@@ -286,6 +286,7 @@ function experimentModal(){
 }
 
 
+
 function productOptions(selected=""){
  return PRODUCT_LIBRARY
   .sort((a,b)=>a.code.localeCompare(b.code))
@@ -295,27 +296,60 @@ function productOptions(selected=""){
 function selectedProduct(){
  return PRODUCT_LIBRARY.find(p=>p.code===document.querySelector("#productCode")?.value);
 }
+function productComponentRows(product){
+ const categoryOrder=["Blade","Ratchet","Bit","Lock Chip","Main Blade","Assist Blade","Metal Blade","Over Blade"];
+ const grouped=new Map(categoryOrder.map(c=>[c,[]]));
+ for(const part of (product?.parts||[])){
+   if(!grouped.has(part.category))grouped.set(part.category,[]);
+   grouped.get(part.category).push(part.name);
+ }
+ return [...grouped.entries()]
+   .filter(([,items])=>items.length)
+   .map(([category,items])=>`
+     <div>
+       <label>${category}</label>
+       <input value="${escapeAttr(items.join(", "))}" readonly>
+     </div>`)
+   .join("");
+}
 function productPreview(){
- const p=selectedProduct();
+ const product=selectedProduct();
  const box=document.querySelector("#productPreview");
- if(!box||!p)return;
- box.innerHTML=`<div class="notice"><b>${p.code} — ${p.name}</b><br>${p.parts.map(x=>`${x.category}: ${x.name}`).join("<br>")}</div>`;
+ if(!box)return;
+ if(!product){
+   box.innerHTML=`<div class="notice">Choose a product to load its included parts.</div>`;
+   return;
+ }
+ box.innerHTML=`
+   <div class="notice">
+     <b>${product.code} — ${product.name}</b><br>
+     Included components are selected automatically from the product mapping.
+   </div>
+   <div class="grid" style="margin-top:10px">
+     ${productComponentRows(product)}
+   </div>
+   <p class="tiny">${product.parts.length} mapped component${product.parts.length===1?"":"s"} will be added per product owned.</p>`;
 }
 function setModal(){
  if(!PRODUCT_LIBRARY.length)return alert("No products are available in the product library.");
  document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card">
-   <h3>Add product to owned collection</h3>
-   <p class="muted">Choose a product. The app will add every mapped component automatically.</p>
+   <h3>Add Product / Set</h3>
+   <p class="muted">Select a product. Its included parts will be loaded automatically.</p>
+
    <label>Product / set</label>
    <select id="productCode">${productOptions()}</select>
+
    <label>Quantity owned</label>
    <input id="productQty" type="number" min="1" value="1">
+
    <div id="productPreview"></div>
+
    <div class="actions">
-     <button class="btn good" id="productSave">Add all included parts</button>
+     <button class="btn good" id="productSave">Add selected product</button>
      <button class="btn secondary" id="productCancel">Cancel</button>
    </div>
  </div></div>`;
+
  document.querySelector("#productCode").onchange=productPreview;
  document.querySelector("#productCancel").onclick=render;
  document.querySelector("#productSave").onclick=saveProduct;
@@ -325,23 +359,48 @@ async function saveProduct(){
  const product=selectedProduct();
  if(!product)return alert("Choose a product.");
  const quantity=Math.max(1,+document.querySelector("#productQty").value||1);
+
  for(const item of product.parts){
-   const existing=state.parts.find(p=>p.category===item.category&&normalizeName(p.name)===normalizeName(item.name));
+   const existing=state.parts.find(p=>
+     p.category===item.category &&
+     normalizeName(p.name)===normalizeName(item.name)
+   );
+
    if(existing){
      existing.qty+=quantity;
-     const sources=new Set(String(existing.source||"").split(";").map(x=>x.trim()).filter(Boolean));
+     const sources=new Set(
+       String(existing.source||"")
+         .split(";")
+         .map(x=>x.trim())
+         .filter(Boolean)
+     );
      sources.add(product.code);
      existing.source=[...sources].join("; ");
      await put("parts",existing);
    }else{
-     await put("parts",{id:uid(),category:item.category,name:item.name,qty:quantity,source:product.code});
+     await put("parts",{
+       id:uid(),
+       category:item.category,
+       name:item.name,
+       qty:quantity,
+       source:product.code
+     });
    }
  }
- await put("settings",{id:`owned-product-${product.code}`,code:product.code,name:product.name,quantityAdded:quantity,lastAdded:new Date().toISOString()});
- await refresh();
- alert(`${product.code} added. ${product.parts.length} included components were updated.`);
-}
 
+ const productRecordId=`owned-product-${product.code}`;
+ const prior=(await getAll("settings")).find(x=>x.id===productRecordId);
+ await put("settings",{
+   id:productRecordId,
+   code:product.code,
+   name:product.name,
+   totalQuantity:(prior?.totalQuantity||0)+quantity,
+   lastAdded:new Date().toISOString()
+ });
+
+ await refresh();
+ alert(`${quantity} × ${product.code} added. ${product.parts.length * quantity} component copy/copies were added to the owned collection.`);
+}
 function independentPartOptions(category,selected=""){
  const items=state.library
   .filter(x=>x.category===category)
