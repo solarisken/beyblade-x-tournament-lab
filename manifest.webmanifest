@@ -5,7 +5,6 @@
   "display": "standalone",
   "background_color": "#07101f",
   "theme_color": "#0f172a",
-  "description": "Offline Beyblade X combo testing, scoring, analytics, and deck management.",
   "icons": [
     {
       "src": "icons/icon-192.png",

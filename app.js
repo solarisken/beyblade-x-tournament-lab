@@ -1,246 +1,27 @@
-const OWNED = {
-  blades:[
-    ["DranStrike","BX-49"],["PhoenixWing","BX-23"],["ImpactDrake","UX-11"],["SilverWolf","UX-08"],
-    ["ScorpioSpear","UX-14"],["BulletGriffon","UX-19"],["BahamutBlitz BK","CX-16"],
-    ["SolEclipse D","CX-09"],["WolfHunt F","CX-10"]
-  ],
-  ratchets:[["Integrated",1],["0-60",1],["0-70",1],["1-50",1],["3-80",1],["4-50",1],["5-70",1],["9-60",2]],
-  bits:["Disc Ball","Free Ball","Free Flat","Gear Flat","Hexa","Ignition","Low Rush","Trans Kick","Zap"]
-};
-const DEFAULT = {
-  deck:[
-    {slot:"Bey 1",blade:"DranStrike",ratchet:"1-50",bit:"Low Rush",role:"Primary attacker"},
-    {slot:"Bey 2",blade:"SilverWolf",ratchet:"9-60",bit:"Hexa",role:"Defense"},
-    {slot:"Bey 3",blade:"PhoenixWing",ratchet:"9-60",bit:"Gear Flat",role:"Secondary attacker"},
-    {slot:"Test Bey",blade:"BahamutBlitz BK",ratchet:"0-70",bit:"Ignition",role:"Balance / counter"}
-  ],
-  matches:[],
-  historical:[
-    {a:"DranStrike 1-50 Low Rush",b:"SilverWolf 9-60 Hexa",aWins:7,bWins:5,aSpin:2,aBurst:0,aOver:12,aXtreme:5,bSpin:22,bBurst:0,bOver:4,bXtreme:0},
-    {a:"DranStrike 1-50 Low Rush",b:"PhoenixWing 9-60 Gear Flat",aWins:7,bWins:5,aSpin:12,aBurst:1,aOver:6,aXtreme:3,bSpin:10,bBurst:0,bOver:2,bXtreme:3}
-  ],
-  activeTest:{focus:0,opponent:3,target:12}
-};
-let state = loadState();
-let page = "home";
-let battle = null;
-let pendingFinish = null;
 
-function loadState(){
-  try{return JSON.parse(localStorage.getItem("beylab-pwa-state")) || structuredClone(DEFAULT)}
-  catch(e){return structuredClone(DEFAULT)}
-}
-function saveState(){localStorage.setItem("beylab-pwa-state",JSON.stringify(state))}
-function comboName(x){return `${x.blade} ${x.ratchet} ${x.bit}`}
-function allCombos(){return state.deck.map(comboName)}
-function officialPoints(type){return {Spin:1,Burst:2,Over:2,Xtreme:3}[type]||0}
-function uid(){return crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random()}
-function partConflict(){
-  const issues=[];
-  const deck=state.deck.slice(0,3);
-  const ratCounts={}; const bitCounts={}; const bladeCounts={};
-  deck.forEach(x=>{
-    bladeCounts[x.blade]=(bladeCounts[x.blade]||0)+1;
-    ratCounts[x.ratchet]=(ratCounts[x.ratchet]||0)+1;
-    bitCounts[x.bit]=(bitCounts[x.bit]||0)+1;
-    if(x.blade==="BulletGriffon"&&x.ratchet!=="Integrated")issues.push("BulletGriffon requires Integrated ratchet.");
-    if(x.blade!=="BulletGriffon"&&x.ratchet==="Integrated")issues.push("Integrated ratchet is BulletGriffon-only.");
-  });
-  Object.entries(bladeCounts).forEach(([p,n])=>{if(n>1)issues.push(`${p} used ${n} times; owned 1.`)});
-  Object.entries(ratCounts).forEach(([p,n])=>{
-    const qty=(OWNED.ratchets.find(x=>x[0]===p)||[p,1])[1];
-    if(n>qty)issues.push(`${p} used ${n} times; owned ${qty}.`);
-  });
-  Object.entries(bitCounts).forEach(([p,n])=>{if(n>1)issues.push(`${p} used ${n} times; owned 1.`)});
-  return [...new Set(issues)];
-}
-function selectedPairAvailable(a,b){
-  if(a===b)return "Choose different slots.";
-  const x=state.deck[a], y=state.deck[b];
-  if(x.blade===y.blade)return `Only one ${x.blade} blade is owned.`;
-  if(x.ratchet===y.ratchet){
-    const qty=(OWNED.ratchets.find(r=>r[0]===x.ratchet)||[x.ratchet,1])[1];
-    if(qty<2)return `Only one ${x.ratchet} ratchet is owned.`;
-  }
-  if(x.bit===y.bit)return `Only one ${x.bit} bit is owned.`;
-  return "";
-}
-function aggregate(){
-  const map={};
-  function add(name,w,l,sp,bu,ov,xt,pts,against){
-    if(!map[name])map[name]={name,w:0,l:0,spin:0,burst:0,over:0,xtreme:0,points:0,against:0,matches:0};
-    const x=map[name]; x.w+=w;x.l+=l;x.matches+=w+l;x.spin+=sp;x.burst+=bu;x.over+=ov;x.xtreme+=xt;x.points+=pts;x.against+=against;
-  }
-  state.historical.forEach(s=>{
-    const ap=s.aSpin+2*s.aBurst+2*s.aOver+3*s.aXtreme;
-    const bp=s.bSpin+2*s.bBurst+2*s.bOver+3*s.bXtreme;
-    add(s.a,s.aWins,s.bWins,s.aSpin,s.aBurst,s.aOver,s.aXtreme,ap,bp);
-    add(s.b,s.bWins,s.aWins,s.bSpin,s.bBurst,s.bOver,s.bXtreme,bp,ap);
-  });
-  state.matches.forEach(m=>{
-    const aW=m.winner===m.a?1:0,bW=m.winner===m.b?1:0;
-    const count=(side,type)=>m.rounds.filter(r=>r.side===side&&r.finish===type).length;
-    add(m.a,aW,bW,count("a","Spin"),count("a","Burst"),count("a","Over"),count("a","Xtreme"),m.aScore,m.bScore);
-    add(m.b,bW,aW,count("b","Spin"),count("b","Burst"),count("b","Over"),count("b","Xtreme"),m.bScore,m.aScore);
-  });
-  return Object.values(map).map(x=>({...x,winRate:x.matches?x.w/x.matches:0,diff:x.points-x.against}));
-}
-function nav(){
-  return `<nav>${[
-    ["home","⌂","Home"],["battle","⚔","Battle"],["deck","◈","Deck"],["analytics","▥","Analytics"],["data","⚙","Data"]
-  ].map(([id,icon,label])=>`<button class="${page===id?"active":""}" onclick="go('${id}')"><span>${icon}</span>${label}</button>`).join("")}</nav>`;
-}
-function header(sub){
-  return `<header><h1>Personal Beyblade X Tournament Lab</h1><p>${sub}</p></header>`;
-}
-function render(){
-  const app=document.getElementById("app");
-  const views={home:homeView,battle:battleView,deck:deckView,analytics:analyticsView,data:dataView};
-  app.innerHTML=header(page==="battle"?"First-to-4 one-tap scoring":"Owned-parts tournament testing and analytics")+`<main>${views[page]()}</main>`+nav();
-}
-function go(id){page=id;render()}
-
-function homeView(){
-  const a=aggregate().find(x=>x.name==="DranStrike 1-50 Low Rush");
-  const test=state.activeTest;
-  const completed=state.matches.filter(m=>
-    (m.a===comboName(state.deck[test.focus])&&m.b===comboName(state.deck[test.opponent]))||
-    (m.b===comboName(state.deck[test.focus])&&m.a===comboName(state.deck[test.opponent]))
-  ).length;
-  const remain=Math.max(0,test.target-completed);
-  const issues=partConflict();
-  return `
-  <div class="card">
-    <h2>Current decision</h2>
-    <div class="notice"><b>Keep DranStrike 1-50 Low Rush unchanged.</b><br>
-    Existing evidence: ${a?`${a.w}-${a.l}, ${(a.winRate*100).toFixed(1)}% win rate, ${a.diff>=0?"+":""}${a.diff} point differential`:"No data"}.</div>
-  </div>
-  <div class="grid">
-    <div class="metric"><b>${a?a.matches:0}</b><span>DranStrike matches</span></div>
-    <div class="metric"><b>${a?(a.winRate*100).toFixed(1)+"%":"—"}</b><span>DranStrike win rate</span></div>
-    <div class="metric"><b>${state.matches.length}</b><span>New matches saved</span></div>
-    <div class="metric"><b>${issues.length?issues.length:"✓"}</b><span>Deck legality</span></div>
-  </div>
-  <div class="card">
-    <h3>Priority test</h3>
-    <p><b>${comboName(state.deck[test.focus])}</b><br><span class="muted">vs</span><br><b>${comboName(state.deck[test.opponent])}</b></p>
-    <div class="progress"><div style="width:${Math.min(100,completed/test.target*100)}%"></div></div>
-    <p class="muted">${completed} of ${test.target} completed · ${remain} remaining</p>
-    <button class="btn" onclick="startBattle(${test.focus},${test.opponent})">Start next match</button>
-  </div>
-  <div class="card">
-    <h3>Current deck</h3>
-    ${state.deck.slice(0,3).map((x,i)=>`<p><span class="badge">${x.slot}</span> <b>${comboName(x)}</b><br><span class="muted">${x.role}</span></p>`).join("")}
-    ${issues.length?`<div class="notice">${issues.join("<br>")}</div>`:`<span class="badge good">Owned-part check passed</span>`}
-  </div>`;
-}
-
-function deckView(){
-  const opts=(arr,selected)=>arr.map(x=>{const v=Array.isArray(x)?x[0]:x;return `<option ${v===selected?"selected":""}>${v}</option>`}).join("");
-  return `<div class="card"><h2>Deck and Test Bey</h2><p class="muted">Change any owned part. Bey 1–3 are checked as a simultaneous tournament deck; Test Bey is independent.</p>
-    ${state.deck.map((x,i)=>`<div class="deck-row">
-      <div class="slot">${x.slot}</div>
-      <div><label>Blade</label><select onchange="updatePart(${i},'blade',this.value)">${opts(OWNED.blades,x.blade)}</select></div>
-      <div><label>Ratchet</label><select onchange="updatePart(${i},'ratchet',this.value)">${opts(OWNED.ratchets,x.ratchet)}</select></div>
-      <div><label>Bit</label><select onchange="updatePart(${i},'bit',this.value)">${opts(OWNED.bits,x.bit)}</select></div>
-    </div>`).join("")}
-    <div class="notice">${partConflict().length?partConflict().join("<br>"):"Tournament deck is legal with the confirmed owned quantities."}</div>
-  </div>`;
-}
-function updatePart(i,k,v){state.deck[i][k]=v;saveState();render()}
-
-function startBattle(a,b){
-  const err=selectedPairAvailable(a,b); if(err){alert(err);return}
-  battle={aIndex:a,bIndex:b,a:comboName(state.deck[a]),b:comboName(state.deck[b]),aScore:0,bScore:0,rounds:[],startedAt:new Date().toISOString()};
-  page="battle";render();
-}
-function battleView(){
-  if(!battle)return `<div class="card"><h2>Start a match</h2>
-    <label>Combo A</label><select id="pickA">${state.deck.map((x,i)=>`<option value="${i}">${x.slot}: ${comboName(x)}</option>`).join("")}</select>
-    <label>Combo B</label><select id="pickB">${state.deck.map((x,i)=>`<option value="${i}" ${i===3?"selected":""}>${x.slot}: ${comboName(x)}</option>`).join("")}</select>
-    <div class="actions"><button class="btn" onclick="startBattle(+pickA.value,+pickB.value)">Start match</button></div></div>`;
-  const complete=battle.aScore>=4||battle.bScore>=4;
-  return `<div class="card">
-    <div class="scoreboard">
-      <div><b>${battle.a}</b><div class="score">${battle.aScore}</div></div><div class="versus">VS</div>
-      <div><b>${battle.b}</b><div class="score">${battle.bScore}</div></div>
-    </div>
-  </div>
-  ${complete?`<div class="card"><h2>${battle.aScore>battle.bScore?battle.a:battle.b} wins</h2>
-    <div class="actions"><button class="btn good" onclick="saveBattle()">Save match</button><button class="btn secondary" onclick="undoRound()">Undo</button><button class="btn danger" onclick="cancelBattle()">Discard</button></div></div>`:
-  `<div class="card"><h3>${battle.a}</h3><div class="finish-grid">${finishButtons("a")}</div></div>
-   <div class="card"><h3>${battle.b}</h3><div class="finish-grid">${finishButtons("b")}</div></div>
-   <div class="actions"><button class="btn secondary" onclick="undoRound()">Undo last round</button><button class="btn danger" onclick="cancelBattle()">Cancel match</button></div>`}
-  <div class="card"><h3>Round history</h3>${battle.rounds.length?`<div class="scroll"><table><tr><th>#</th><th>Winner</th><th>Finish</th><th>Points</th><th>Own finish</th></tr>${battle.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${r.side==="a"?battle.a:battle.b}</td><td>${r.finish}</td><td>${r.points}</td><td>${r.own?"Yes":""}</td></tr>`).join("")}</table></div>`:`<p class="muted">No rounds recorded.</p>`}</div>
-  ${pendingFinish?ownFinishModal():""}`;
-}
-function finishButtons(side){
-  return [["Spin",1,"spin"],["Burst",2,"burst"],["Over",2,"over"],["Xtreme",3,"xtreme"]].map(([f,p,c])=>
-    `<button class="finish ${c}" onclick="chooseFinish('${side}','${f}',${p})">${f}<small>${p} point${p>1?"s":""}</small></button>`).join("");
-}
-function chooseFinish(side,finish,points){
-  if(finish==="Over"||finish==="Xtreme"){pendingFinish={side,finish,points};render()}
-  else addRound(side,finish,points,false);
-}
-function ownFinishModal(){
-  return `<div class="modal"><div class="card"><h3>Was this an Own Finish?</h3>
-    <p class="muted">Choose Yes only when the losing Bey entered the Over/Xtreme Zone without contacting the opponent.</p>
-    <div class="actions"><button class="btn secondary" onclick="confirmFinish(false)">No / contact occurred</button><button class="btn danger" onclick="confirmFinish(true)">Yes, Own Finish</button></div></div></div>`;
-}
-function confirmFinish(own){const p=pendingFinish;pendingFinish=null;addRound(p.side,p.finish,p.points,own)}
-function addRound(side,finish,points,own){
-  battle.rounds.push({side,finish,points,own});
-  if(side==="a")battle.aScore+=points;else battle.bScore+=points;
-  render();
-}
-function undoRound(){
-  if(pendingFinish){pendingFinish=null;render();return}
-  const r=battle?.rounds.pop();if(!r)return;
-  if(r.side==="a")battle.aScore-=r.points;else battle.bScore-=r.points;render();
-}
-function cancelBattle(){if(confirm("Discard this match?")){battle=null;render()}}
-function saveBattle(){
-  const winner=battle.aScore>battle.bScore?battle.a:battle.b;
-  state.matches.push({id:uid(),date:new Date().toISOString(),a:battle.a,b:battle.b,winner,aScore:battle.aScore,bScore:battle.bScore,rounds:battle.rounds});
-  saveState();battle=null;page="home";render();
-}
-
-function analyticsView(){
-  const data=aggregate().sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff);
-  return `<div class="card"><h2>Combo leaderboard</h2><div class="scroll"><table><tr><th>Combo</th><th>Record</th><th>Win %</th><th>Points</th><th>Diff</th></tr>
-    ${data.map(x=>`<tr><td>${x.name}</td><td>${x.w}-${x.l}</td><td>${(x.winRate*100).toFixed(1)}%</td><td>${x.points}-${x.against}</td><td>${x.diff>=0?"+":""}${x.diff}</td></tr>`).join("")}</table></div></div>
-    <div class="card"><h3>Finish profiles</h3>${data.map(x=>{
-      const total=x.spin+x.burst+x.over+x.xtreme||1;
-      return `<p><b>${x.name}</b><br><span class="muted">Spin ${(x.spin/total*100).toFixed(0)}% · Burst ${(x.burst/total*100).toFixed(0)}% · Over ${(x.over/total*100).toFixed(0)}% · Xtreme ${(x.xtreme/total*100).toFixed(0)}%</span></p>`;
-    }).join("")}</div>`;
-}
-
-function dataView(){
-  return `<div class="card"><h2>Data management</h2><p class="muted">All data is stored locally on this device. Export backups regularly.</p>
-    <div class="actions"><button class="btn" onclick="exportBackup()">Export backup</button><button class="btn secondary" onclick="document.getElementById('importFile').click()">Import backup</button><button class="btn secondary" onclick="exportCSV()">Export CSV</button><button class="btn danger" onclick="resetAll()">Reset app</button></div>
-    <input id="importFile" class="hidden" type="file" accept=".json" onchange="importBackup(event)">
-  </div>
-  <div class="card"><h3>Install status</h3><p id="installText" class="muted">Use your browser menu and choose “Add to Home screen” after the app is hosted.</p></div>`;
-}
-function download(name,text,type){
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-function exportBackup(){download("beylab-backup.json",JSON.stringify(state,null,2),"application/json")}
-function importBackup(e){
-  const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{state=JSON.parse(r.result);saveState();render();alert("Backup imported.")}catch{alert("Invalid backup.")}};
-  r.readAsText(f);
-}
-function exportCSV(){
-  let csv="date,combo_a,combo_b,winner,a_score,b_score,round,round_winner,finish,points,own_finish\n";
-  state.matches.forEach(m=>m.rounds.forEach((r,i)=>csv += [
-    m.date,`"${m.a}"`,`"${m.b}"`,`"${m.winner}"`,m.aScore,m.bScore,i+1,`"${r.side==="a"?m.a:m.b}"`,r.finish,r.points,r.own
-  ].join(",")+"\n"));
-  download("beylab-matches.csv",csv,"text/csv");
-}
-function resetAll(){if(confirm("Erase all saved app data?")){state=structuredClone(DEFAULT);saveState();battle=null;render()}}
-
-window.addEventListener("load",()=>{
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
-  render();
-});
+const BASE={blades:[["DranStrike","BX-49",1],["PhoenixWing","BX-23",1],["ImpactDrake","UX-11",1],["SilverWolf","UX-08",1],["ScorpioSpear","UX-14",1],["BulletGriffon","UX-19",1],["BahamutBlitz BK","CX-16",1],["SolEclipse D","CX-09",1],["WolfHunt F","CX-10",1]],ratchets:[["Integrated",1],["0-60",1],["0-70",1],["1-50",1],["3-80",1],["4-50",1],["5-70",1],["9-60",2]],bits:[["Disc Ball",1],["Free Ball",1],["Free Flat",1],["Gear Flat",1],["Hexa",1],["Ignition",1],["Low Rush",1],["Trans Kick",1],["Zap",1]]};
+const DEFAULT={owned:structuredClone(BASE),deck:[{slot:"Bey 1",blade:"DranStrike",ratchet:"1-50",bit:"Low Rush",role:"Primary attacker"},{slot:"Bey 2",blade:"SilverWolf",ratchet:"9-60",bit:"Hexa",role:"Defense"},{slot:"Bey 3",blade:"PhoenixWing",ratchet:"9-60",bit:"Gear Flat",role:"Secondary attacker"},{slot:"Test Bey",blade:"BahamutBlitz BK",ratchet:"0-70",bit:"Ignition",role:"Balance / counter"}],matches:[],historical:[{a:"DranStrike 1-50 Low Rush",b:"SilverWolf 9-60 Hexa",aWins:7,bWins:5,aSpin:2,aBurst:0,aOver:12,aXtreme:5,bSpin:22,bBurst:0,bOver:4,bXtreme:0},{a:"DranStrike 1-50 Low Rush",b:"PhoenixWing 9-60 Gear Flat",aWins:7,bWins:5,aSpin:12,aBurst:1,aOver:6,aXtreme:3,bSpin:10,bBurst:0,bOver:2,bXtreme:3}],activeTest:{focus:0,opponent:3,target:12}};
+let state=load();if(!state.owned)state.owned=structuredClone(BASE);if(!state.activeTest)state.activeTest={focus:0,opponent:3,target:12};save();let page="home",battle=null,pending=null;
+function load(){try{return JSON.parse(localStorage.getItem("beylab-state"))||structuredClone(DEFAULT)}catch{return structuredClone(DEFAULT)}}function save(){localStorage.setItem("beylab-state",JSON.stringify(state))}
+function name(x){return `${x.blade} ${x.ratchet} ${x.bit}`}function qty(list,n){let x=list.find(v=>v[0]===n);return x?x[x.length-1]:0}
+function conflicts(){let d=state.deck.slice(0,3),o=[];for(let k of ["blade","ratchet","bit"]){let m={};d.forEach(x=>m[x[k]]=(m[x[k]]||0)+1);Object.entries(m).forEach(([p,n])=>{let q=k==="blade"?qty(state.owned.blades,p):k==="ratchet"?qty(state.owned.ratchets,p):qty(state.owned.bits,p);if(n>q)o.push(`${p} used ${n} times; owned ${q}.`)})}d.forEach(x=>{if(x.blade==="BulletGriffon"&&x.ratchet!=="Integrated")o.push("BulletGriffon requires Integrated ratchet.");if(x.blade!=="BulletGriffon"&&x.ratchet==="Integrated")o.push("Integrated is BulletGriffon-only.")});return [...new Set(o)]}
+function aggregate(){let m={};function add(n,w,l,s,b,o,x,p,a){m[n]??={name:n,w:0,l:0,matches:0,spin:0,burst:0,over:0,xtreme:0,points:0,against:0};let z=m[n];z.w+=w;z.l+=l;z.matches+=w+l;z.spin+=s;z.burst+=b;z.over+=o;z.xtreme+=x;z.points+=p;z.against+=a}
+state.historical.forEach(t=>{let ap=t.aSpin+2*t.aBurst+2*t.aOver+3*t.aXtreme,bp=t.bSpin+2*t.bBurst+2*t.bOver+3*t.bXtreme;add(t.a,t.aWins,t.bWins,t.aSpin,t.aBurst,t.aOver,t.aXtreme,ap,bp);add(t.b,t.bWins,t.aWins,t.bSpin,t.bBurst,t.bOver,t.bXtreme,bp,ap)});
+state.matches.forEach(t=>{let c=(s,f)=>t.rounds.filter(r=>r.side===s&&r.finish===f).length,aw=t.winner===t.a?1:0,bw=1-aw;add(t.a,aw,bw,c("a","Spin"),c("a","Burst"),c("a","Over"),c("a","Xtreme"),t.aScore,t.bScore);add(t.b,bw,aw,c("b","Spin"),c("b","Burst"),c("b","Over"),c("b","Xtreme"),t.bScore,t.aScore)});return Object.values(m).map(x=>({...x,wr:x.matches?x.w/x.matches:0,diff:x.points-x.against}))}
+function nav(){return `<nav>${[["home","⌂","Home"],["battle","⚔","Battle"],["deck","◈","Deck"],["analytics","▥","Analytics"],["data","⚙","Data"]].map(x=>`<button class="${page===x[0]?"active":""}" onclick="go('${x[0]}')"><span>${x[1]}</span>${x[2]}</button>`).join("")}</nav>`}
+function render(){let v={home,battle:battleView,deck,analytics,data};document.getElementById("app").innerHTML=`<header><h1>Personal Beyblade X Tournament Lab</h1><p>Owned-parts tournament testing and analytics</p></header><main>${v[page]()}</main>${nav()}`}function go(p){page=p;render()}
+function setTarget(v){state.activeTest.target=Math.max(1,Math.min(200,+v||12));save();render()}
+function home(){let a=aggregate().find(x=>x.name==="DranStrike 1-50 Low Rush"),t=state.activeTest,focus=name(state.deck[t.focus]),opp=name(state.deck[t.opponent]),done=state.matches.filter(m=>(m.a===focus&&m.b===opp)||(m.a===opp&&m.b===focus)).length,remain=Math.max(0,t.target-done);return `<div class="card"><h2>Current decision</h2><div class="notice"><b>Keep DranStrike 1-50 Low Rush unchanged.</b><br>Existing evidence: ${a.w}-${a.l}, ${(a.wr*100).toFixed(1)}% win rate, +${a.diff} point differential.</div></div><div class="grid"><div class="metric"><b>${a.matches}</b><span>DranStrike matches</span></div><div class="metric"><b>${(a.wr*100).toFixed(1)}%</b><span>Win rate</span></div><div class="metric"><b>${state.matches.length}</b><span>New matches saved</span></div><div class="metric"><b>${conflicts().length||"✓"}</b><span>Deck legality</span></div></div><div class="card"><h3>Priority test</h3><p><b>${focus}</b><br><span class="muted">vs</span><br><b>${opp}</b></p><div class="progress"><div style="width:${Math.min(100,done/t.target*100)}%"></div></div><p class="muted">${done} of ${t.target} completed · ${remain} remaining</p><label>Target matches</label><div style="display:grid;grid-template-columns:1fr auto;gap:8px"><input id="target" type="number" min="1" max="200" value="${t.target}"><button class="btn secondary" onclick="setTarget(target.value)">Update</button></div><div class="actions"><button class="btn" onclick="start(${t.focus},${t.opponent})">Start next match</button></div></div>`}
+function opts(list,s){return list.map(x=>`<option ${x[0]===s?"selected":""}>${x[0]}</option>`).join("")}
+function deck(){return `<div class="card"><h2>Deck and Test Bey</h2>${state.deck.map((x,i)=>`<div class="deck-row"><div class="slot">${x.slot}</div><div><label>Blade</label><select onchange="upd(${i},'blade',this.value)">${opts(state.owned.blades,x.blade)}</select></div><div><label>Ratchet</label><select onchange="upd(${i},'ratchet',this.value)">${opts(state.owned.ratchets,x.ratchet)}</select></div><div><label>Bit</label><select onchange="upd(${i},'bit',this.value)">${opts(state.owned.bits,x.bit)}</select></div></div>`).join("")}<div class="notice">${conflicts().length?conflicts().join("<br>"):"Tournament deck is legal."}</div></div>`}function upd(i,k,v){state.deck[i][k]=v;save();render()}
+function pair(a,b){if(a===b)return"Choose different slots.";let x=state.deck[a],y=state.deck[b];if(x.blade===y.blade&&qty(state.owned.blades,x.blade)<2)return`Only one ${x.blade} is owned.`;if(x.ratchet===y.ratchet&&qty(state.owned.ratchets,x.ratchet)<2)return`Only one ${x.ratchet} is owned.`;if(x.bit===y.bit&&qty(state.owned.bits,x.bit)<2)return`Only one ${x.bit} is owned.`;return""}
+function start(a,b){let e=pair(a,b);if(e)return alert(e);battle={a:name(state.deck[a]),b:name(state.deck[b]),aScore:0,bScore:0,rounds:[]};page="battle";render()}
+function battleView(){if(!battle)return`<div class="card"><h2>Start a match</h2><label>Combo A</label><select id="pa">${state.deck.map((x,i)=>`<option value="${i}">${x.slot}: ${name(x)}</option>`).join("")}</select><label>Combo B</label><select id="pb">${state.deck.map((x,i)=>`<option value="${i}" ${i===3?"selected":""}>${x.slot}: ${name(x)}</option>`).join("")}</select><div class="actions"><button class="btn" onclick="start(+pa.value,+pb.value)">Start</button></div></div>`;let done=battle.aScore>=4||battle.bScore>=4;return`<div class="card"><div class="scoreboard"><div><b>${battle.a}</b><div class="score">${battle.aScore}</div></div><div class="versus">VS</div><div><b>${battle.b}</b><div class="score">${battle.bScore}</div></div></div></div>${done?`<div class="card"><h2>${battle.aScore>battle.bScore?battle.a:battle.b} wins</h2><div class="actions"><button class="btn good" onclick="saveBattle()">Save</button><button class="btn secondary" onclick="undo()">Undo</button><button class="btn danger" onclick="cancel()">Discard</button></div></div>`:`<div class="card"><h3>${battle.a}</h3>${buttons("a")}</div><div class="card"><h3>${battle.b}</h3>${buttons("b")}</div><div class="actions"><button class="btn secondary" onclick="undo()">Undo</button><button class="btn danger" onclick="cancel()">Cancel</button></div>`}<div class="card"><h3>Rounds</h3>${battle.rounds.length?`<div class="scroll"><table><tr><th>#</th><th>Winner</th><th>Finish</th><th>Pts</th><th>Own</th></tr>${battle.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${r.side==="a"?battle.a:battle.b}</td><td>${r.finish}</td><td>${r.points}</td><td>${r.own?"Yes":""}</td></tr>`).join("")}</table></div>`:`<p class="muted">No rounds yet.</p>`}</div>${pending?modal():""}`}
+function buttons(s){return`<div class="finish-grid">${[["Spin",1],["Burst",2],["Over",2],["Xtreme",3]].map(x=>`<button class="finish" onclick="finish('${s}','${x[0]}',${x[1]})">${x[0]}<small>${x[1]} pt</small></button>`).join("")}</div>`}
+function finish(s,f,p){if(f==="Over"||f==="Xtreme"){pending={s,f,p};render()}else add(s,f,p,false)}function modal(){return`<div class="modal"><div class="card"><h3>Own Finish?</h3><p class="muted">Yes only if the losing Bey entered the zone without contact.</p><div class="actions"><button class="btn secondary" onclick="confirmOwn(false)">No</button><button class="btn danger" onclick="confirmOwn(true)">Yes</button></div></div></div>`}function confirmOwn(o){let p=pending;pending=null;add(p.s,p.f,p.p,o)}function add(s,f,p,o){battle.rounds.push({side:s,finish:f,points:p,own:o});s==="a"?battle.aScore+=p:battle.bScore+=p;render()}function undo(){if(pending){pending=null;return render()}let r=battle.rounds.pop();if(!r)return;r.side==="a"?battle.aScore-=r.points:battle.bScore-=r.points;render()}function cancel(){if(confirm("Discard match?")){battle=null;render()}}function saveBattle(){let w=battle.aScore>battle.bScore?battle.a:battle.b;state.matches.push({...battle,winner:w,date:new Date().toISOString()});save();battle=null;page="home";render()}
+function analytics(){let a=aggregate().sort((x,y)=>y.wr-x.wr);return`<div class="card"><h2>Leaderboard</h2><div class="scroll"><table><tr><th>Combo</th><th>Record</th><th>Win %</th><th>Diff</th></tr>${a.map(x=>`<tr><td>${x.name}</td><td>${x.w}-${x.l}</td><td>${(x.wr*100).toFixed(1)}%</td><td>${x.diff>=0?"+":""}${x.diff}</td></tr>`).join("")}</table></div></div>`}
+function addPart(cat,n,q,src){n=n.trim();q=Math.max(1,+q||1);if(!n)return alert("Enter a name.");let list=cat==="Blade"?state.owned.blades:cat==="Ratchet"?state.owned.ratchets:state.owned.bits,x=list.find(v=>v[0].toLowerCase()===n.toLowerCase());if(x)x[x.length-1]+=q;else list.push(cat==="Blade"?[n,src||"Manual",q]:[n,q]);save();render()}
+function addSet(){let c=setCode.value.trim()||"Manual set",q=Math.max(1,+setQty.value||1);if(!setBlade.value&&!setRatchet.value&&!setBit.value)return alert("Enter at least one part.");if(setBlade.value)addPart("Blade",setBlade.value,q,c);if(setRatchet.value)addPart("Ratchet",setRatchet.value,q,c);if(setBit.value)addPart("Bit",setBit.value,q,c);alert(`${c} added.`)}
+function data(){let rows=(title,list)=>`<tr><th colspan="3">${title}</th></tr>${list.map(x=>`<tr><td>${x[0]}</td><td>${x[x.length-1]}</td><td>${x.length===3?x[1]:""}</td></tr>`).join("")}`;return`<div class="card"><h2>Collection manager</h2><h3>Add individual part</h3><div class="grid"><div><label>Category</label><select id="pc"><option>Blade</option><option>Ratchet</option><option>Bit</option></select></div><div><label>Name</label><input id="pn"></div><div><label>Qty</label><input id="pq" type="number" value="1"></div><div><label>Source</label><input id="ps"></div></div><div class="actions"><button class="btn" onclick="addPart(pc.value,pn.value,pq.value,ps.value)">Add part</button></div><hr><h3>Add product/set</h3><div class="grid"><div><label>Code</label><input id="setCode"></div><div><label>Blade</label><input id="setBlade"></div><div><label>Ratchet</label><input id="setRatchet"></div><div><label>Bit</label><input id="setBit"></div><div><label>Qty</label><input id="setQty" type="number" value="1"></div></div><div class="actions"><button class="btn good" onclick="addSet()">Add set</button></div></div><div class="card"><h3>Owned parts</h3><div class="scroll"><table><tr><th>Part</th><th>Qty</th><th>Source</th></tr>${rows("Blades",state.owned.blades)}${rows("Ratchets",state.owned.ratchets)}${rows("Bits",state.owned.bits)}</table></div></div><div class="card"><h3>Backup</h3><div class="actions"><button class="btn" onclick="backup()">Export</button><button class="btn danger" onclick="reset()">Reset</button></div></div>`}
+function backup(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}));a.download="beylab-backup.json";a.click()}function reset(){if(confirm("Reset all data?")){state=structuredClone(DEFAULT);save();render()}}
+addEventListener("load",()=>{if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");render()});
