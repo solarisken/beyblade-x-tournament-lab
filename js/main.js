@@ -7,23 +7,23 @@ const BASE_PARTS=[];
 
 
 const PRODUCT_LIBRARY=[
- {code:"BX-23",name:"PhoenixWing 9-60GF",parts:[
+ {code:"BX-23",name:"PhoenixWing 9-60GF",type:"Starter",line:"BX",parts:[
    {category:"Blade",name:"PhoenixWing"},{category:"Ratchet",name:"9-60"},{category:"Bit",name:"Gear Flat"}]},
- {code:"UX-08",name:"SilverWolf 3-80FB",parts:[
+ {code:"UX-08",name:"SilverWolf 3-80FB",type:"Booster",line:"UX",parts:[
    {category:"Blade",name:"SilverWolf"},{category:"Ratchet",name:"3-80"},{category:"Bit",name:"Free Ball"}]},
- {code:"UX-11",name:"ImpactDrake 9-60LR",parts:[
+ {code:"UX-11",name:"ImpactDrake 9-60LR",type:"Starter",line:"UX",parts:[
    {category:"Blade",name:"ImpactDrake"},{category:"Ratchet",name:"9-60"},{category:"Bit",name:"Low Rush"}]},
- {code:"UX-14",name:"ScorpioSpear 0-70Z",parts:[
+ {code:"UX-14",name:"ScorpioSpear 0-70Z",type:"Booster",line:"UX",parts:[
    {category:"Blade",name:"ScorpioSpear"},{category:"Ratchet",name:"0-70"},{category:"Bit",name:"Zap"}]},
- {code:"UX-19",name:"BulletGriffon H",parts:[
+ {code:"UX-19",name:"BulletGriffon H",type:"Booster",line:"UX",parts:[
    {category:"Blade",name:"BulletGriffon"},{category:"Ratchet",name:"Integrated"},{category:"Bit",name:"Hexa"}]},
- {code:"CX-09",name:"SolEclipse D 5-70TK",parts:[
+ {code:"CX-09",name:"SolEclipse D 5-70TK",type:"Booster",line:"CX",parts:[
    {category:"Blade",name:"SolEclipse D"},{category:"Ratchet",name:"5-70"},{category:"Bit",name:"Trans Kick"}]},
- {code:"CX-10",name:"WolfHunt F 0-60DB",parts:[
+ {code:"CX-10",name:"WolfHunt F 0-60DB",type:"Booster",line:"CX",parts:[
    {category:"Blade",name:"WolfHunt F"},{category:"Ratchet",name:"0-60"},{category:"Bit",name:"Disc Ball"}]},
- {code:"CX-16",name:"BahamutBlitz BK 1-50I",parts:[
+ {code:"CX-16",name:"BahamutBlitz BK 1-50I",type:"Set",line:"CX",parts:[
    {category:"Blade",name:"BahamutBlitz BK"},{category:"Ratchet",name:"1-50"},{category:"Bit",name:"Ignition"}]},
- {code:"BX-49",name:"DranStrike 4-50FF",parts:[
+ {code:"BX-49",name:"DranStrike 4-50FF",type:"Starter",line:"BX",parts:[
    {category:"Blade",name:"DranStrike"},{category:"Ratchet",name:"4-50"},{category:"Bit",name:"Free Flat"}]}
 ];
 const BASE_BUILDS=[];
@@ -44,7 +44,7 @@ async function seed(){
  }
 }
 async function refresh(){
- state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");state.library=await getAll("library");state.projects=await getAll("projects");state.experiments=await getAll("experiments");render();
+ state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");state.settings=await getAll("settings");state.library=await getAll("library");state.projects=await getAll("projects");state.experiments=await getAll("experiments");render();
 }
 function build(id){return state.builds.find(x=>x.id===id)}
 function slotBuild(slot){return state.builds.find(x=>x.slot===slot)||null}
@@ -139,51 +139,82 @@ function analyticsView(){
 }
 function statCard(x){const total=x.spin+x.burst+x.over+x.xtreme||1;return `<div class="card"><div class="queue-top"><div><h3>${x.name}</h3>${badge(x.readiness,x.readiness.includes("Validated")?"good":x.readiness==="Testing"?"warn":"")}</div><div><b>${(x.winRate*100).toFixed(1)}%</b><br><span class="tiny">${x.matches} matches</span></div></div>${[["Spin",x.spin],["Burst",x.burst],["Over",x.over],["Xtreme",x.xtreme]].map(([n,v])=>`<div class="statbar"><span>${n}</span><div class="bar"><div style="width:${v/total*100}%"></div></div><b>${v}</b></div>`).join("")}<p class="muted">Avg points: ${x.avgPoints.toFixed(2)} · KO rate: ${(x.koRate*100).toFixed(1)}% · Self-exit losses: ${x.self}</p></div>`}
 function collectionView(){
- const categories=[...new Set(state.library.map(x=>x.category))].sort();
- const libraryRows=state.library.slice(0,500).map(x=>{
-   const owned=state.parts.find(p=>p.category===x.category&&normalizeName(p.name)===normalizeName(x.name));
-   return `<tr data-library-row data-name="${escapeAttr(x.name.toLowerCase())}" data-category="${escapeAttr(x.category)}"><td>${x.category}</td><td>${x.name}</td><td>${x.system||""}</td><td>${owned?.qty||0}</td><td><button class="btn secondary" data-own-library="${x.id}">+ Own</button></td></tr>`;
- }).join("");
- const ownedRows=state.parts.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>
-   `<tr data-owned-row data-name="${escapeAttr(x.name.toLowerCase())}" data-category="${escapeAttr(x.category)}"><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||""}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`
- ).join("");
+ const productRows=PRODUCT_LIBRARY
+  .slice()
+  .sort((a,b)=>a.code.localeCompare(b.code))
+  .map(p=>{
+    const ownedRecord=state.settings?.find?.(x=>x.id===`owned-product-${p.code}`);
+    const ownedQty=ownedRecord?.totalQuantity||0;
+    const partSummary=p.parts.map(x=>x.name).join(", ");
+    return `<tr data-product-row data-name="${escapeAttr((p.code+" "+p.name+" "+partSummary).toLowerCase())}" data-line="${escapeAttr(p.line||"")}" data-type="${escapeAttr(p.type||"")}">
+      <td>${p.code}</td>
+      <td>${p.name}</td>
+      <td>${p.line||""}</td>
+      <td>${p.type||""}</td>
+      <td>${ownedQty}</td>
+      <td><button class="btn secondary" data-add-product="${p.code}">Add</button></td>
+    </tr>`;
+  }).join("");
+
+ const categories=[...new Set(state.parts.map(x=>x.category))].sort();
+ const ownedRows=state.parts
+  .slice()
+  .sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name))
+  .map(x=>`<tr data-owned-row data-name="${escapeAttr(x.name.toLowerCase())}" data-category="${escapeAttr(x.category)}">
+    <td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||""}</td>
+    <td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td>
+  </tr>`).join("");
+
  return `<div class="card hero">
-   <h2>Released-parts library</h2>
-   <p class="muted">Search without closing the keyboard. Tap + Own to add one copy.</p>
+   <h2>Released Product / Set Library</h2>
+   <p class="muted">Search mapped products. Selecting a product automatically loads all included parts.</p>
    <div class="search-row">
-     <input id="librarySearch" placeholder="Search released parts" value="${escapeAttr(state.libraryFilter||"")}">
-     <select id="libraryCategory"><option>All</option>${categories.map(c=>`<option ${c===state.libraryCategory?"selected":""}>${c}</option>`).join("")}</select>
+     <input id="productSearch" placeholder="Search code, name, or included part">
+     <select id="productLine"><option>All Lines</option><option>BX</option><option>UX</option><option>CX</option></select>
    </div>
-   <div class="scroll"><table id="libraryTable"><tr><th>Category</th><th>Part</th><th>System</th><th>Owned</th><th></th></tr>${libraryRows}</table></div>
-   <p class="tiny">The released-parts library remains available even though your owned collection starts empty.</p>
+   <div class="search-row">
+     <select id="productType"><option>All Types</option><option>Starter</option><option>Booster</option><option>Set</option><option>Random Booster</option></select>
+     <button class="btn good" data-add-set>Add Product / Set</button>
+   </div>
+   <div class="scroll"><table id="productTable">
+     <tr><th>Code</th><th>Product</th><th>Line</th><th>Type</th><th>Owned</th><th></th></tr>
+     ${productRows}
+   </table></div>
+   <p class="tiny">Only products with verified component mappings are shown. Independent loose-part entry remains available below.</p>
  </div>
 
  <div class="card">
-   <h2>Owned collection</h2>
+   <h2>Owned Collection</h2>
    <div class="search-row">
-     <input id="partSearch" placeholder="Search owned parts" value="${escapeAttr(state.filter||"")}">
-     <select id="partCategory"><option>All</option>${categories.map(c=>`<option ${c===state.partFilter?"selected":""}>${c}</option>`).join("")}</select>
+     <input id="partSearch" placeholder="Search owned parts">
+     <select id="partCategory"><option>All</option>${categories.map(c=>`<option>${c}</option>`).join("")}</select>
    </div>
    <div class="actions">
      <button class="btn" data-add-part>Add Independent Part</button>
-     <button class="btn good" data-add-set>Add Product / Set</button>
-     <button class="btn secondary" data-add-build>Add saved build</button>
+     <button class="btn secondary" data-add-build>Add Saved Build</button>
    </div>
  </div>
 
  <div class="card">
-   <div class="scroll"><table id="ownedTable"><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${ownedRows||`<tr><td colspan="5" class="muted">Owned collection is empty. Add a part or product above.</td></tr>`}</table></div>
+   <div class="scroll"><table id="ownedTable">
+     <tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>
+     ${ownedRows||`<tr><td colspan="5" class="muted">Owned collection is empty. Add a product/set or independent part.</td></tr>`}
+   </table></div>
  </div>
 
- <div class="card"><h2>Saved builds</h2>${state.builds.length?state.builds.map(b=>`<div class="queue-item"><div class="queue-top"><div><b>${b.name}</b><br><span class="muted">${b.role||""}</span></div>${badge(b.status||"Candidate")}</div><p class="tiny">v${b.version||1} · ${b.blade} · ${b.ratchet} · ${b.bit}</p><div class="actions"><button class="btn secondary" data-edit-build="${b.id}">Edit</button><button class="btn danger" data-delete-build="${b.id}">Delete</button></div></div>`).join(""):`<p class="muted">No saved builds.</p>`}</div>
+ <div class="card"><h2>Saved Builds</h2>
+   ${state.builds.length?state.builds.map(b=>`<div class="queue-item">
+     <div class="queue-top"><div><b>${b.name}</b><br><span class="muted">${b.role||""}</span></div>${badge(b.status||"Candidate")}</div>
+     <p class="tiny">v${b.version||1} · ${b.blade} · ${b.ratchet} · ${b.bit}</p>
+     <div class="actions"><button class="btn secondary" data-edit-build="${b.id}">Edit</button><button class="btn danger" data-delete-build="${b.id}">Delete</button></div>
+   </div>`).join(""):`<p class="muted">No saved builds.</p>`}
+ </div>
 
- <div class="card"><h3>Backup and reset</h3>
+ <div class="card"><h3>Backup and Reset</h3>
    <div class="actions">
-    <button class="btn" data-export-all>Export full backup</button>
-    <button class="btn secondary" data-export-collection>Export collection</button>
-    <button class="btn secondary" data-export-builds>Export builds</button>
-    <button class="btn secondary" data-export-research>Export research</button>
-    <button class="btn secondary" data-import>Import backup</button>
+    <button class="btn" data-export-all>Export Full Backup</button>
+    <button class="btn secondary" data-export-collection>Export Collection</button>
+    <button class="btn secondary" data-import>Import Backup</button>
    </div>
    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
    <div class="actions">
@@ -194,6 +225,29 @@ function collectionView(){
    <input id="importFile" class="hidden" type="file" accept=".json">
  </div><div id="modal"></div>`;
 }
+
+function filterProductRows(){
+ const query=(document.querySelector("#productSearch")?.value||"").toLowerCase();
+ const line=document.querySelector("#productLine")?.value||"All Lines";
+ const type=document.querySelector("#productType")?.value||"All Types";
+ document.querySelectorAll("[data-product-row]").forEach(row=>{
+   const matchesQuery=!query||(row.dataset.name||"").includes(query);
+   const matchesLine=line==="All Lines"||row.dataset.line===line;
+   const matchesType=type==="All Types"||row.dataset.type===type;
+   row.style.display=matchesQuery&&matchesLine&&matchesType?"":"none";
+ });
+}
+
+function filterOwnedRows(){
+ const query=(document.querySelector("#partSearch")?.value||"").toLowerCase();
+ const category=document.querySelector("#partCategory")?.value||"All";
+ document.querySelectorAll("[data-owned-row]").forEach(row=>{
+   const matchesQuery=!query||(row.dataset.name||"").includes(query);
+   const matchesCategory=category==="All"||row.dataset.category===category;
+   row.style.display=matchesQuery&&matchesCategory?"":"none";
+ });
+}
+
 function normalizeName(value){return String(value||"").replace(/\s/g,"").toLowerCase()}
 function escapeAttr(value){return String(value??"").replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
 function filterRows(selector,query,category){
@@ -203,11 +257,7 @@ function filterRows(selector,query,category){
    row.style.display=(!q||name.includes(q))&&(category==="All"||cat===category)?"":"none";
  });
 }
-function filterLibraryRows(){
- state.libraryFilter=document.querySelector("#librarySearch")?.value||"";
- state.libraryCategory=document.querySelector("#libraryCategory")?.value||"All";
- filterRows("[data-library-row]",state.libraryFilter,state.libraryCategory);
-}
+
 function filterOwnedRows(){
  state.filter=document.querySelector("#partSearch")?.value||"";
  state.partFilter=document.querySelector("#partCategory")?.value||"All";
@@ -237,6 +287,10 @@ function bind(){
  document.querySelector("#newExperiment")?.addEventListener("click",experimentModal);
  document.querySelector("[data-add-part]")?.addEventListener("click",()=>partModal());
  document.querySelector("[data-add-set]")?.addEventListener("click",setModal);
+ document.querySelector("#productSearch")?.addEventListener("input",filterProductRows);
+ document.querySelector("#productLine")?.addEventListener("change",filterProductRows);
+ document.querySelector("#productType")?.addEventListener("change",filterProductRows);
+ document.querySelectorAll("[data-add-product]").forEach(x=>x.onclick=()=>setModal(x.dataset.addProduct));
  document.querySelectorAll("[data-edit-part]").forEach(x=>x.onclick=()=>partModal(x.dataset.editPart));
  document.querySelector("[data-add-build]")?.addEventListener("click",()=>buildModal());
  document.querySelectorAll("[data-edit-build]").forEach(x=>x.onclick=()=>buildModal(x.dataset.editBuild));
@@ -330,14 +384,14 @@ function productPreview(){
    </div>
    <p class="tiny">${product.parts.length} mapped component${product.parts.length===1?"":"s"} will be added per product owned.</p>`;
 }
-function setModal(){
+function setModal(preselectedCode=""){
  if(!PRODUCT_LIBRARY.length)return alert("No products are available in the product library.");
  document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card">
    <h3>Add Product / Set</h3>
    <p class="muted">Select a product. Its included parts will be loaded automatically.</p>
 
    <label>Product / set</label>
-   <select id="productCode">${productOptions()}</select>
+   <select id="productCode">${productOptions(preselectedCode)}</select>
 
    <label>Quantity owned</label>
    <input id="productQty" type="number" min="1" value="1">
