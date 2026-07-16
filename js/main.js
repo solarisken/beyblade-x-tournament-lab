@@ -5,6 +5,27 @@ import {RELEASED_PARTS} from "./library.js";
 
 const BASE_PARTS=[];
 
+
+const PRODUCT_LIBRARY=[
+ {code:"BX-23",name:"PhoenixWing 9-60GF",parts:[
+   {category:"Blade",name:"PhoenixWing"},{category:"Ratchet",name:"9-60"},{category:"Bit",name:"Gear Flat"}]},
+ {code:"UX-08",name:"SilverWolf 3-80FB",parts:[
+   {category:"Blade",name:"SilverWolf"},{category:"Ratchet",name:"3-80"},{category:"Bit",name:"Free Ball"}]},
+ {code:"UX-11",name:"ImpactDrake 9-60LR",parts:[
+   {category:"Blade",name:"ImpactDrake"},{category:"Ratchet",name:"9-60"},{category:"Bit",name:"Low Rush"}]},
+ {code:"UX-14",name:"ScorpioSpear 0-70Z",parts:[
+   {category:"Blade",name:"ScorpioSpear"},{category:"Ratchet",name:"0-70"},{category:"Bit",name:"Zap"}]},
+ {code:"UX-19",name:"BulletGriffon H",parts:[
+   {category:"Blade",name:"BulletGriffon"},{category:"Ratchet",name:"Integrated"},{category:"Bit",name:"Hexa"}]},
+ {code:"CX-09",name:"SolEclipse D 5-70TK",parts:[
+   {category:"Blade",name:"SolEclipse D"},{category:"Ratchet",name:"5-70"},{category:"Bit",name:"Trans Kick"}]},
+ {code:"CX-10",name:"WolfHunt F 0-60DB",parts:[
+   {category:"Blade",name:"WolfHunt F"},{category:"Ratchet",name:"0-60"},{category:"Bit",name:"Disc Ball"}]},
+ {code:"CX-16",name:"BahamutBlitz BK 1-50I",parts:[
+   {category:"Blade",name:"BahamutBlitz BK"},{category:"Ratchet",name:"1-50"},{category:"Bit",name:"Ignition"}]},
+ {code:"BX-49",name:"DranStrike 4-50FF",parts:[
+   {category:"Blade",name:"DranStrike"},{category:"Ratchet",name:"4-50"},{category:"Bit",name:"Free Flat"}]}
+];
 const BASE_BUILDS=[];
 
 const HIST=[];
@@ -144,8 +165,8 @@ function collectionView(){
      <select id="partCategory"><option>All</option>${categories.map(c=>`<option ${c===state.partFilter?"selected":""}>${c}</option>`).join("")}</select>
    </div>
    <div class="actions">
-     <button class="btn" data-add-part>Add individual part</button>
-     <button class="btn good" data-add-set>Add set / product</button>
+     <button class="btn" data-add-part>Add Independent Part</button>
+     <button class="btn good" data-add-set>Add Product / Set</button>
      <button class="btn secondary" data-add-build>Add saved build</button>
    </div>
  </div>
@@ -264,36 +285,157 @@ function experimentModal(){
  document.querySelector("#exSave").onclick=async()=>{if(exBase.value===exVar.value)return alert("Baseline and variant must differ.");const e={id:uid(),name:exName.value,baselineId:exBase.value,variantId:exVar.value,opponentId:exOpp.value,target:+exTarget.value||16,status:"Planned"};await put("experiments",e);await refresh()};document.querySelector("#exCancel").onclick=()=>render();
 }
 
-function libraryOptions(category,selected=""){
- const items=state.library.filter(x=>x.category===category).sort((a,b)=>a.name.localeCompare(b.name));
- return `<option value="">None</option>${items.map(x=>`<option value="${escapeAttr(x.name)}" ${x.name===selected?"selected":""}>${x.name}</option>`).join("")}`;
+
+function productOptions(selected=""){
+ return PRODUCT_LIBRARY
+  .sort((a,b)=>a.code.localeCompare(b.code))
+  .map(p=>`<option value="${p.code}" ${p.code===selected?"selected":""}>${p.code} — ${p.name}</option>`)
+  .join("");
+}
+function selectedProduct(){
+ return PRODUCT_LIBRARY.find(p=>p.code===document.querySelector("#productCode")?.value);
+}
+function productPreview(){
+ const p=selectedProduct();
+ const box=document.querySelector("#productPreview");
+ if(!box||!p)return;
+ box.innerHTML=`<div class="notice"><b>${p.code} — ${p.name}</b><br>${p.parts.map(x=>`${x.category}: ${x.name}`).join("<br>")}</div>`;
 }
 function setModal(){
- const componentCategories=["Blade","Ratchet","Bit","Lock Chip","Main Blade","Assist Blade","Metal Blade","Over Blade"];
+ if(!PRODUCT_LIBRARY.length)return alert("No products are available in the product library.");
  document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card">
-   <h3>Add set / product</h3>
-   <p class="muted">Select every included component. Only selected entries will be added to your owned collection.</p>
-   <label>Product code or name</label><input id="setSource" placeholder="Example: UX-11">
-   <label>Quantity of this product</label><input id="setQty" type="number" min="1" value="1">
-   ${componentCategories.map((cat,i)=>`<label>${cat}</label><select id="setComp${i}" data-set-category="${cat}">${libraryOptions(cat)}</select>`).join("")}
-   <div class="actions"><button class="btn good" id="setSave">Add product</button><button class="btn secondary" id="setCancel">Cancel</button></div>
+   <h3>Add product to owned collection</h3>
+   <p class="muted">Choose a product. The app will add every mapped component automatically.</p>
+   <label>Product / set</label>
+   <select id="productCode">${productOptions()}</select>
+   <label>Quantity owned</label>
+   <input id="productQty" type="number" min="1" value="1">
+   <div id="productPreview"></div>
+   <div class="actions">
+     <button class="btn good" id="productSave">Add all included parts</button>
+     <button class="btn secondary" id="productCancel">Cancel</button>
+   </div>
  </div></div>`;
- document.querySelector("#setCancel").onclick=render;
- document.querySelector("#setSave").onclick=saveSet;
+ document.querySelector("#productCode").onchange=productPreview;
+ document.querySelector("#productCancel").onclick=render;
+ document.querySelector("#productSave").onclick=saveProduct;
+ productPreview();
 }
-async function saveSet(){
- const source=document.querySelector("#setSource").value.trim()||"Manual product";
- const qty=Math.max(1,+document.querySelector("#setQty").value||1);
- const selected=[...document.querySelectorAll("[data-set-category]")].map(el=>({category:el.dataset.setCategory,name:el.value})).filter(x=>x.name);
- if(!selected.length)return alert("Select at least one included component.");
- for(const item of selected){
+async function saveProduct(){
+ const product=selectedProduct();
+ if(!product)return alert("Choose a product.");
+ const quantity=Math.max(1,+document.querySelector("#productQty").value||1);
+ for(const item of product.parts){
    const existing=state.parts.find(p=>p.category===item.category&&normalizeName(p.name)===normalizeName(item.name));
-   if(existing){existing.qty+=qty;existing.source=existing.source?`${existing.source}; ${source}`:source;await put("parts",existing)}
-   else await put("parts",{id:uid(),category:item.category,name:item.name,qty,source});
+   if(existing){
+     existing.qty+=quantity;
+     const sources=new Set(String(existing.source||"").split(";").map(x=>x.trim()).filter(Boolean));
+     sources.add(product.code);
+     existing.source=[...sources].join("; ");
+     await put("parts",existing);
+   }else{
+     await put("parts",{id:uid(),category:item.category,name:item.name,qty:quantity,source:product.code});
+   }
  }
+ await put("settings",{id:`owned-product-${product.code}`,code:product.code,name:product.name,quantityAdded:quantity,lastAdded:new Date().toISOString()});
  await refresh();
+ alert(`${product.code} added. ${product.parts.length} included components were updated.`);
 }
-function partModal(id=null){const p=id?state.parts.find(x=>x.id===id):{id:uid(),category:"Blade",name:"",qty:1,source:""};document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>${id?"Edit":"Add"} part</h3><label>Category</label><select id="pmCat">${["Blade","Ratchet","Bit"].map(x=>`<option ${x===p.category?"selected":""}>${x}</option>`).join("")}</select><label>Name</label><input id="pmName" value="${p.name}"><label>Quantity</label><input id="pmQty" type="number" min="0" value="${p.qty}"><label>Source</label><input id="pmSource" value="${p.source||""}"><div class="actions"><button class="btn" id="pmSave">Save</button>${id?`<button class="btn danger" id="pmDelete">Delete</button>`:""}<button class="btn secondary" id="pmCancel">Cancel</button></div></div></div>`;document.querySelector("#pmSave").onclick=async()=>{const x={id:p.id,category:pmCat.value,name:pmName.value.trim(),qty:Math.max(0,+pmQty.value||0),source:pmSource.value};if(!x.name)return alert("Enter a name.");await put("parts",x);await refresh()};document.querySelector("#pmCancel").onclick=()=>render();if(id)document.querySelector("#pmDelete").onclick=async()=>{const inUse=state.builds.some(b=>[b.blade,b.ratchet,b.bit].includes(p.name));if(inUse)return alert("This part is used by a saved build. Edit or delete that build first.");await del("parts",p.id);await refresh()}}
+
+function independentPartOptions(category,selected=""){
+ const items=state.library
+  .filter(x=>x.category===category)
+  .sort((a,b)=>a.name.localeCompare(b.name));
+ return `<option value="">Choose from released-parts library</option>`+
+   items.map(x=>`<option value="${escapeAttr(x.name)}" ${x.name===selected?"selected":""}>${x.name}</option>`).join("");
+}
+function refreshIndependentPartLibrary(){
+ const category=document.querySelector("#pmCat")?.value||"Blade";
+ const select=document.querySelector("#pmLibrary");
+ if(!select)return;
+ select.innerHTML=independentPartOptions(category);
+}
+function partModal(id=null){
+ const p=id?state.parts.find(x=>x.id===id):{id:uid(),category:"Blade",name:"",qty:1,source:"Loose / independent"};
+ const categories=["Blade","Ratchet","Bit","Lock Chip","Main Blade","Assist Blade","Metal Blade","Over Blade"];
+ document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card">
+   <h3>${id?"Edit Owned Part":"Add Independent Part"}</h3>
+   <p class="muted">${id?"Edit the quantity or source for this owned part.":"Use this for loose parts or parts obtained independently from a complete product."}</p>
+
+   <label>Category</label>
+   <select id="pmCat">${categories.map(x=>`<option ${x===p.category?"selected":""}>${x}</option>`).join("")}</select>
+
+   ${id?"":`<label>Released-parts library</label>
+   <select id="pmLibrary">${independentPartOptions(p.category,p.name)}</select>
+   <p class="tiny">Selecting a library item fills the part name automatically. Custom names remain allowed.</p>`}
+
+   <label>Part name</label>
+   <input id="pmName" value="${escapeAttr(p.name)}" placeholder="Example: 3-60">
+
+   <label>Quantity owned</label>
+   <input id="pmQty" type="number" min="0" value="${p.qty}">
+
+   <label>Source / note</label>
+   <input id="pmSource" value="${escapeAttr(p.source||"")}" placeholder="Loose purchase, trade, spare, etc.">
+
+   <div class="actions">
+     <button class="btn" id="pmSave">${id?"Save changes":"Add independent part"}</button>
+     ${id?`<button class="btn danger" id="pmDelete">Delete</button>`:""}
+     <button class="btn secondary" id="pmCancel">Cancel</button>
+   </div>
+ </div></div>`;
+
+ const categoryEl=document.querySelector("#pmCat");
+ const libraryEl=document.querySelector("#pmLibrary");
+ categoryEl.onchange=()=>{
+   if(libraryEl)refreshIndependentPartLibrary();
+ };
+ if(libraryEl){
+   libraryEl.onchange=()=>{
+     if(libraryEl.value)document.querySelector("#pmName").value=libraryEl.value;
+   };
+ }
+
+ document.querySelector("#pmSave").onclick=async()=>{
+   const x={
+     id:p.id,
+     category:document.querySelector("#pmCat").value,
+     name:document.querySelector("#pmName").value.trim(),
+     qty:Math.max(0,+document.querySelector("#pmQty").value||0),
+     source:document.querySelector("#pmSource").value.trim()||"Loose / independent"
+   };
+   if(!x.name)return alert("Enter or select a part name.");
+
+   const duplicate=state.parts.find(other=>
+     other.id!==x.id &&
+     other.category===x.category &&
+     normalizeName(other.name)===normalizeName(x.name)
+   );
+
+   if(duplicate){
+     duplicate.qty+=x.qty;
+     const sources=new Set(String(duplicate.source||"").split(";").map(v=>v.trim()).filter(Boolean));
+     sources.add(x.source);
+     duplicate.source=[...sources].join("; ");
+     await put("parts",duplicate);
+     if(id)await del("parts",x.id);
+   }else{
+     await put("parts",x);
+   }
+   await refresh();
+ };
+
+ document.querySelector("#pmCancel").onclick=render;
+
+ if(id){
+   document.querySelector("#pmDelete").onclick=async()=>{
+     const inUse=state.builds.some(b=>[b.blade,b.ratchet,b.bit].includes(p.name));
+     if(inUse)return alert("This part is used by a saved build. Edit or delete that build first.");
+     await del("parts",p.id);
+     await refresh();
+   };
+ }
+}
 function buildModal(id=null){const b=id?state.builds.find(x=>x.id===id):{id:uid(),blade:state.parts.find(x=>x.category==="Blade")?.name,ratchet:state.parts.find(x=>x.category==="Ratchet")?.name,bit:state.parts.find(x=>x.category==="Bit")?.name,role:"",status:"Experimental",slot:""};const options=cat=>state.parts.filter(x=>x.category===cat&&x.qty>0).map(x=>`<option ${x.name===b[cat.toLowerCase()]?"selected":""}>${x.name}</option>`).join("");document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>${id?"Edit":"Add"} build</h3><label>Blade</label><select id="bmBlade">${options("Blade")}</select><label>Ratchet</label><select id="bmRatchet">${options("Ratchet")}</select><label>Bit</label><select id="bmBit">${options("Bit")}</select><label>Role</label><input id="bmRole" value="${b.role||""}"><label>Status</label><select id="bmStatus">${["Experimental","Benchmark","Tournament Candidate","Validated","Rejected","Test Bey"].map(x=>`<option ${x===b.status?"selected":""}>${x}</option>`).join("")}</select><label>Deck slot</label><select id="bmSlot">${["","Bey 1","Bey 2","Bey 3","Test Bey"].map(x=>`<option ${x===b.slot?"selected":""}>${x||"None"}</option>`).join("")}</select><div class="actions"><button class="btn" id="bmSave">Save</button><button class="btn secondary" id="bmCancel">Cancel</button></div></div></div>`;document.querySelector("#bmSave").onclick=async()=>{const changed=id&&(b.blade!==bmBlade.value||b.ratchet!==bmRatchet.value||b.bit!==bmBit.value);
 const x=changed?{...b,id:uid(),parentId:b.parentId||b.id,version:(b.version||1)+1,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value}:{...b,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value};
 x.name=comboName(x);if(x.slot)for(const other of state.builds.filter(y=>y.id!==x.id&&y.slot===x.slot)){other.slot="";await put("builds",other)}await put("builds",x);await put("history",{id:uid(),type:"build-change",buildId:x.id,timestamp:new Date().toISOString(),snapshot:x});await refresh()};document.querySelector("#bmCancel").onclick=()=>render()}
