@@ -1,13 +1,8 @@
-# Beyblade X Tournament Lab PWA v7.4
+# Beyblade X Tournament Lab PWA v7.5
 
-Ownership entry now has two independent workflows:
-
-1. Add Product / Set
-   - Select a mapped product.
-   - Automatically adds every included part.
-
-2. Add Independent Part
-   - For loose purchases, trades, spares, or individual parts.
-   - Choose from the released-parts library or enter a custom part.
-   - Supports Blade, Ratchet, Bit, Lock Chip, Main Blade, Assist Blade, Metal Blade, and Over Blade.
-   - Duplicate entries merge quantities automatically.
+Product/set workflow update:
+- Selecting a product automatically loads all mapped components.
+- Included Blade, Ratchet, Bit, and CX component fields are shown as read-only.
+- No manual component selection is required.
+- Product quantity multiplies every included component.
+- Existing owned quantities are incremented rather than overwritten.
