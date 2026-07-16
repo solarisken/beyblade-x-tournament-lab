@@ -1,5 +1,225 @@
 [
   {
+    "code": "BX-01",
+    "name": "Starter DranSword 3-60F",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-02",
+    "name": "Starter HellsScythe 4-60T",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-03",
+    "name": "Starter WizardArrow 4-80B",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-04",
+    "name": "Starter KnightShield 3-80N",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-05",
+    "name": "Booster WizardArrow 4-80B",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-06",
+    "name": "Booster KnightShield 3-80N",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-07",
+    "name": "Start Dash Set",
+    "line": "BX",
+    "type": "Start Dash Set",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-08",
+    "name": "3on3 Deck Set",
+    "line": "BX",
+    "type": "Deck Set",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-09",
+    "name": "Beybattle Pass",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-10",
+    "name": "Xtreme Stadium",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-11",
+    "name": "Launcher Grip",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-12",
+    "name": "3on3 Deck Case",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2023-07-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-13",
+    "name": "Booster KnightLance 4-80HN",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-08-10",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-14",
+    "name": "Random Booster Vol. 1",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2023-09-09",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-15",
+    "name": "Starter LeonClaw 5-60P",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-10-07",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-16",
+    "name": "Random Booster ViperTail Select",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2023-10-07",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-17",
+    "name": "Battle Entry Set",
+    "line": "BX",
+    "type": "Battle Entry Set",
+    "releaseDate": "2023-10-07",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-18",
+    "name": "String Launcher",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2023-10-07",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-19",
+    "name": "Booster RhinoHorn 3-80S",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-11-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-20",
+    "name": "DranDagger Deck Set",
+    "line": "BX",
+    "type": "Deck Set",
+    "releaseDate": "2023-11-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-21",
+    "name": "HellsChain Deck Set",
+    "line": "BX",
+    "type": "Deck Set",
+    "releaseDate": "2023-11-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-22",
+    "name": "DranSword 3-60F Entry Package",
+    "line": "BX",
+    "type": "Entry Package",
+    "releaseDate": "2023-12-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
     "code": "BX-23",
     "name": "PhoenixWing 9-60GF",
     "line": "BX",
@@ -17,7 +237,260 @@
         "category": "Bit",
         "name": "Gear Flat"
       }
-    ]
+    ],
+    "releaseDate": "2023-12-27",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-24",
+    "name": "Random Booster Vol. 2",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2023-12-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-25",
+    "name": "Gear Case",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2023-12-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-26",
+    "name": "Booster UnicornSting 5-60GP",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2024-01-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-27",
+    "name": "Random Booster SphinxCowl Select",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2024-02-22",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-28",
+    "name": "String Launcher White Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2024-03-30",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-29",
+    "name": "Custom Grip White Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2024-03-30",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-30",
+    "name": "Custom Grip Red Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2024-03-30",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-31",
+    "name": "Random Booster Vol. 3",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2024-04-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-32",
+    "name": "Wide Xtreme Stadium",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2024-07-13",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-33",
+    "name": "Booster WeissTiger 3-60U",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2024-06-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-34",
+    "name": "Starter CobaltDragoon 2-60C",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2024-07-13",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-35",
+    "name": "Random Booster Vol. 4",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2024-07-13",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-36",
+    "name": "Random Booster WhaleWave Select",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2024-09-14",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-37",
+    "name": "Double Xtreme Stadium Set",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2024-10-12",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-38",
+    "name": "Booster CrimsonGaruda 4-70TP",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2024-11-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-39",
+    "name": "Random Booster ShelterDrake Select",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2025-02-15",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-40",
+    "name": "Winder Launcher L",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-41",
+    "name": "Rubber Custom Grip Gunmetal Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-42",
+    "name": "Rubber Custom Grip Blue Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-43",
+    "name": "Gear Case White Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-44",
+    "name": "Booster TriceraPress M-85BS",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2025-06-28",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-45",
+    "name": "Booster SamuraiCalibur 6-70M",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2025-08-09",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-46",
+    "name": "Battle Entry Set Infinity",
+    "line": "BX",
+    "type": "Battle Entry Set",
+    "releaseDate": "2025-10-11",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "BX-47",
+    "name": "String Launcher L Red Ver.",
+    "line": "BX",
+    "type": "Accessory",
+    "releaseDate": "2025-10-11",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": false
+  },
+  {
+    "code": "BX-48",
+    "name": "Random Booster Vol. 9",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2026-02-14",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "BX-49",
@@ -37,13 +510,86 @@
         "category": "Bit",
         "name": "Free Flat"
       }
-    ]
+    ],
+    "releaseDate": "2026-05-16",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-01",
+    "name": "Starter DranBuster 1-60A",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-03-30",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-02",
+    "name": "Starter HellsHammer 3-70H",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-03-30",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-03",
+    "name": "Booster WizardRod 5-70DB",
+    "line": "UX",
+    "type": "Booster",
+    "releaseDate": "2024-03-30",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-04",
+    "name": "Battle Entry Set U",
+    "line": "UX",
+    "type": "Battle Entry Set",
+    "releaseDate": "2024-04-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-05",
+    "name": "Random Booster ShinobiShadow Select",
+    "line": "UX",
+    "type": "Random Booster",
+    "releaseDate": "2024-05-18",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-06",
+    "name": "Booster LeonCrest 7-60GN",
+    "line": "UX",
+    "type": "Booster",
+    "releaseDate": "2024-08-10",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-07",
+    "name": "PhoenixRudder Deck Set",
+    "line": "UX",
+    "type": "Deck Set",
+    "releaseDate": "2024-08-10",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "UX-08",
     "name": "SilverWolf 3-80FB",
     "line": "UX",
-    "type": "Booster",
+    "type": "Starter",
     "parts": [
       {
         "category": "Blade",
@@ -57,7 +603,30 @@
         "category": "Bit",
         "name": "Free Ball"
       }
-    ]
+    ],
+    "releaseDate": "2024-10-12",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-09",
+    "name": "Starter SamuraiSaber 2-70L",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-11-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-10",
+    "name": "Customize Set U",
+    "line": "UX",
+    "type": "Customize Set",
+    "releaseDate": "2024-11-02",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "UX-11",
@@ -77,13 +646,36 @@
         "category": "Bit",
         "name": "Low Rush"
       }
-    ]
+    ],
+    "releaseDate": "2024-12-28",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-12",
+    "name": "Random Booster Vol. 5",
+    "line": "UX",
+    "type": "Random Booster",
+    "releaseDate": "2024-12-28",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-13",
+    "name": "Booster GolemRock 1-60UN",
+    "line": "UX",
+    "type": "Booster",
+    "releaseDate": "2025-01-25",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "UX-14",
     "name": "ScorpioSpear 0-70Z",
     "line": "UX",
-    "type": "Booster",
+    "type": "Starter",
     "parts": [
       {
         "category": "Blade",
@@ -97,13 +689,56 @@
         "category": "Bit",
         "name": "Zap"
       }
-    ]
+    ],
+    "releaseDate": "2025-04-26",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-15",
+    "name": "SharkScale Deck Set",
+    "line": "UX",
+    "type": "Deck Set",
+    "releaseDate": "2025-08-09",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-16",
+    "name": "Random Booster ClockMirage Select",
+    "line": "UX",
+    "type": "Random Booster",
+    "releaseDate": "2025-10-11",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-17",
+    "name": "Starter MeteorDragoon 3-70J",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2025-12-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "UX-18",
+    "name": "Random Booster Vol. 8",
+    "line": "UX",
+    "type": "Random Booster",
+    "releaseDate": "2025-12-27",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "UX-19",
     "name": "BulletGriffon H",
     "line": "UX",
-    "type": "Booster",
+    "type": "Starter",
     "parts": [
       {
         "category": "Blade",
@@ -117,13 +752,96 @@
         "category": "Bit",
         "name": "Hexa"
       }
-    ]
+    ],
+    "releaseDate": "2026-04-25",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-01",
+    "name": "Starter DranBrave S6-60V",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-02",
+    "name": "Starter WizardArc R4-55LO",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-03",
+    "name": "Booster PerseusDark B6-80W",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-04",
+    "name": "Battle Entry Set C",
+    "line": "CX",
+    "type": "Battle Entry Set",
+    "releaseDate": "2025-03-29",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-05",
+    "name": "Random Booster Vol. 6",
+    "line": "CX",
+    "type": "Random Booster",
+    "releaseDate": "2025-04-26",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-06",
+    "name": "Random Booster FoxBrush Select",
+    "line": "CX",
+    "type": "Random Booster",
+    "releaseDate": "2025-05-17",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-07",
+    "name": "Starter PegasusBlast ATr",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-07-19",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-08",
+    "name": "Random Booster Vol. 7",
+    "line": "CX",
+    "type": "Random Booster",
+    "releaseDate": "2025-07-19",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "CX-09",
-    "name": "SolEclipse D 5-70TK",
+    "name": "SolEclipse D5-70TK",
     "line": "CX",
-    "type": "Booster",
+    "type": "Starter",
     "parts": [
       {
         "category": "Blade",
@@ -137,11 +855,14 @@
         "category": "Bit",
         "name": "Trans Kick"
       }
-    ]
+    ],
+    "releaseDate": "2025-09-27",
+    "mappingStatus": "verified",
+    "containsBey": true
   },
   {
     "code": "CX-10",
-    "name": "WolfHunt F 0-60DB",
+    "name": "WolfHunt F0-60DB",
     "line": "CX",
     "type": "Booster",
     "parts": [
@@ -157,13 +878,66 @@
         "category": "Bit",
         "name": "Disc Ball"
       }
-    ]
+    ],
+    "releaseDate": "2025-11-01",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-11",
+    "name": "EmperorMight Deck Set",
+    "line": "CX",
+    "type": "Deck Set",
+    "releaseDate": "2025-11-01",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-12",
+    "name": "Booster PhoenixFlare Z9-80WW",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2026-01-24",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-13",
+    "name": "Starter BahamutBlitz BK1-50I",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2026-03-28",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-14",
+    "name": "Starter KnightFortress GV8-70UN",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2026-03-28",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-15",
+    "name": "Booster RagnaRage FE4-55Y",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2026-03-28",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   },
   {
     "code": "CX-16",
-    "name": "BahamutBlitz BK 1-50I",
+    "name": "Start Dash Set C",
     "line": "CX",
-    "type": "Set",
+    "type": "Start Dash Set",
     "parts": [
       {
         "category": "Blade",
@@ -177,6 +951,29 @@
         "category": "Bit",
         "name": "Ignition"
       }
-    ]
+    ],
+    "releaseDate": "2026-03-28",
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-17",
+    "name": "Random Booster Vol. 10",
+    "line": "CX",
+    "type": "Random Booster",
+    "releaseDate": "2026-04-25",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
+  },
+  {
+    "code": "CX-18",
+    "name": "Random Booster BrachioWhip Select",
+    "line": "CX",
+    "type": "Random Booster",
+    "releaseDate": "2026-06-13",
+    "parts": [],
+    "mappingStatus": "catalog-only",
+    "containsBey": true
   }
 ]
