@@ -1,17 +1,9 @@
-# Beyblade X Tournament Lab — Stable Rebuild v1
+# Beyblade X Tournament Lab — Stable Rebuild v1.1
 
-This is a clean rebuild, not an update to the old prototype.
+Product library expanded to all standard Takara Tomy BX-01 through BX-49, UX-01 through UX-19, and CX-01 through CX-18 releases listed through June 2026.
 
-Included:
-- Released product/set library with automatic component loading
-- Independent loose-part additions
-- Empty owned collection by default
-- Saved builds
-- Controlled test targets: 16, 32, 64, 96
-- One-tap first-to-4 scoring
-- Offline IndexedDB storage
-- Analytics
-- Export/import backup
-- Visible startup error screen
-
-Replace every file in the GitHub Pages repository. Clear site data once because this rebuild uses a new database name.
+- 86 standard release entries
+- Includes starters, boosters, random boosters, deck sets, battle-entry sets, stadium/accessory releases
+- Existing verified product-to-parts mappings remain automatic
+- Unmapped random boosters and multi-Bey sets are clearly marked Catalog only rather than adding incorrect parts
+- Independent Part remains available for exact variants and loose parts
