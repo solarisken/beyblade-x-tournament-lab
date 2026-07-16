@@ -21,3 +21,6 @@ Separate exports:
 - Research only
 
 Optional build templates can be loaded manually.
+
+
+Version 7.1 fixes the IndexedDB library-store startup failure and adds a visible startup error boundary.
