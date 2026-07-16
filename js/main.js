@@ -3,33 +3,7 @@ import {aggregate,comboName,matchupMatrix,partPerformance} from "./analytics.js"
 import {recommend} from "./recommendations.js";
 import {RELEASED_PARTS} from "./library.js";
 
-const BASE_PARTS=[
-{id:"blade-dranstrike",category:"Blade",name:"DranStrike",qty:1,source:"BX-49"},
-{id:"blade-phoenixwing",category:"Blade",name:"PhoenixWing",qty:1,source:"BX-23"},
-{id:"blade-impactdrake",category:"Blade",name:"ImpactDrake",qty:1,source:"UX-11"},
-{id:"blade-silverwolf",category:"Blade",name:"SilverWolf",qty:1,source:"UX-08"},
-{id:"blade-scorpiospear",category:"Blade",name:"ScorpioSpear",qty:1,source:"UX-14"},
-{id:"blade-bulletgriffon",category:"Blade",name:"BulletGriffon",qty:1,source:"UX-19"},
-{id:"blade-bahamutblitz",category:"Blade",name:"BahamutBlitz BK",qty:1,source:"CX-16"},
-{id:"blade-soleclipse",category:"Blade",name:"SolEclipse D",qty:1,source:"CX-09"},
-{id:"blade-wolfhunt",category:"Blade",name:"WolfHunt F",qty:1,source:"CX-10"},
-{id:"ratchet-integrated",category:"Ratchet",name:"Integrated",qty:1,source:"UX-19"},
-{id:"ratchet-060",category:"Ratchet",name:"0-60",qty:1,source:"CX-10"},
-{id:"ratchet-070",category:"Ratchet",name:"0-70",qty:1,source:"UX-14"},
-{id:"ratchet-150",category:"Ratchet",name:"1-50",qty:1,source:"CX-16"},
-{id:"ratchet-380",category:"Ratchet",name:"3-80",qty:1,source:"UX-08"},
-{id:"ratchet-450",category:"Ratchet",name:"4-50",qty:1,source:"BX-49"},
-{id:"ratchet-570",category:"Ratchet",name:"5-70",qty:1,source:"CX-09"},
-{id:"ratchet-960",category:"Ratchet",name:"9-60",qty:2,source:"BX-23 / UX-11"},
-{id:"bit-discball",category:"Bit",name:"Disc Ball",qty:1,source:"CX-10"},
-{id:"bit-freeball",category:"Bit",name:"Free Ball",qty:1,source:"UX-08"},
-{id:"bit-freeflat",category:"Bit",name:"Free Flat",qty:1,source:"BX-49"},
-{id:"bit-gearflat",category:"Bit",name:"Gear Flat",qty:1,source:"BX-23"},
-{id:"bit-hexa",category:"Bit",name:"Hexa",qty:1,source:"UX-19"},
-{id:"bit-ignition",category:"Bit",name:"Ignition",qty:1,source:"CX-16"},
-{id:"bit-lowrush",category:"Bit",name:"Low Rush",qty:1,source:"UX-11"},
-{id:"bit-transkick",category:"Bit",name:"Trans Kick",qty:1,source:"CX-09"},
-{id:"bit-zap",category:"Bit",name:"Zap",qty:1,source:"UX-14"}];
+const BASE_PARTS=[];
 
 const BASE_BUILDS=[];
 
@@ -39,8 +13,14 @@ let state={page:"home",parts:[],builds:[],matches:[],tests:[],history:[],library
 
 function uid(){return crypto.randomUUID?.()||Date.now()+"-"+Math.random()}
 async function seed(){
- if(!(await getAll("parts")).length) for(const x of BASE_PARTS) await put("parts",x);
- if(typeof RELEASED_PARTS!=="undefined" && !(await getAll("library")).length) for(const x of RELEASED_PARTS) await put("library",x);
+ const flags=await getAll("settings");
+ if(!flags.find(x=>x.id==="collection-reset-v72")){
+   await clearStore("parts");
+   await put("settings",{id:"collection-reset-v72",done:true,timestamp:new Date().toISOString()});
+ }
+ if(typeof RELEASED_PARTS!=="undefined" && !(await getAll("library")).length){
+   for(const x of RELEASED_PARTS) await put("library",x);
+ }
 }
 async function refresh(){
  state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");state.library=await getAll("library");state.projects=await getAll("projects");state.experiments=await getAll("experiments");render();
@@ -138,29 +118,81 @@ function analyticsView(){
 }
 function statCard(x){const total=x.spin+x.burst+x.over+x.xtreme||1;return `<div class="card"><div class="queue-top"><div><h3>${x.name}</h3>${badge(x.readiness,x.readiness.includes("Validated")?"good":x.readiness==="Testing"?"warn":"")}</div><div><b>${(x.winRate*100).toFixed(1)}%</b><br><span class="tiny">${x.matches} matches</span></div></div>${[["Spin",x.spin],["Burst",x.burst],["Over",x.over],["Xtreme",x.xtreme]].map(([n,v])=>`<div class="statbar"><span>${n}</span><div class="bar"><div style="width:${v/total*100}%"></div></div><b>${v}</b></div>`).join("")}<p class="muted">Avg points: ${x.avgPoints.toFixed(2)} · KO rate: ${(x.koRate*100).toFixed(1)}% · Self-exit losses: ${x.self}</p></div>`}
 function collectionView(){
- const filtered=state.parts.filter(x=>(state.partFilter==="All"||x.category===state.partFilter)&&x.name.toLowerCase().includes(state.filter.toLowerCase()));
- return `<div class="card hero"><h2>Released-parts library</h2><p class="muted">Search the catalog, then add a released part to your owned collection with one tap.</p><div class="search-row"><input id="librarySearch" placeholder="Search released parts" value="${state.libraryFilter}"><select id="libraryCategory"><option>All</option>${[...new Set(state.library.map(x=>x.category))].map(c=>`<option ${c===state.libraryCategory?"selected":""}>${c}</option>`).join("")}</select></div><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>System</th><th>Owned</th><th></th></tr>${state.library.filter(x=>(state.libraryCategory==="All"||x.category===state.libraryCategory)&&x.name.toLowerCase().includes(state.libraryFilter.toLowerCase())).slice(0,250).map(x=>{const owned=state.parts.find(p=>p.category===x.category&&p.name.replace(/\s/g,"").toLowerCase()===x.name.replace(/\s/g,"").toLowerCase());return `<tr><td>${x.category}</td><td>${x.name}</td><td>${x.system}</td><td>${owned?.qty||0}</td><td><button class="btn secondary" data-own-library="${x.id}">+ Own</button></td></tr>`}).join("")}</table></div><p class="tiny">Catalog basis updated July 2026. Custom entries remain supported for new or regional releases.</p></div><div class="card"><h2>Collection manager</h2><div class="search-row"><input id="partSearch" placeholder="Search parts" value="${state.filter}"><select id="partCategory"><option>All</option><option>Blade</option><option>Ratchet</option><option>Bit</option></select></div><div class="actions"><button class="btn" data-add-part>Add part</button><button class="btn secondary" data-add-build>Add saved build</button><button class="btn secondary" data-load-templates>Load optional templates</button></div></div>
- <div class="card"><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${filtered.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||""}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`).join("")}</table></div></div>
- <div class="card"><h2>Saved builds and history</h2>${state.builds.map(b=>`<div class="queue-item"><div class="queue-top"><div><b>${b.name}</b><br><span class="muted">${b.role||""}</span></div>${badge(b.status||"Candidate")}</div><p class="tiny">v${b.version||1} · ${b.blade} · ${b.ratchet} · ${b.bit}</p><div class="actions"><button class="btn secondary" data-edit-build="${b.id}">Edit</button><button class="btn danger" data-delete-build="${b.id}">Delete</button></div></div>`).join("")}</div>
+ const categories=[...new Set(state.library.map(x=>x.category))].sort();
+ const libraryRows=state.library.slice(0,500).map(x=>{
+   const owned=state.parts.find(p=>p.category===x.category&&normalizeName(p.name)===normalizeName(x.name));
+   return `<tr data-library-row data-name="${escapeAttr(x.name.toLowerCase())}" data-category="${escapeAttr(x.category)}"><td>${x.category}</td><td>${x.name}</td><td>${x.system||""}</td><td>${owned?.qty||0}</td><td><button class="btn secondary" data-own-library="${x.id}">+ Own</button></td></tr>`;
+ }).join("");
+ const ownedRows=state.parts.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>
+   `<tr data-owned-row data-name="${escapeAttr(x.name.toLowerCase())}" data-category="${escapeAttr(x.category)}"><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||""}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`
+ ).join("");
+ return `<div class="card hero">
+   <h2>Released-parts library</h2>
+   <p class="muted">Search without closing the keyboard. Tap + Own to add one copy.</p>
+   <div class="search-row">
+     <input id="librarySearch" placeholder="Search released parts" value="${escapeAttr(state.libraryFilter||"")}">
+     <select id="libraryCategory"><option>All</option>${categories.map(c=>`<option ${c===state.libraryCategory?"selected":""}>${c}</option>`).join("")}</select>
+   </div>
+   <div class="scroll"><table id="libraryTable"><tr><th>Category</th><th>Part</th><th>System</th><th>Owned</th><th></th></tr>${libraryRows}</table></div>
+   <p class="tiny">The released-parts library remains available even though your owned collection starts empty.</p>
+ </div>
+
+ <div class="card">
+   <h2>Owned collection</h2>
+   <div class="search-row">
+     <input id="partSearch" placeholder="Search owned parts" value="${escapeAttr(state.filter||"")}">
+     <select id="partCategory"><option>All</option>${categories.map(c=>`<option ${c===state.partFilter?"selected":""}>${c}</option>`).join("")}</select>
+   </div>
+   <div class="actions">
+     <button class="btn" data-add-part>Add individual part</button>
+     <button class="btn good" data-add-set>Add set / product</button>
+     <button class="btn secondary" data-add-build>Add saved build</button>
+   </div>
+ </div>
+
+ <div class="card">
+   <div class="scroll"><table id="ownedTable"><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${ownedRows||`<tr><td colspan="5" class="muted">Owned collection is empty. Add a part or product above.</td></tr>`}</table></div>
+ </div>
+
+ <div class="card"><h2>Saved builds</h2>${state.builds.length?state.builds.map(b=>`<div class="queue-item"><div class="queue-top"><div><b>${b.name}</b><br><span class="muted">${b.role||""}</span></div>${badge(b.status||"Candidate")}</div><p class="tiny">v${b.version||1} · ${b.blade} · ${b.ratchet} · ${b.bit}</p><div class="actions"><button class="btn secondary" data-edit-build="${b.id}">Edit</button><button class="btn danger" data-delete-build="${b.id}">Delete</button></div></div>`).join(""):`<p class="muted">No saved builds.</p>`}</div>
+
  <div class="card"><h3>Backup and reset</h3>
- <div class="actions">
-  <button class="btn" data-export-all>Export full backup</button>
-  <button class="btn secondary" data-export-collection>Export collection</button>
-  <button class="btn secondary" data-export-builds>Export builds</button>
-  <button class="btn secondary" data-export-research>Export research</button>
-  <button class="btn secondary" data-import>Import backup</button>
- </div>
- <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
- <h3>Reset options</h3>
- <div class="actions">
-  <button class="btn warn" data-new-season>New Season</button>
-  <button class="btn warn" data-reset-research>Reset Research</button>
-  <button class="btn danger" data-factory-reset>Factory Reset</button>
- </div>
- <p class="tiny"><b>New Season:</b> keeps collection, deletes builds and all research. <b>Reset Research:</b> keeps collection and builds, deletes tests/matches/history. <b>Factory Reset:</b> deletes everything and restores the bundled collection baseline.</p>
- <input id="importFile" class="hidden" type="file" accept=".json">
-</div><div id="modal"></div>`;
+   <div class="actions">
+    <button class="btn" data-export-all>Export full backup</button>
+    <button class="btn secondary" data-export-collection>Export collection</button>
+    <button class="btn secondary" data-export-builds>Export builds</button>
+    <button class="btn secondary" data-export-research>Export research</button>
+    <button class="btn secondary" data-import>Import backup</button>
+   </div>
+   <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+   <div class="actions">
+    <button class="btn warn" data-new-season>New Season</button>
+    <button class="btn warn" data-reset-research>Reset Research</button>
+    <button class="btn danger" data-factory-reset>Factory Reset</button>
+   </div>
+   <input id="importFile" class="hidden" type="file" accept=".json">
+ </div><div id="modal"></div>`;
 }
+function normalizeName(value){return String(value||"").replace(/\s/g,"").toLowerCase()}
+function escapeAttr(value){return String(value??"").replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
+function filterRows(selector,query,category){
+ const q=(query||"").toLowerCase();
+ document.querySelectorAll(selector).forEach(row=>{
+   const name=row.dataset.name||"",cat=row.dataset.category||"";
+   row.style.display=(!q||name.includes(q))&&(category==="All"||cat===category)?"":"none";
+ });
+}
+function filterLibraryRows(){
+ state.libraryFilter=document.querySelector("#librarySearch")?.value||"";
+ state.libraryCategory=document.querySelector("#libraryCategory")?.value||"All";
+ filterRows("[data-library-row]",state.libraryFilter,state.libraryCategory);
+}
+function filterOwnedRows(){
+ state.filter=document.querySelector("#partSearch")?.value||"";
+ state.partFilter=document.querySelector("#partCategory")?.value||"All";
+ filterRows("[data-owned-row]",state.filter,state.partFilter);
+}
+
 function bind(){
  document.querySelectorAll("[data-go]").forEach(x=>x.onclick=()=>go(x.dataset.go));
  document.querySelectorAll("[data-start]").forEach(x=>x.onclick=()=>startTest(x.dataset.start));
@@ -176,13 +208,14 @@ function bind(){
  document.querySelectorAll("[data-wiz-back]").forEach(x=>x.onclick=()=>{state.wizard.step--;render()});
  document.querySelectorAll("[data-target]").forEach(x=>x.onclick=()=>{state.wizard.target=+x.dataset.target;render()});
  document.querySelector("[data-create-test]")?.addEventListener("click",createTest);
- document.querySelector("#partSearch")?.addEventListener("input",e=>{state.filter=e.target.value;render()});
- const pc=document.querySelector("#partCategory");if(pc){pc.value=state.partFilter;pc.onchange=e=>{state.partFilter=e.target.value;render()}}
- document.querySelector("#librarySearch")?.addEventListener("input",e=>{state.libraryFilter=e.target.value;render()});
- const lc=document.querySelector("#libraryCategory");if(lc)lc.onchange=e=>{state.libraryCategory=e.target.value;render()};
+ document.querySelector("#partSearch")?.addEventListener("input",filterOwnedRows);
+ const pc=document.querySelector("#partCategory");if(pc){pc.value=state.partFilter;pc.onchange=filterOwnedRows}
+ document.querySelector("#librarySearch")?.addEventListener("input",filterLibraryRows);
+ const lc=document.querySelector("#libraryCategory");if(lc)lc.onchange=filterLibraryRows;
  document.querySelectorAll("[data-own-library]").forEach(x=>x.onclick=()=>ownLibraryPart(x.dataset.ownLibrary));
  document.querySelector("#newExperiment")?.addEventListener("click",experimentModal);
  document.querySelector("[data-add-part]")?.addEventListener("click",()=>partModal());
+ document.querySelector("[data-add-set]")?.addEventListener("click",setModal);
  document.querySelectorAll("[data-edit-part]").forEach(x=>x.onclick=()=>partModal(x.dataset.editPart));
  document.querySelector("[data-add-build]")?.addEventListener("click",()=>buildModal());
  document.querySelectorAll("[data-edit-build]").forEach(x=>x.onclick=()=>buildModal(x.dataset.editBuild));
@@ -194,7 +227,7 @@ function bind(){
  document.querySelector("[data-new-season]")?.addEventListener("click",newSeason);
  document.querySelector("[data-reset-research]")?.addEventListener("click",resetResearch);
  document.querySelector("[data-factory-reset]")?.addEventListener("click",factoryReset);
- document.querySelector("[data-load-templates]")?.addEventListener("click",loadTemplates);
+ 
  document.querySelector("[data-import]")?.addEventListener("click",()=>document.querySelector("#importFile").click());
  document.querySelector("#importFile")?.addEventListener("change",importBackup);
  
@@ -230,6 +263,36 @@ function experimentModal(){
  document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>New controlled A/B experiment</h3><label>Name</label><input id="exName" value="Single-part comparison"><label>Baseline</label><select id="exBase">${builds}</select><label>Variant</label><select id="exVar">${builds}</select><label>Common opponent</label><select id="exOpp">${builds}</select><label>Matches per build</label><input id="exTarget" type="number" value="16" min="8"><div class="actions"><button class="btn" id="exSave">Create</button><button class="btn secondary" id="exCancel">Cancel</button></div></div></div>`;
  document.querySelector("#exSave").onclick=async()=>{if(exBase.value===exVar.value)return alert("Baseline and variant must differ.");const e={id:uid(),name:exName.value,baselineId:exBase.value,variantId:exVar.value,opponentId:exOpp.value,target:+exTarget.value||16,status:"Planned"};await put("experiments",e);await refresh()};document.querySelector("#exCancel").onclick=()=>render();
 }
+
+function libraryOptions(category,selected=""){
+ const items=state.library.filter(x=>x.category===category).sort((a,b)=>a.name.localeCompare(b.name));
+ return `<option value="">None</option>${items.map(x=>`<option value="${escapeAttr(x.name)}" ${x.name===selected?"selected":""}>${x.name}</option>`).join("")}`;
+}
+function setModal(){
+ const componentCategories=["Blade","Ratchet","Bit","Lock Chip","Main Blade","Assist Blade","Metal Blade","Over Blade"];
+ document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card">
+   <h3>Add set / product</h3>
+   <p class="muted">Select every included component. Only selected entries will be added to your owned collection.</p>
+   <label>Product code or name</label><input id="setSource" placeholder="Example: UX-11">
+   <label>Quantity of this product</label><input id="setQty" type="number" min="1" value="1">
+   ${componentCategories.map((cat,i)=>`<label>${cat}</label><select id="setComp${i}" data-set-category="${cat}">${libraryOptions(cat)}</select>`).join("")}
+   <div class="actions"><button class="btn good" id="setSave">Add product</button><button class="btn secondary" id="setCancel">Cancel</button></div>
+ </div></div>`;
+ document.querySelector("#setCancel").onclick=render;
+ document.querySelector("#setSave").onclick=saveSet;
+}
+async function saveSet(){
+ const source=document.querySelector("#setSource").value.trim()||"Manual product";
+ const qty=Math.max(1,+document.querySelector("#setQty").value||1);
+ const selected=[...document.querySelectorAll("[data-set-category]")].map(el=>({category:el.dataset.setCategory,name:el.value})).filter(x=>x.name);
+ if(!selected.length)return alert("Select at least one included component.");
+ for(const item of selected){
+   const existing=state.parts.find(p=>p.category===item.category&&normalizeName(p.name)===normalizeName(item.name));
+   if(existing){existing.qty+=qty;existing.source=existing.source?`${existing.source}; ${source}`:source;await put("parts",existing)}
+   else await put("parts",{id:uid(),category:item.category,name:item.name,qty,source});
+ }
+ await refresh();
+}
 function partModal(id=null){const p=id?state.parts.find(x=>x.id===id):{id:uid(),category:"Blade",name:"",qty:1,source:""};document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>${id?"Edit":"Add"} part</h3><label>Category</label><select id="pmCat">${["Blade","Ratchet","Bit"].map(x=>`<option ${x===p.category?"selected":""}>${x}</option>`).join("")}</select><label>Name</label><input id="pmName" value="${p.name}"><label>Quantity</label><input id="pmQty" type="number" min="0" value="${p.qty}"><label>Source</label><input id="pmSource" value="${p.source||""}"><div class="actions"><button class="btn" id="pmSave">Save</button>${id?`<button class="btn danger" id="pmDelete">Delete</button>`:""}<button class="btn secondary" id="pmCancel">Cancel</button></div></div></div>`;document.querySelector("#pmSave").onclick=async()=>{const x={id:p.id,category:pmCat.value,name:pmName.value.trim(),qty:Math.max(0,+pmQty.value||0),source:pmSource.value};if(!x.name)return alert("Enter a name.");await put("parts",x);await refresh()};document.querySelector("#pmCancel").onclick=()=>render();if(id)document.querySelector("#pmDelete").onclick=async()=>{const inUse=state.builds.some(b=>[b.blade,b.ratchet,b.bit].includes(p.name));if(inUse)return alert("This part is used by a saved build. Edit or delete that build first.");await del("parts",p.id);await refresh()}}
 function buildModal(id=null){const b=id?state.builds.find(x=>x.id===id):{id:uid(),blade:state.parts.find(x=>x.category==="Blade")?.name,ratchet:state.parts.find(x=>x.category==="Ratchet")?.name,bit:state.parts.find(x=>x.category==="Bit")?.name,role:"",status:"Experimental",slot:""};const options=cat=>state.parts.filter(x=>x.category===cat&&x.qty>0).map(x=>`<option ${x.name===b[cat.toLowerCase()]?"selected":""}>${x.name}</option>`).join("");document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>${id?"Edit":"Add"} build</h3><label>Blade</label><select id="bmBlade">${options("Blade")}</select><label>Ratchet</label><select id="bmRatchet">${options("Ratchet")}</select><label>Bit</label><select id="bmBit">${options("Bit")}</select><label>Role</label><input id="bmRole" value="${b.role||""}"><label>Status</label><select id="bmStatus">${["Experimental","Benchmark","Tournament Candidate","Validated","Rejected","Test Bey"].map(x=>`<option ${x===b.status?"selected":""}>${x}</option>`).join("")}</select><label>Deck slot</label><select id="bmSlot">${["","Bey 1","Bey 2","Bey 3","Test Bey"].map(x=>`<option ${x===b.slot?"selected":""}>${x||"None"}</option>`).join("")}</select><div class="actions"><button class="btn" id="bmSave">Save</button><button class="btn secondary" id="bmCancel">Cancel</button></div></div></div>`;document.querySelector("#bmSave").onclick=async()=>{const changed=id&&(b.blade!==bmBlade.value||b.ratchet!==bmRatchet.value||b.bit!==bmBit.value);
 const x=changed?{...b,id:uid(),parentId:b.parentId||b.id,version:(b.version||1)+1,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value}:{...b,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value};
@@ -255,9 +318,9 @@ async function resetResearch(){
  state.wizard=null;state.battle=null;await refresh();
 }
 async function factoryReset(){
- if(!confirm("Factory reset? This deletes collection, builds, and all research, then restores the bundled baseline collection."))return;
- for(const s of["settings","parts","builds","matches","tests","history","library","projects","experiments"])await clearStore(s);
- await seed();state.wizard=null;state.battle=null;await refresh();
+ if(!confirm("Factory reset? This deletes collection, builds, and all research. The released-parts library remains available."))return;
+ for(const s of["parts","builds","matches","tests","history","projects","experiments"])await clearStore(s);
+ state.wizard=null;state.battle=null;await refresh();
 }
 async function loadTemplates(){
  if(state.builds.length && !confirm("Templates will be added alongside existing builds. Continue?"))return;
