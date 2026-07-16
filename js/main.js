@@ -31,11 +31,7 @@ const BASE_PARTS=[
 {id:"bit-transkick",category:"Bit",name:"Trans Kick",qty:1,source:"CX-09"},
 {id:"bit-zap",category:"Bit",name:"Zap",qty:1,source:"UX-14"}];
 
-const BASE_BUILDS=[
-{id:"build-ds",name:"DranStrike 1-50 Low Rush",blade:"DranStrike",ratchet:"1-50",bit:"Low Rush",role:"Primary attacker",status:"Tournament Candidate",slot:"Bey 1",version:1,parentId:""},
-{id:"build-sw",name:"SilverWolf 9-60 Hexa",blade:"SilverWolf",ratchet:"9-60",bit:"Hexa",role:"Defense",status:"Benchmark",slot:"Bey 2",version:1,parentId:""},
-{id:"build-pw",name:"PhoenixWing 9-60 Gear Flat",blade:"PhoenixWing",ratchet:"9-60",bit:"Gear Flat",role:"Secondary attacker",status:"Benchmark",slot:"Bey 3",version:1,parentId:""},
-{id:"build-bb",name:"BahamutBlitz BK 0-70 Ignition",blade:"BahamutBlitz BK",ratchet:"0-70",bit:"Ignition",role:"Balance / counter",status:"Test Bey",slot:"Test Bey",version:1,parentId:""}];
+const BASE_BUILDS=[];
 
 const HIST=[];
 
@@ -44,17 +40,13 @@ let state={page:"home",parts:[],builds:[],matches:[],tests:[],history:[],library
 function uid(){return crypto.randomUUID?.()||Date.now()+"-"+Math.random()}
 async function seed(){
  if(!(await getAll("parts")).length) for(const x of BASE_PARTS) await put("parts",x);
- if(!(await getAll("builds")).length) for(const x of BASE_BUILDS) await put("builds",x);
- if(!(await getAll("history")).length) for(const x of HIST) await put("history",x);
- if(!(await getAll("library")).length) for(const x of RELEASED_PARTS) await put("library",x);
- if(!(await getAll("projects")).length) await put("projects",{id:"project-dranstrike",name:"Optimize DranStrike",focusBuildId:"build-ds",status:"Active",goal:"Tournament verification across major archetypes",stageTargets:[16,32,64,96]});
- if(!(await getAll("tests")).length) await put("tests",{id:"test-ds-sw",projectId:"project-dranstrike",focusId:"build-ds",opponentId:"build-sw",target:16,stage:1,status:"Active",priority:"High",purpose:"Stage 1 screening against defense/stamina benchmark"});
+ if(typeof RELEASED_PARTS!=="undefined" && !(await getAll("catalog")).length) for(const x of RELEASED_PARTS) await put("catalog",x);
 }
 async function refresh(){
  state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");state.library=await getAll("library");state.projects=await getAll("projects");state.experiments=await getAll("experiments");render();
 }
 function build(id){return state.builds.find(x=>x.id===id)}
-function slotBuild(slot){return state.builds.find(x=>x.slot===slot)}
+function slotBuild(slot){return state.builds.find(x=>x.slot===slot)||null}
 function partQty(category,name){return state.parts.find(x=>x.category===category&&x.name===name)?.qty||0}
 function deckIssues(){
  const deck=state.builds.filter(x=>["Bey 1","Bey 2","Bey 3"].includes(x.slot));const out=[];
@@ -81,12 +73,16 @@ function render(){
 function go(p){state.page=p;render()}
 function stats(){return aggregate(state.builds,state.matches,state.history)}
 function homeView(){
- const s=stats(),rec=recommend(s,state.tests.map(t=>({...t,completed:completed(t)}))),active=state.tests.find(t=>t.status==="Active")||state.tests.find(t=>t.status==="Planned"),best=[...s].sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff)[0];
- const readiness=best?Math.min(100,Math.round((Math.min(best.matches,36)/36)*45 + Math.min(best.opponents.length,3)/3*25 + Math.max(0,Math.min(1,best.winRate))*20 + (best.diff>0?10:0))):0;
- return `<div class="card hero"><div class="queue-top"><div><h2>Tournament command center</h2><p class="muted">Clean test database · controlled evidence only</p></div>${badge(readiness+"% readiness",readiness>=80?"good":readiness>=40?"warn":"")}</div><div class="notice"><b>${rec.title}</b><br>${rec.body}</div></div>
+ const s=stats(),active=state.tests.find(t=>t.status==="Active")||state.tests.find(t=>t.status==="Planned"),best=[...s].sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff)[0];
+ if(!state.builds.length){
+   return `<div class="card hero"><h2>Research Lab</h2><p class="muted">No saved builds or active research.</p><div class="notice">Start by creating a build from your owned collection, assign it to a slot, then create a controlled test.</div><div class="actions"><button class="btn" data-go="collection">Create first build</button></div></div>
+   <div class="grid"><div class="metric"><b>${state.parts.reduce((a,p)=>a+p.qty,0)}</b><span>Owned part copies</span></div><div class="metric"><b>${state.parts.length}</b><span>Unique owned parts</span></div><div class="metric"><b>0</b><span>Saved builds</span></div><div class="metric"><b>0</b><span>Research matches</span></div></div>`;
+ }
+ const rec=recommend(s,state.tests.map(t=>({...t,completed:completed(t)})));
+ return `<div class="card hero"><h2>${rec.title}</h2><div class="notice">${rec.body}</div></div>
  <div class="grid"><div class="metric"><b>${state.matches.length}</b><span>Controlled matches</span></div><div class="metric"><b>${state.tests.filter(x=>x.status==="Complete").length}</b><span>Completed test series</span></div><div class="metric"><b>${best?(best.winRate*100).toFixed(1)+"%":"—"}</b><span>Best observed win rate</span></div><div class="metric"><b>${deckIssues().length||"✓"}</b><span>Deck legality</span></div></div>
  ${active?testCard(active,true):`<div class="card"><p>No active tests.</p><button class="btn" data-go="wizard">Create test</button></div>`}
- <div class="card"><h3>Current tournament deck</h3>${["Bey 1","Bey 2","Bey 3"].map(slot=>{const b=slotBuild(slot);return `<p>${badge(slot)} <b>${b?.name||"Unassigned"}</b><br><span class="muted">${b?.role||""}</span></p>`}).join("")}<div class="notice">${deckIssues().length?deckIssues().join("<br>"):"Owned-part check passed."}</div></div>`;
+ <div class="card"><h3>Current deck</h3>${["Bey 1","Bey 2","Bey 3"].map(slot=>{const b=slotBuild(slot);return `<p>${badge(slot)} <b>${b?.name||"Unassigned"}</b><br><span class="muted">${b?.role||""}</span></p>`}).join("")}<div class="notice">${deckIssues().length?deckIssues().join("<br>"):"Owned-part check passed."}</div></div>`;
 }
 function testCard(t,home=false){
  const a=build(t.focusId),b=build(t.opponentId),done=completed(t),remain=Math.max(0,t.target-done);
@@ -101,12 +97,15 @@ function researchView(){
  <div class="card"><div class="toolbar"><h3>Controlled experiments</h3><button class="btn icon" id="newExperiment">+</button></div>${state.experiments.length?state.experiments.map(e=>`<div class="queue-item"><b>${e.name}</b><p class="tiny">Baseline: ${build(e.baselineId)?.name}<br>Variant: ${build(e.variantId)?.name}<br>Opponent: ${build(e.opponentId)?.name}</p>${badge(e.status,e.status==="Complete"?"good":"warn")}</div>`).join(""):"<p class='muted'>No A/B experiments yet.</p>"}</div>`:""}<div id="modal"></div>`;
 }
 function wizardView(){
- const w=state.wizard||{step:1,focusId:state.builds[0]?.id,opponentId:state.builds[3]?.id,target:12,purpose:""};
+ if(state.builds.length<2){
+   return `<div class="card"><h2>More builds required</h2><div class="notice">Create at least two saved builds before starting a controlled test.</div><div class="actions"><button class="btn" data-go="collection">Go to Collection</button></div></div>`;
+ }
+ const w=state.wizard||{step:1,focusId:state.builds[0]?.id,opponentId:state.builds[1]?.id,target:16,purpose:""};
  state.wizard=w;
  const bars=[1,2,3,4].map(i=>`<span class="${i<=w.step?"active":""}"></span>`).join("");
  if(w.step===1)return `<div class="card"><div class="wizard-step">${bars}</div><h2>Choose focus build</h2><label>Focus build</label><select id="wizFocus">${buildOptions(w.focusId)}</select><div class="actions"><button class="btn" data-wiz-next="1">Next</button></div></div>`;
  if(w.step===2)return `<div class="card"><div class="wizard-step">${bars}</div><h2>Choose opponent</h2><label>Opponent build</label><select id="wizOpponent">${buildOptions(w.opponentId)}</select><div class="actions"><button class="btn secondary" data-wiz-back>Back</button><button class="btn" data-wiz-next="2">Next</button></div></div>`;
- if(w.step===3)return `<div class="card"><div class="wizard-step">${bars}</div><h2>Set test target</h2><div class="grid">${[12,24,36,50].map(n=>`<button class="btn ${w.target===n?"good":"secondary"}" data-target="${n}">${n} matches</button>`).join("")}</div><label>Custom target</label><input id="wizTarget" type="number" min="1" max="500" value="${w.target}"><label>Purpose</label><textarea id="wizPurpose">${w.purpose||""}</textarea><div class="actions"><button class="btn secondary" data-wiz-back>Back</button><button class="btn" data-wiz-next="3">Review</button></div></div>`;
+ if(w.step===3)return `<div class="card"><div class="wizard-step">${bars}</div><h2>Set test target</h2><div class="grid">${[16,32,64,96].map(n=>`<button class="btn ${w.target===n?"good":"secondary"}" data-target="${n}">${n} matches</button>`).join("")}</div><label>Custom target</label><input id="wizTarget" type="number" min="1" max="500" value="${w.target}"><label>Purpose</label><textarea id="wizPurpose">${w.purpose||""}</textarea><div class="actions"><button class="btn secondary" data-wiz-back>Back</button><button class="btn" data-wiz-next="3">Review</button></div></div>`;
  const a=build(w.focusId),b=build(w.opponentId),err=a&&b?pairIssue(a,b):"Select builds";
  return `<div class="card"><div class="wizard-step">${bars}</div><h2>Review test</h2><p><b>${a?.name}</b><br><span class="muted">vs</span><br><b>${b?.name}</b></p><p>Target: <b>${w.target}</b> first-to-4 matches</p>${err?`<div class="notice">${err}</div>`:""}<div class="actions"><button class="btn secondary" data-wiz-back>Back</button><button class="btn good" data-create-test ${err?"disabled":""}>Create and start</button></div></div>`;
 }
@@ -140,10 +139,27 @@ function analyticsView(){
 function statCard(x){const total=x.spin+x.burst+x.over+x.xtreme||1;return `<div class="card"><div class="queue-top"><div><h3>${x.name}</h3>${badge(x.readiness,x.readiness.includes("Validated")?"good":x.readiness==="Testing"?"warn":"")}</div><div><b>${(x.winRate*100).toFixed(1)}%</b><br><span class="tiny">${x.matches} matches</span></div></div>${[["Spin",x.spin],["Burst",x.burst],["Over",x.over],["Xtreme",x.xtreme]].map(([n,v])=>`<div class="statbar"><span>${n}</span><div class="bar"><div style="width:${v/total*100}%"></div></div><b>${v}</b></div>`).join("")}<p class="muted">Avg points: ${x.avgPoints.toFixed(2)} · KO rate: ${(x.koRate*100).toFixed(1)}% · Self-exit losses: ${x.self}</p></div>`}
 function collectionView(){
  const filtered=state.parts.filter(x=>(state.partFilter==="All"||x.category===state.partFilter)&&x.name.toLowerCase().includes(state.filter.toLowerCase()));
- return `<div class="card hero"><h2>Released-parts library</h2><p class="muted">Search the catalog, then add a released part to your owned collection with one tap.</p><div class="search-row"><input id="librarySearch" placeholder="Search released parts" value="${state.libraryFilter}"><select id="libraryCategory"><option>All</option>${[...new Set(state.library.map(x=>x.category))].map(c=>`<option ${c===state.libraryCategory?"selected":""}>${c}</option>`).join("")}</select></div><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>System</th><th>Owned</th><th></th></tr>${state.library.filter(x=>(state.libraryCategory==="All"||x.category===state.libraryCategory)&&x.name.toLowerCase().includes(state.libraryFilter.toLowerCase())).slice(0,250).map(x=>{const owned=state.parts.find(p=>p.category===x.category&&p.name.replace(/\s/g,"").toLowerCase()===x.name.replace(/\s/g,"").toLowerCase());return `<tr><td>${x.category}</td><td>${x.name}</td><td>${x.system}</td><td>${owned?.qty||0}</td><td><button class="btn secondary" data-own-library="${x.id}">+ Own</button></td></tr>`}).join("")}</table></div><p class="tiny">Catalog basis updated July 2026. Custom entries remain supported for new or regional releases.</p></div><div class="card"><h2>Collection manager</h2><div class="search-row"><input id="partSearch" placeholder="Search parts" value="${state.filter}"><select id="partCategory"><option>All</option><option>Blade</option><option>Ratchet</option><option>Bit</option></select></div><div class="actions"><button class="btn" data-add-part>Add part</button><button class="btn secondary" data-add-build>Add saved build</button></div></div>
+ return `<div class="card hero"><h2>Released-parts library</h2><p class="muted">Search the catalog, then add a released part to your owned collection with one tap.</p><div class="search-row"><input id="librarySearch" placeholder="Search released parts" value="${state.libraryFilter}"><select id="libraryCategory"><option>All</option>${[...new Set(state.library.map(x=>x.category))].map(c=>`<option ${c===state.libraryCategory?"selected":""}>${c}</option>`).join("")}</select></div><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>System</th><th>Owned</th><th></th></tr>${state.library.filter(x=>(state.libraryCategory==="All"||x.category===state.libraryCategory)&&x.name.toLowerCase().includes(state.libraryFilter.toLowerCase())).slice(0,250).map(x=>{const owned=state.parts.find(p=>p.category===x.category&&p.name.replace(/\s/g,"").toLowerCase()===x.name.replace(/\s/g,"").toLowerCase());return `<tr><td>${x.category}</td><td>${x.name}</td><td>${x.system}</td><td>${owned?.qty||0}</td><td><button class="btn secondary" data-own-library="${x.id}">+ Own</button></td></tr>`}).join("")}</table></div><p class="tiny">Catalog basis updated July 2026. Custom entries remain supported for new or regional releases.</p></div><div class="card"><h2>Collection manager</h2><div class="search-row"><input id="partSearch" placeholder="Search parts" value="${state.filter}"><select id="partCategory"><option>All</option><option>Blade</option><option>Ratchet</option><option>Bit</option></select></div><div class="actions"><button class="btn" data-add-part>Add part</button><button class="btn secondary" data-add-build>Add saved build</button><button class="btn secondary" data-load-templates>Load optional templates</button></div></div>
  <div class="card"><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${filtered.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||""}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`).join("")}</table></div></div>
  <div class="card"><h2>Saved builds and history</h2>${state.builds.map(b=>`<div class="queue-item"><div class="queue-top"><div><b>${b.name}</b><br><span class="muted">${b.role||""}</span></div>${badge(b.status||"Candidate")}</div><p class="tiny">v${b.version||1} · ${b.blade} · ${b.ratchet} · ${b.bit}</p><div class="actions"><button class="btn secondary" data-edit-build="${b.id}">Edit</button><button class="btn danger" data-delete-build="${b.id}">Delete</button></div></div>`).join("")}</div>
- <div class="card"><h3>Backup</h3><div class="actions"><button class="btn" data-export>Export backup</button><button class="btn secondary" data-import>Import backup</button><button class="btn danger" data-reset>Reset database</button></div><input id="importFile" class="hidden" type="file" accept=".json"></div><div id="modal"></div>`;
+ <div class="card"><h3>Backup and reset</h3>
+ <div class="actions">
+  <button class="btn" data-export-all>Export full backup</button>
+  <button class="btn secondary" data-export-collection>Export collection</button>
+  <button class="btn secondary" data-export-builds>Export builds</button>
+  <button class="btn secondary" data-export-research>Export research</button>
+  <button class="btn secondary" data-import>Import backup</button>
+ </div>
+ <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+ <h3>Reset options</h3>
+ <div class="actions">
+  <button class="btn warn" data-new-season>New Season</button>
+  <button class="btn warn" data-reset-research>Reset Research</button>
+  <button class="btn danger" data-factory-reset>Factory Reset</button>
+ </div>
+ <p class="tiny"><b>New Season:</b> keeps collection, deletes builds and all research. <b>Reset Research:</b> keeps collection and builds, deletes tests/matches/history. <b>Factory Reset:</b> deletes everything and restores the bundled collection baseline.</p>
+ <input id="importFile" class="hidden" type="file" accept=".json">
+</div><div id="modal"></div>`;
 }
 function bind(){
  document.querySelectorAll("[data-go]").forEach(x=>x.onclick=()=>go(x.dataset.go));
@@ -171,10 +187,17 @@ function bind(){
  document.querySelector("[data-add-build]")?.addEventListener("click",()=>buildModal());
  document.querySelectorAll("[data-edit-build]").forEach(x=>x.onclick=()=>buildModal(x.dataset.editBuild));
  document.querySelectorAll("[data-delete-build]").forEach(x=>x.onclick=()=>deleteBuild(x.dataset.deleteBuild));
- document.querySelector("[data-export]")?.addEventListener("click",exportBackup);
+ document.querySelector("[data-export-all]")?.addEventListener("click",exportBackup);
+ document.querySelector("[data-export-collection]")?.addEventListener("click",exportCollection);
+ document.querySelector("[data-export-builds]")?.addEventListener("click",exportBuilds);
+ document.querySelector("[data-export-research]")?.addEventListener("click",exportResearch);
+ document.querySelector("[data-new-season]")?.addEventListener("click",newSeason);
+ document.querySelector("[data-reset-research]")?.addEventListener("click",resetResearch);
+ document.querySelector("[data-factory-reset]")?.addEventListener("click",factoryReset);
+ document.querySelector("[data-load-templates]")?.addEventListener("click",loadTemplates);
  document.querySelector("[data-import]")?.addEventListener("click",()=>document.querySelector("#importFile").click());
  document.querySelector("#importFile")?.addEventListener("change",importBackup);
- document.querySelector("[data-reset]")?.addEventListener("click",resetDB);
+ 
 }
 function startEventMatch(){
  const a=build(document.querySelector("#eventA").value),b=build(document.querySelector("#eventB").value);
@@ -212,7 +235,42 @@ function buildModal(id=null){const b=id?state.builds.find(x=>x.id===id):{id:uid(
 const x=changed?{...b,id:uid(),parentId:b.parentId||b.id,version:(b.version||1)+1,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value}:{...b,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value};
 x.name=comboName(x);if(x.slot)for(const other of state.builds.filter(y=>y.id!==x.id&&y.slot===x.slot)){other.slot="";await put("builds",other)}await put("builds",x);await put("history",{id:uid(),type:"build-change",buildId:x.id,timestamp:new Date().toISOString(),snapshot:x});await refresh()};document.querySelector("#bmCancel").onclick=()=>render()}
 async function deleteBuild(id){if(state.tests.some(t=>t.focusId===id||t.opponentId===id))return alert("This build is used by a test. Delete or edit the test first.");if(confirm("Delete saved build?")){await del("builds",id);await refresh()}}
+
+async function downloadJSON(name,data){
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));
+ a.download=name;a.click();
+}
+async function exportCollection(){downloadJSON("beylab-collection.json",{parts:state.parts})}
+async function exportBuilds(){downloadJSON("beylab-builds.json",{builds:state.builds})}
+async function exportResearch(){downloadJSON("beylab-research.json",{matches:state.matches,tests:state.tests,history:state.history})}
+async function newSeason(){
+ if(!confirm("Start a new season? This keeps your owned collection but deletes all builds, tests, matches, and history."))return;
+ for(const s of["builds","matches","tests","history"])await clearStore(s);
+ state.wizard=null;state.battle=null;await refresh();
+}
+async function resetResearch(){
+ if(!confirm("Reset research? This keeps your collection and saved builds but deletes tests, matches, and research history."))return;
+ for(const s of["matches","tests","history"])await clearStore(s);
+ state.wizard=null;state.battle=null;await refresh();
+}
+async function factoryReset(){
+ if(!confirm("Factory reset? This deletes collection, builds, and all research, then restores the bundled baseline collection."))return;
+ for(const s of["settings","parts","builds","matches","tests","history","catalog"])await clearStore(s);
+ await seed();state.wizard=null;state.battle=null;await refresh();
+}
+async function loadTemplates(){
+ if(state.builds.length && !confirm("Templates will be added alongside existing builds. Continue?"))return;
+ const templates=[
+  {id:uid(),name:"DranStrike 1-50 Low Rush",blade:"DranStrike",ratchet:"1-50",bit:"Low Rush",role:"Primary attacker",status:"Template",slot:""},
+  {id:uid(),name:"SilverWolf 9-60 Hexa",blade:"SilverWolf",ratchet:"9-60",bit:"Hexa",role:"Defense",status:"Template",slot:""},
+  {id:uid(),name:"PhoenixWing 9-60 Gear Flat",blade:"PhoenixWing",ratchet:"9-60",bit:"Gear Flat",role:"Secondary attacker",status:"Template",slot:""},
+  {id:uid(),name:"BahamutBlitz BK 0-70 Ignition",blade:"BahamutBlitz BK",ratchet:"0-70",bit:"Ignition",role:"Balance / counter",status:"Template",slot:""}
+ ];
+ for(const t of templates)await put("builds",t);
+ await refresh();
+}
 async function exportBackup(){const data=await exportAll();const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="beylab-v4-backup.json";a.click()}
 async function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{await importAll(JSON.parse(r.result));await refresh()}catch{alert("Invalid backup.")}};r.readAsText(f)}
-async function resetDB(){if(!confirm("Erase all app data and restore defaults?"))return;for(const s of["settings","parts","builds","matches","tests","history","library","projects","experiments"])await clearStore(s);await seed();await refresh()}
+
 addEventListener("load",async()=>{if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");await seed();await refresh()});
