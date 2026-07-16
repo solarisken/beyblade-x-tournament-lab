@@ -1,0 +1,182 @@
+[
+  {
+    "code": "BX-23",
+    "name": "PhoenixWing 9-60GF",
+    "line": "BX",
+    "type": "Starter",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "PhoenixWing"
+      },
+      {
+        "category": "Ratchet",
+        "name": "9-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Gear Flat"
+      }
+    ]
+  },
+  {
+    "code": "BX-49",
+    "name": "DranStrike 4-50FF",
+    "line": "BX",
+    "type": "Starter",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranStrike"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Free Flat"
+      }
+    ]
+  },
+  {
+    "code": "UX-08",
+    "name": "SilverWolf 3-80FB",
+    "line": "UX",
+    "type": "Booster",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SilverWolf"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Free Ball"
+      }
+    ]
+  },
+  {
+    "code": "UX-11",
+    "name": "ImpactDrake 9-60LR",
+    "line": "UX",
+    "type": "Starter",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "ImpactDrake"
+      },
+      {
+        "category": "Ratchet",
+        "name": "9-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Low Rush"
+      }
+    ]
+  },
+  {
+    "code": "UX-14",
+    "name": "ScorpioSpear 0-70Z",
+    "line": "UX",
+    "type": "Booster",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "ScorpioSpear"
+      },
+      {
+        "category": "Ratchet",
+        "name": "0-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Zap"
+      }
+    ]
+  },
+  {
+    "code": "UX-19",
+    "name": "BulletGriffon H",
+    "line": "UX",
+    "type": "Booster",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "BulletGriffon"
+      },
+      {
+        "category": "Ratchet",
+        "name": "Integrated"
+      },
+      {
+        "category": "Bit",
+        "name": "Hexa"
+      }
+    ]
+  },
+  {
+    "code": "CX-09",
+    "name": "SolEclipse D 5-70TK",
+    "line": "CX",
+    "type": "Booster",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SolEclipse D"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Trans Kick"
+      }
+    ]
+  },
+  {
+    "code": "CX-10",
+    "name": "WolfHunt F 0-60DB",
+    "line": "CX",
+    "type": "Booster",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WolfHunt F"
+      },
+      {
+        "category": "Ratchet",
+        "name": "0-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Disc Ball"
+      }
+    ]
+  },
+  {
+    "code": "CX-16",
+    "name": "BahamutBlitz BK 1-50I",
+    "line": "CX",
+    "type": "Set",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "BahamutBlitz BK"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Ignition"
+      }
+    ]
+  }
+]
