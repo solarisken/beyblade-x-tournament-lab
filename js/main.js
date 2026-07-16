@@ -40,7 +40,7 @@ let state={page:"home",parts:[],builds:[],matches:[],tests:[],history:[],library
 function uid(){return crypto.randomUUID?.()||Date.now()+"-"+Math.random()}
 async function seed(){
  if(!(await getAll("parts")).length) for(const x of BASE_PARTS) await put("parts",x);
- if(typeof RELEASED_PARTS!=="undefined" && !(await getAll("catalog")).length) for(const x of RELEASED_PARTS) await put("catalog",x);
+ if(typeof RELEASED_PARTS!=="undefined" && !(await getAll("library")).length) for(const x of RELEASED_PARTS) await put("library",x);
 }
 async function refresh(){
  state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");state.library=await getAll("library");state.projects=await getAll("projects");state.experiments=await getAll("experiments");render();
@@ -256,7 +256,7 @@ async function resetResearch(){
 }
 async function factoryReset(){
  if(!confirm("Factory reset? This deletes collection, builds, and all research, then restores the bundled baseline collection."))return;
- for(const s of["settings","parts","builds","matches","tests","history","catalog"])await clearStore(s);
+ for(const s of["settings","parts","builds","matches","tests","history","library","projects","experiments"])await clearStore(s);
  await seed();state.wizard=null;state.battle=null;await refresh();
 }
 async function loadTemplates(){
@@ -273,4 +273,13 @@ async function loadTemplates(){
 async function exportBackup(){const data=await exportAll();const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="beylab-v4-backup.json";a.click()}
 async function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{await importAll(JSON.parse(r.result));await refresh()}catch{alert("Invalid backup.")}};r.readAsText(f)}
 
-addEventListener("load",async()=>{if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");await seed();await refresh()});
+addEventListener("load",async()=>{
+ try{
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+  await seed();
+  await refresh();
+ }catch(error){
+  console.error(error);
+  document.getElementById("app").innerHTML=`<main><div class="card"><h2>Startup error</h2><div class="notice">${error?.message||error}</div><p class="muted">Reload after updating the app files. If this persists, clear this site’s stored data once.</p></div></main>`;
+ }
+});
