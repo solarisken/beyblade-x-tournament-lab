@@ -1,7 +1,7 @@
 export function recommend(stats,tests){
   if(!stats.length) return {title:"First prescribed test",body:"Run DranStrike 1-50 Low Rush vs SilverWolf 9-60 Hexa for 12 first-to-4 matches. Do not change parts during the screening block.",level:"warn"};
   const active=tests.find(t=>t.status==="Active")||tests.find(t=>t.status==="Planned");
-  if(active) return {title:"Continue active test",body:`Complete ${Math.max(0,active.target-(active.completed||0))} more matches before changing parts.`,level:"warn"};
+  if(active) return {title:"Continue active test",body:`Complete ${Math.max(0,active.target-(active.completed||0))} more matches in the current evidence stage before changing parts.`,level:"warn"};
   const candidate=stats.find(s=>s.readiness==="Validated candidate");
   if(candidate) return {title:"Validated candidate",body:`${candidate.name} has enough breadth and positive results to remain locked.`,level:"good"};
   const best=[...stats].sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff)[0];

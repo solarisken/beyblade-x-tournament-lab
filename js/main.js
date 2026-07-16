@@ -1,6 +1,7 @@
 import {getAll,put,del,exportAll,importAll,clearStore} from "./db.js";
 import {aggregate,comboName,matchupMatrix,partPerformance} from "./analytics.js";
 import {recommend} from "./recommendations.js";
+import {RELEASED_PARTS} from "./library.js";
 
 const BASE_PARTS=[
 {id:"blade-dranstrike",category:"Blade",name:"DranStrike",qty:1,source:"BX-49"},
@@ -38,17 +39,19 @@ const BASE_BUILDS=[
 
 const HIST=[];
 
-let state={page:"home",parts:[],builds:[],matches:[],tests:[],history:[],battle:null,pending:null,wizard:null,filter:"",partFilter:"All"};
+let state={page:"home",parts:[],builds:[],matches:[],tests:[],history:[],library:[],projects:[],experiments:[],battle:null,pending:null,wizard:null,filter:"",partFilter:"All",libraryFilter:"",libraryCategory:"All"};
 
 function uid(){return crypto.randomUUID?.()||Date.now()+"-"+Math.random()}
 async function seed(){
  if(!(await getAll("parts")).length) for(const x of BASE_PARTS) await put("parts",x);
  if(!(await getAll("builds")).length) for(const x of BASE_BUILDS) await put("builds",x);
  if(!(await getAll("history")).length) for(const x of HIST) await put("history",x);
- if(!(await getAll("tests")).length) await put("tests",{id:"test-ds-sw",focusId:"build-ds",opponentId:"build-sw",target:12,status:"Active",priority:"High",purpose:"Initial screening: test knockout conversion and consistency against the optimized defense/stamina benchmark"});
+ if(!(await getAll("library")).length) for(const x of RELEASED_PARTS) await put("library",x);
+ if(!(await getAll("projects")).length) await put("projects",{id:"project-dranstrike",name:"Optimize DranStrike",focusBuildId:"build-ds",status:"Active",goal:"Tournament verification across major archetypes",stageTargets:[16,32,64,96]});
+ if(!(await getAll("tests")).length) await put("tests",{id:"test-ds-sw",projectId:"project-dranstrike",focusId:"build-ds",opponentId:"build-sw",target:16,stage:1,status:"Active",priority:"High",purpose:"Stage 1 screening against defense/stamina benchmark"});
 }
 async function refresh(){
- state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");render();
+ state.parts=await getAll("parts");state.builds=await getAll("builds");state.matches=await getAll("matches");state.tests=await getAll("tests");state.history=await getAll("history");state.library=await getAll("library");state.projects=await getAll("projects");state.experiments=await getAll("experiments");render();
 }
 function build(id){return state.builds.find(x=>x.id===id)}
 function slotBuild(slot){return state.builds.find(x=>x.slot===slot)}
@@ -68,10 +71,10 @@ function completed(test){
  const a=build(test.focusId)?.name,b=build(test.opponentId)?.name;
  return state.matches.filter(m=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a)).length;
 }
-function nav(){return `<nav>${[["home","⌂","Home"],["wizard","＋","New Test"],["battle","⚔","Battle"],["tests","☷","Tests"],["tournament","🏆","Event"],["analytics","▥","Stats"],["collection","⚙","Collection"]].map(x=>`<button class="${state.page===x[0]?"active":""}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join("")}</nav>`}
+function nav(){return `<nav>${[["home","⌂","Home"],["research","⌁","Research"],["wizard","＋","New Test"],["battle","⚔","Battle"],["tests","☷","Tests"],["analytics","▥","Stats"],["collection","⚙","Collection"]].map(x=>`<button class="${state.page===x[0]?"active":""}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join("")}</nav>`}
 function badge(text,level=""){return `<span class="badge ${level}">${text}</span>`}
 function render(){
- const views={home:homeView,wizard:wizardView,battle:battleView,tests:testsView,tournament:tournamentView,analytics:analyticsView,collection:collectionView};
+ const views={home:homeView,research:researchView,wizard:wizardView,battle:battleView,tests:testsView,analytics:analyticsView,collection:collectionView};
  document.getElementById("app").innerHTML=`<header><h1>Personal Beyblade X Tournament Lab</h1><p>IndexedDB · offline · scalable match analytics</p></header><main>${views[state.page]()}</main>${nav()}`;
  bind();
 }
@@ -87,7 +90,15 @@ function homeView(){
 }
 function testCard(t,home=false){
  const a=build(t.focusId),b=build(t.opponentId),done=completed(t),remain=Math.max(0,t.target-done);
- return `<div class="queue-item"><div class="queue-top"><div><b>${a?.name}</b><br><span class="muted">vs</span><br><b>${b?.name}</b></div>${badge(t.status,t.status==="Active"?"warn":t.status==="Complete"?"good":"")}</div><p class="tiny">${t.purpose||""}</p><div class="progress"><div style="width:${Math.min(100,done/t.target*100)}%"></div></div><p class="muted">${done}/${t.target} · ${remain} remaining</p>${t.id==="test-ds-sw"?`<p class="tiny">Decision rule: 7–5 or better → extend to 24; 6–6 → extend immediately; 5–7 or worse → inspect finish profile before changing parts.</p>`:""}<div class="actions"><button class="btn" data-start="${t.id}">Continue</button>${home?`<button class="btn secondary" data-go="tests">Manage</button>`:`<button class="btn secondary" data-edit-test="${t.id}">Edit</button><button class="btn danger" data-delete-test="${t.id}">Delete</button>`}</div></div>`;
+ return `<div class="queue-item"><div class="queue-top"><div><b>${a?.name}</b><br><span class="muted">vs</span><br><b>${b?.name}</b></div>${badge(t.status,t.status==="Active"?"warn":t.status==="Complete"?"good":"")}</div><p class="tiny">${t.purpose||""}</p><div class="progress"><div style="width:${Math.min(100,done/t.target*100)}%"></div></div><p class="muted">${done}/${t.target} · ${remain} remaining</p>${t.id==="test-ds-sw"?`<p class="tiny">Evidence stages: 16 screening → 32 validation → 64 high confidence → 96 tournament verification for this benchmark.</p>`:""}<div class="actions"><button class="btn" data-start="${t.id}">Continue</button>${home?`<button class="btn secondary" data-go="tests">Manage</button>`:`<button class="btn secondary" data-edit-test="${t.id}">Edit</button><button class="btn danger" data-delete-test="${t.id}">Delete</button>`}</div></div>`;
+}
+
+function researchView(){
+ const project=state.projects.find(x=>x.status==="Active"),focus=project?build(project.focusBuildId):null,projectTests=project?state.tests.filter(x=>x.projectId===project.id):[];
+ return `<div class="card hero"><h2>Research project</h2><p><b>${project?.name||"No active project"}</b></p><p class="muted">${project?.goal||"Create a project to begin."}</p></div>
+ ${project?`<div class="card"><h3>Focus build</h3><p><b>${focus?.name}</b></p><div class="notice">Change only one part per variant. The app preserves each build version and its evidence.</div></div>
+ <div class="card"><h3>Evidence ladder</h3>${[16,32,64,96].map((n,i)=>{const total=projectTests.reduce((s,x)=>s+Math.min(completed(x),x.target),0);const complete=total>=n;return `<p>${badge(complete?"✓":"Stage "+(i+1),complete?"good":"warn")} <b>${n} matches</b> — ${["Screened","Validated","High confidence","Tournament verified vs benchmark"][i]}</p>`}).join("")}</div>
+ <div class="card"><div class="toolbar"><h3>Controlled experiments</h3><button class="btn icon" id="newExperiment">+</button></div>${state.experiments.length?state.experiments.map(e=>`<div class="queue-item"><b>${e.name}</b><p class="tiny">Baseline: ${build(e.baselineId)?.name}<br>Variant: ${build(e.variantId)?.name}<br>Opponent: ${build(e.opponentId)?.name}</p>${badge(e.status,e.status==="Complete"?"good":"warn")}</div>`).join(""):"<p class='muted'>No A/B experiments yet.</p>"}</div>`:""}<div id="modal"></div>`;
 }
 function wizardView(){
  const w=state.wizard||{step:1,focusId:state.builds[0]?.id,opponentId:state.builds[3]?.id,target:12,purpose:""};
@@ -129,7 +140,7 @@ function analyticsView(){
 function statCard(x){const total=x.spin+x.burst+x.over+x.xtreme||1;return `<div class="card"><div class="queue-top"><div><h3>${x.name}</h3>${badge(x.readiness,x.readiness.includes("Validated")?"good":x.readiness==="Testing"?"warn":"")}</div><div><b>${(x.winRate*100).toFixed(1)}%</b><br><span class="tiny">${x.matches} matches</span></div></div>${[["Spin",x.spin],["Burst",x.burst],["Over",x.over],["Xtreme",x.xtreme]].map(([n,v])=>`<div class="statbar"><span>${n}</span><div class="bar"><div style="width:${v/total*100}%"></div></div><b>${v}</b></div>`).join("")}<p class="muted">Avg points: ${x.avgPoints.toFixed(2)} · KO rate: ${(x.koRate*100).toFixed(1)}% · Self-exit losses: ${x.self}</p></div>`}
 function collectionView(){
  const filtered=state.parts.filter(x=>(state.partFilter==="All"||x.category===state.partFilter)&&x.name.toLowerCase().includes(state.filter.toLowerCase()));
- return `<div class="card"><h2>Collection manager</h2><div class="search-row"><input id="partSearch" placeholder="Search parts" value="${state.filter}"><select id="partCategory"><option>All</option><option>Blade</option><option>Ratchet</option><option>Bit</option></select></div><div class="actions"><button class="btn" data-add-part>Add part</button><button class="btn secondary" data-add-build>Add saved build</button></div></div>
+ return `<div class="card hero"><h2>Released-parts library</h2><p class="muted">Search the catalog, then add a released part to your owned collection with one tap.</p><div class="search-row"><input id="librarySearch" placeholder="Search released parts" value="${state.libraryFilter}"><select id="libraryCategory"><option>All</option>${[...new Set(state.library.map(x=>x.category))].map(c=>`<option ${c===state.libraryCategory?"selected":""}>${c}</option>`).join("")}</select></div><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>System</th><th>Owned</th><th></th></tr>${state.library.filter(x=>(state.libraryCategory==="All"||x.category===state.libraryCategory)&&x.name.toLowerCase().includes(state.libraryFilter.toLowerCase())).slice(0,250).map(x=>{const owned=state.parts.find(p=>p.category===x.category&&p.name.replace(/\s/g,"").toLowerCase()===x.name.replace(/\s/g,"").toLowerCase());return `<tr><td>${x.category}</td><td>${x.name}</td><td>${x.system}</td><td>${owned?.qty||0}</td><td><button class="btn secondary" data-own-library="${x.id}">+ Own</button></td></tr>`}).join("")}</table></div><p class="tiny">Catalog basis updated July 2026. Custom entries remain supported for new or regional releases.</p></div><div class="card"><h2>Collection manager</h2><div class="search-row"><input id="partSearch" placeholder="Search parts" value="${state.filter}"><select id="partCategory"><option>All</option><option>Blade</option><option>Ratchet</option><option>Bit</option></select></div><div class="actions"><button class="btn" data-add-part>Add part</button><button class="btn secondary" data-add-build>Add saved build</button></div></div>
  <div class="card"><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${filtered.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||""}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`).join("")}</table></div></div>
  <div class="card"><h2>Saved builds and history</h2>${state.builds.map(b=>`<div class="queue-item"><div class="queue-top"><div><b>${b.name}</b><br><span class="muted">${b.role||""}</span></div>${badge(b.status||"Candidate")}</div><p class="tiny">v${b.version||1} · ${b.blade} · ${b.ratchet} · ${b.bit}</p><div class="actions"><button class="btn secondary" data-edit-build="${b.id}">Edit</button><button class="btn danger" data-delete-build="${b.id}">Delete</button></div></div>`).join("")}</div>
  <div class="card"><h3>Backup</h3><div class="actions"><button class="btn" data-export>Export backup</button><button class="btn secondary" data-import>Import backup</button><button class="btn danger" data-reset>Reset database</button></div><input id="importFile" class="hidden" type="file" accept=".json"></div><div id="modal"></div>`;
@@ -151,6 +162,10 @@ function bind(){
  document.querySelector("[data-create-test]")?.addEventListener("click",createTest);
  document.querySelector("#partSearch")?.addEventListener("input",e=>{state.filter=e.target.value;render()});
  const pc=document.querySelector("#partCategory");if(pc){pc.value=state.partFilter;pc.onchange=e=>{state.partFilter=e.target.value;render()}}
+ document.querySelector("#librarySearch")?.addEventListener("input",e=>{state.libraryFilter=e.target.value;render()});
+ const lc=document.querySelector("#libraryCategory");if(lc)lc.onchange=e=>{state.libraryCategory=e.target.value;render()};
+ document.querySelectorAll("[data-own-library]").forEach(x=>x.onclick=()=>ownLibraryPart(x.dataset.ownLibrary));
+ document.querySelector("#newExperiment")?.addEventListener("click",experimentModal);
  document.querySelector("[data-add-part]")?.addEventListener("click",()=>partModal());
  document.querySelectorAll("[data-edit-part]").forEach(x=>x.onclick=()=>partModal(x.dataset.editPart));
  document.querySelector("[data-add-build]")?.addEventListener("click",()=>buildModal());
@@ -174,11 +189,24 @@ function confirmOwn(own){const p=state.pending;state.pending=null;addRound(p.sid
 function addRound(side,finish,points,own){state.battle.rounds.push({side,finish,points,own});side==="a"?state.battle.aScore+=points:state.battle.bScore+=points;render()}
 function undo(){if(state.pending){state.pending=null;return render()}const r=state.battle?.rounds.pop();if(!r)return;r.side==="a"?state.battle.aScore-=r.points:state.battle.bScore-=r.points;render()}
 function discard(){if(confirm("Discard this match?")){state.battle=null;render()}}
-async function saveMatch(){const m=state.battle;m.winner=m.aScore>m.bScore?m.a:m.b;m.date=new Date().toISOString();await put("matches",m);const t=m.mode==="Controlled Test"?state.tests.find(x=>x.id===m.testId):null;if(t&&completed(t)+1>=t.target){t.status="Complete";await put("tests",t)}state.battle=null;state.page="home";await refresh()}
+async function saveMatch(){const m=state.battle;m.winner=m.aScore>m.bScore?m.a:m.b;m.date=new Date().toISOString();await put("matches",m);const t=m.mode==="Controlled Test"?state.tests.find(x=>x.id===m.testId):null;if(t&&completed(t)+1>=t.target){const next={16:32,32:64,64:96}[t.target];if(next){t.target=next;t.stage=(t.stage||1)+1;t.status="Active";t.purpose=`Stage ${t.stage}: continue same controlled benchmark to ${next} total matches`}else{t.status="Complete"}await put("tests",t)}state.battle=null;state.page="home";await refresh()}
 function wizardNext(step){if(step===1){state.wizard.focusId=document.querySelector("#wizFocus").value;state.wizard.step=2}else if(step===2){state.wizard.opponentId=document.querySelector("#wizOpponent").value;state.wizard.step=3}else{state.wizard.target=Math.max(1,+document.querySelector("#wizTarget").value||12);state.wizard.purpose=document.querySelector("#wizPurpose").value;state.wizard.step=4}render()}
 async function createTest(){const w=state.wizard,t={id:uid(),focusId:w.focusId,opponentId:w.opponentId,target:w.target,status:"Active",priority:"High",purpose:w.purpose};for(const x of state.tests.filter(x=>x.status==="Active")){x.status="Paused";await put("tests",x)}await put("tests",t);state.wizard=null;await refresh();startTest(t.id)}
 async function deleteTest(id){if(confirm("Delete test?")){await del("tests",id);await refresh()}}
 function editTest(id){const t=state.tests.find(x=>x.id===id);state.wizard={step:1,focusId:t.focusId,opponentId:t.opponentId,target:t.target,purpose:t.purpose,editing:id};go("wizard")}
+
+async function ownLibraryPart(id){
+ const x=state.library.find(v=>v.id===id);if(!x)return;
+ const category=["Blade","Ratchet","Bit"].includes(x.category)?x.category:x.category;
+ const existing=state.parts.find(p=>p.category===category&&p.name.replace(/\s/g,"").toLowerCase()===x.name.replace(/\s/g,"").toLowerCase());
+ if(existing){existing.qty+=1;await put("parts",existing)}else await put("parts",{id:uid(),category,name:x.name,qty:1,source:"Released-parts library"});
+ await refresh();
+}
+function experimentModal(){
+ const builds=state.builds.map(x=>`<option value="${x.id}">${x.name}</option>`).join("");
+ document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>New controlled A/B experiment</h3><label>Name</label><input id="exName" value="Single-part comparison"><label>Baseline</label><select id="exBase">${builds}</select><label>Variant</label><select id="exVar">${builds}</select><label>Common opponent</label><select id="exOpp">${builds}</select><label>Matches per build</label><input id="exTarget" type="number" value="16" min="8"><div class="actions"><button class="btn" id="exSave">Create</button><button class="btn secondary" id="exCancel">Cancel</button></div></div></div>`;
+ document.querySelector("#exSave").onclick=async()=>{if(exBase.value===exVar.value)return alert("Baseline and variant must differ.");const e={id:uid(),name:exName.value,baselineId:exBase.value,variantId:exVar.value,opponentId:exOpp.value,target:+exTarget.value||16,status:"Planned"};await put("experiments",e);await refresh()};document.querySelector("#exCancel").onclick=()=>render();
+}
 function partModal(id=null){const p=id?state.parts.find(x=>x.id===id):{id:uid(),category:"Blade",name:"",qty:1,source:""};document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>${id?"Edit":"Add"} part</h3><label>Category</label><select id="pmCat">${["Blade","Ratchet","Bit"].map(x=>`<option ${x===p.category?"selected":""}>${x}</option>`).join("")}</select><label>Name</label><input id="pmName" value="${p.name}"><label>Quantity</label><input id="pmQty" type="number" min="0" value="${p.qty}"><label>Source</label><input id="pmSource" value="${p.source||""}"><div class="actions"><button class="btn" id="pmSave">Save</button>${id?`<button class="btn danger" id="pmDelete">Delete</button>`:""}<button class="btn secondary" id="pmCancel">Cancel</button></div></div></div>`;document.querySelector("#pmSave").onclick=async()=>{const x={id:p.id,category:pmCat.value,name:pmName.value.trim(),qty:Math.max(0,+pmQty.value||0),source:pmSource.value};if(!x.name)return alert("Enter a name.");await put("parts",x);await refresh()};document.querySelector("#pmCancel").onclick=()=>render();if(id)document.querySelector("#pmDelete").onclick=async()=>{const inUse=state.builds.some(b=>[b.blade,b.ratchet,b.bit].includes(p.name));if(inUse)return alert("This part is used by a saved build. Edit or delete that build first.");await del("parts",p.id);await refresh()}}
 function buildModal(id=null){const b=id?state.builds.find(x=>x.id===id):{id:uid(),blade:state.parts.find(x=>x.category==="Blade")?.name,ratchet:state.parts.find(x=>x.category==="Ratchet")?.name,bit:state.parts.find(x=>x.category==="Bit")?.name,role:"",status:"Experimental",slot:""};const options=cat=>state.parts.filter(x=>x.category===cat&&x.qty>0).map(x=>`<option ${x.name===b[cat.toLowerCase()]?"selected":""}>${x.name}</option>`).join("");document.querySelector("#modal").innerHTML=`<div class="modal"><div class="card"><h3>${id?"Edit":"Add"} build</h3><label>Blade</label><select id="bmBlade">${options("Blade")}</select><label>Ratchet</label><select id="bmRatchet">${options("Ratchet")}</select><label>Bit</label><select id="bmBit">${options("Bit")}</select><label>Role</label><input id="bmRole" value="${b.role||""}"><label>Status</label><select id="bmStatus">${["Experimental","Benchmark","Tournament Candidate","Validated","Rejected","Test Bey"].map(x=>`<option ${x===b.status?"selected":""}>${x}</option>`).join("")}</select><label>Deck slot</label><select id="bmSlot">${["","Bey 1","Bey 2","Bey 3","Test Bey"].map(x=>`<option ${x===b.slot?"selected":""}>${x||"None"}</option>`).join("")}</select><div class="actions"><button class="btn" id="bmSave">Save</button><button class="btn secondary" id="bmCancel">Cancel</button></div></div></div>`;document.querySelector("#bmSave").onclick=async()=>{const changed=id&&(b.blade!==bmBlade.value||b.ratchet!==bmRatchet.value||b.bit!==bmBit.value);
 const x=changed?{...b,id:uid(),parentId:b.parentId||b.id,version:(b.version||1)+1,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value}:{...b,blade:bmBlade.value,ratchet:bmRatchet.value,bit:bmBit.value,role:bmRole.value,status:bmStatus.value,slot:bmSlot.value};
@@ -186,5 +214,5 @@ x.name=comboName(x);if(x.slot)for(const other of state.builds.filter(y=>y.id!==x
 async function deleteBuild(id){if(state.tests.some(t=>t.focusId===id||t.opponentId===id))return alert("This build is used by a test. Delete or edit the test first.");if(confirm("Delete saved build?")){await del("builds",id);await refresh()}}
 async function exportBackup(){const data=await exportAll();const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="beylab-v4-backup.json";a.click()}
 async function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{await importAll(JSON.parse(r.result));await refresh()}catch{alert("Invalid backup.")}};r.readAsText(f)}
-async function resetDB(){if(!confirm("Erase all app data and restore defaults?"))return;for(const s of["settings","parts","builds","matches","tests","history"])await clearStore(s);await seed();await refresh()}
+async function resetDB(){if(!confirm("Erase all app data and restore defaults?"))return;for(const s of["settings","parts","builds","matches","tests","history","library","projects","experiments"])await clearStore(s);await seed();await refresh()}
 addEventListener("load",async()=>{if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");await seed();await refresh()});

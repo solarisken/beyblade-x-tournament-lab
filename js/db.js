@@ -1,6 +1,6 @@
 const DB_NAME = "beylab-v4";
-const DB_VERSION = 1;
-const STORES = ["settings","parts","builds","matches","tests","history"];
+const DB_VERSION = 2;
+const STORES = ["settings","parts","builds","matches","tests","history","library","projects","experiments"];
 
 export function openDB(){
   return new Promise((resolve,reject)=>{
