@@ -1,9 +1,5 @@
-# Beyblade X Tournament Lab PWA v5
+# Beyblade X Tournament Lab PWA v5.1
 
-- Clean reset: no preloaded match results
-- First test: DranStrike 1-50 Low Rush vs SilverWolf 9-60 Hexa, 12 matches
-- Tournament Mode separated from controlled testing
-- Build versioning when parts change
-- Command-center dashboard and readiness estimate
+Fixes the blank-screen JavaScript startup error in v5.
 
-After deployment, use Collection > Reset database once to clear old IndexedDB data.
+After replacing the repository files, fully close the browser/app and reopen it. If the old blank page remains, clear site data or unregister the old service worker.
