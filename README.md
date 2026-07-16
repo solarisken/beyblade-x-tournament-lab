@@ -1,10 +1,23 @@
-# Beyblade X Tournament Lab PWA v6
+# Beyblade X Tournament Lab PWA v7
 
-- Research projects and controlled A/B experiments
-- Automatic evidence ladder: 16, 32, 64, 96 matches per benchmark
-- Automatic stage advancement
-- Searchable released-parts library, separate from owned collection
-- One-tap add-to-owned from catalog
-- IndexedDB and offline operation retained
+Version 7 separates collection, builds, and research data.
 
-The library is seeded from public Beyblade X part databases and official system categories, with a July 2026 catalog date. Manual custom entries remain available for regional/new releases.
+Default state:
+- Bundled owned collection only
+- No saved builds
+- No tests
+- No match data
+- No research projects
+
+Reset options:
+- New Season: keeps collection; deletes builds and all research
+- Reset Research: keeps collection and builds; deletes matches/tests/history
+- Factory Reset: restores bundled collection baseline and deletes everything else
+
+Separate exports:
+- Full backup
+- Collection only
+- Builds only
+- Research only
+
+Optional build templates can be loaded manually.
