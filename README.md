@@ -1,17 +1,9 @@
-# Beyblade X Tournament Lab PWA v3
+# Beyblade X Tournament Lab PWA v5
 
-Version 3 adds:
-- Multi-test queue with priorities and statuses
-- Editable test targets
-- One-tap first-to-4 battle screen
-- Haptic feedback where supported
-- Richer combo analytics
-- Confidence and readiness classifications
-- Self-exit tracking
-- Collection manager
-- JSON backup and CSV export
-- Offline service worker cache v3
+- Clean reset: no preloaded match results
+- First test: DranStrike 1-50 Low Rush vs SilverWolf 9-60 Hexa, 12 matches
+- Tournament Mode separated from controlled testing
+- Build versioning when parts change
+- Command-center dashboard and readiness estimate
 
-Upload all files to the existing GitHub Pages repository and replace earlier versions.
-
-Version 3.1 removes set-based entry and adds quantity reduction / complete part removal with in-use protection.
+After deployment, use Collection > Reset database once to clear old IndexedDB data.
