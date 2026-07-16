@@ -1,26 +1,9 @@
-# Beyblade X Tournament Lab PWA v7
+# Beyblade X Tournament Lab PWA v7.2
 
-Version 7 separates collection, builds, and research data.
-
-Default state:
-- Bundled owned collection only
-- No saved builds
-- No tests
-- No match data
-- No research projects
-
-Reset options:
-- New Season: keeps collection; deletes builds and all research
-- Reset Research: keeps collection and builds; deletes matches/tests/history
-- Factory Reset: restores bundled collection baseline and deletes everything else
-
-Separate exports:
-- Full backup
-- Collection only
-- Builds only
-- Research only
-
-Optional build templates can be loaded manually.
-
-
-Version 7.1 fixes the IndexedDB library-store startup failure and adds a visible startup error boundary.
+Changes:
+- Owned collection is reset to empty once on first v7.2 startup.
+- Released-parts library is retained.
+- Add ownership as an individual part or a complete set/product.
+- Product entry supports Blade, Ratchet, Bit, Lock Chip, Main Blade, Assist Blade, Metal Blade, and Over Blade.
+- Search filtering no longer re-renders the app on each keystroke, so mobile keyboards stay open.
+- Factory Reset leaves the owned collection empty while retaining the released-parts library.
