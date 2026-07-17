@@ -3,22 +3,24 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],uid
 let S={page:'home',catalog:[],parts:[],productsOwned:[],builds:[],tests:[],matches:[],battle:null,pending:null};
 async function load(){const r=await fetch('./data/products.json',{cache:'no-store'});if(!r.ok)throw new Error('Could not load product catalog');S.catalog=await r.json();S.parts=await all('parts');S.productsOwned=await all('productsOwned');S.builds=await all('builds');S.tests=await all('tests');S.matches=await all('matches');render()}
 function nav(){return `<nav>${[['home','⌂','Home'],['collection','◫','Collection'],['builds','◇','Builds'],['research','☷','Research'],['battle','⚔','Battle'],['stats','▥','Stats']].map(x=>`<button class="${S.page===x[0]?'active':''}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}</nav>`}
-function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Stable rebuild v1.4.1 · CX component fix · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
+function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Stable rebuild v1.4.2 · all CX mappings corrected · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
 function go(p){S.page=p;render()}
 function buildSystem(b){
  if(b.system)return b.system;
  if(b.lockChip&&(b.overBlade||b.metalBlade))return 'CX Expand';
+ if(b.lockChip&&b.integratedBit)return 'CX Integrated';
  if(b.lockChip&&b.mainBlade)return 'CX';
  return 'Standard';
 }
 function bname(b){
  const system=buildSystem(b);
  if(system==='CX Expand')return `${b.lockChip} ${b.overBlade} ${b.metalBlade} ${b.assistBlade} ${b.ratchet} ${b.bit}`.replace(/\s+/g,' ').trim();
+ if(system==='CX Integrated')return `${b.lockChip} ${b.mainBlade} ${b.assistBlade} ${b.integratedBit}`.replace(/\s+/g,' ').trim();
  if(system==='CX')return `${b.lockChip} ${b.mainBlade} ${b.assistBlade} ${b.ratchet} ${b.bit}`.replace(/\s+/g,' ').trim();
  return `${b.blade} ${b.ratchet} ${b.bit}`.replace(/\s+/g,' ').trim();
 }
 function buildPartNames(b){
- return [b.blade,b.lockChip,b.mainBlade,b.assistBlade,b.overBlade,b.metalBlade,b.ratchet,b.bit].filter(Boolean);
+ return [b.blade,b.lockChip,b.mainBlade,b.assistBlade,b.overBlade,b.metalBlade,b.ratchet,b.bit,b.integratedBit].filter(Boolean);
 }
 function home(){
  const a=aggregate(S.matches),coach=researchCoach({builds:S.builds,tests:S.tests,matches:S.matches}),best=[...a].sort((x,y)=>y.winRate-x.winRate||y.diff-x.diff)[0],active=S.tests.find(x=>x.status==='Active');
@@ -79,6 +81,11 @@ function opts(cat,sel){
   :`<option value="">No owned ${cat}</option>`;
 }
 function buildFields(system,b){
+ if(system==='CX Integrated')return `
+   <label>Lock Chip</label><select id="blc">${opts('Lock Chip',b.lockChip)}</select>
+   <label>Main Blade</label><select id="bmain">${opts('Main Blade',b.mainBlade)}</select>
+   <label>Assist Blade</label><select id="bab">${opts('Assist Blade',b.assistBlade)}</select>
+   <label>Ratchet Integrated Bit</label><select id="bib">${opts('Ratchet Integrated Bit',b.integratedBit)}</select>`;
  if(system==='CX Expand')return `
    <label>Lock Chip</label><select id="blc">${opts('Lock Chip',b.lockChip)}</select>
    <label>Over Blade</label><select id="bob">${opts('Over Blade',b.overBlade)}</select>
@@ -99,6 +106,7 @@ function buildFields(system,b){
 }
 function readBuildFields(system,b){
  const base={...b,system,role:$('#bro').value,status:$('#bs').value};
+ if(system==='CX Integrated')return {...base,blade:'',overBlade:'',metalBlade:'',ratchet:'',bit:'',lockChip:$('#blc').value,mainBlade:$('#bmain').value,assistBlade:$('#bab').value,integratedBit:$('#bib').value};
  if(system==='CX Expand')return {...base,blade:'',mainBlade:'',lockChip:$('#blc').value,overBlade:$('#bob').value,metalBlade:$('#bmb').value,assistBlade:$('#bab').value,ratchet:$('#br').value,bit:$('#bi').value};
  if(system==='CX')return {...base,blade:'',overBlade:'',metalBlade:'',lockChip:$('#blc').value,mainBlade:$('#bmain').value,assistBlade:$('#bab').value,ratchet:$('#br').value,bit:$('#bi').value};
  return {...base,lockChip:'',mainBlade:'',assistBlade:'',overBlade:'',metalBlade:'',blade:$('#bb').value,ratchet:$('#br').value,bit:$('#bi').value};
@@ -116,7 +124,7 @@ function buildModal(id=null){
  $('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Build</h3>
    <label>Build System</label>
    <select id="buildSystem">
-     ${['Standard','CX','CX Expand'].map(x=>`<option ${x===initialSystem?'selected':''}>${x}</option>`).join('')}
+     ${['Standard','CX','CX Integrated','CX Expand'].map(x=>`<option ${x===initialSystem?'selected':''}>${x}</option>`).join('')}
    </select>
    <div id="buildFields"></div>
    <label>Role</label><input id="bro" value="${b.role||''}">
