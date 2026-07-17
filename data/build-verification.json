@@ -1,0 +1,27 @@
+{
+  "verifiedAt": "2026-07-17T08:22:48.615Z",
+  "products": 9,
+  "bladeAssemblies": 33,
+  "cxStandardAssemblies": 18,
+  "cxExpandAssemblies": 9,
+  "legalCombos": 2025,
+  "exactDeckAllocations": 95954544,
+  "fastScreened": 52712,
+  "fastLegal": 6065,
+  "topDeck": [
+    "DranStrike 9-60FF",
+    "WolfEclipse Knuckle 4-50H",
+    "PhoenixWing 0-60LR"
+  ],
+  "topDecisionScore": 48.0575,
+  "tests": [
+    "official scoring",
+    "CX Expand four-part model",
+    "BulletGriffon integrated ratchet",
+    "canonical duplicate-part rejection",
+    "exact space count",
+    "fast optimizer legality",
+    "limited deep audit",
+    "six-order adaptive-cycle lab"
+  ]
+}

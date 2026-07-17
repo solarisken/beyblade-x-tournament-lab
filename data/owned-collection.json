@@ -1,0 +1,10 @@
+{
+  "authoritative": true,
+  "updatedAt": "2026-07-17",
+  "products": ["UX-14","CX-16","UX-19","UX-08","CX-09","CX-10","BX-23","UX-11","BX-49"],
+  "specialRules": {
+    "CX-16": "Special-color version of the BahamutBlitz BK1-50I functional configuration; four customizable blade components.",
+    "UX-19": "BulletGriffon has an integrated ratchet and cannot receive a separate ratchet.",
+    "9-60": "Two physical copies are owned, but official 3-on-3 duplicate-part rules permit only one in a deck."
+  }
+}

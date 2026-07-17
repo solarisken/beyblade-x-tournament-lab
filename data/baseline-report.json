@@ -1,0 +1,538 @@
+{
+  "generatedAt": "2026-07-17T08:23:37.629Z",
+  "version": "2026.07.17-v3",
+  "interpretation": "Deterministic zero-evidence baseline. This is a test hypothesis, not tournament proof.",
+  "search": {
+    "mode": "fast dominance-screened",
+    "complete": false,
+    "comboSpace": 2025,
+    "candidateBreadth": 210
+  },
+  "exactSpace": {
+    "bladeTriples": 1109,
+    "withIntegrated": 253,
+    "withoutIntegrated": 856,
+    "total": 95954544
+  },
+  "deck": {
+    "combos": [
+      {
+        "name": "PhoenixWing 9-60FF",
+        "components": [
+          "PhoenixWing"
+        ],
+        "ratchet": "9-60",
+        "bit": "Free Flat",
+        "role": "Attack pressure",
+        "critical": 0.8029660813317571,
+        "launch": {
+          "primary": "level-hard",
+          "alternate": "light-bank",
+          "reason": "Compare direct contact with controlled rail entry."
+        }
+      },
+      {
+        "name": "WolfHunt Knuckle 1-50Z",
+        "components": [
+          "Wolf Lock",
+          "Hunt Main",
+          "Knuckle Assist"
+        ],
+        "ratchet": "1-50",
+        "bit": "Zap",
+        "role": "Attack pressure",
+        "critical": 0.7157970442892607,
+        "launch": {
+          "primary": "level-controlled",
+          "alternate": "light-bank",
+          "reason": "Use a repeatable baseline first."
+        }
+      },
+      {
+        "name": "DranStrike 0-60H",
+        "components": [
+          "DranStrike"
+        ],
+        "ratchet": "0-60",
+        "bit": "Hexa",
+        "role": "Attack pressure",
+        "critical": 0.7545496872406323,
+        "launch": {
+          "primary": "level-hard",
+          "alternate": "light-bank",
+          "reason": "Compare direct contact with controlled rail entry."
+        }
+      }
+    ],
+    "decisionScore": 48.1092,
+    "metrics": {
+      "score": 48.1092,
+      "primary": 0.5581422127747815,
+      "backup": 0.5511154226889667,
+      "floor": 0.5400169195582525,
+      "lowPrimary": 0.4281422127747815,
+      "lowBackup": 0.42111542268896685,
+      "worstBackup": 0.4117519743345266,
+      "worstFloor": 0.3882039500735631,
+      "criticalFloor": 0.7157970442892607,
+      "criticalAvg": 0.75777093762055,
+      "control": 0.9004,
+      "finishDiversity": 1,
+      "evidenceSupport": 0,
+      "evidenceGames": 0,
+      "gapControl": 0.9029101080649116,
+      "matchup": [
+        {
+          "id": "heavy-attack",
+          "name": "Heavy smash attack",
+          "weight": 0.24,
+          "primary": 0.5518733457806688,
+          "backup": 0.5417519743345265,
+          "floor": 0.5182039500735631,
+          "lowPrimary": 0.4218733457806688,
+          "lowBackup": 0.4117519743345266,
+          "lowFloor": 0.3882039500735631
+        },
+        {
+          "id": "low-attack",
+          "name": "Low destabilizer",
+          "weight": 0.19,
+          "primary": 0.5572068481980053,
+          "backup": 0.549677393776381,
+          "floor": 0.5328306349789316,
+          "lowPrimary": 0.42720684819800525,
+          "lowBackup": 0.41967739377638114,
+          "lowFloor": 0.40283063497893157
+        },
+        {
+          "id": "stamina",
+          "name": "Pure stamina",
+          "weight": 0.24,
+          "primary": 0.56662356802796,
+          "backup": 0.5649767134665394,
+          "floor": 0.556890851668668,
+          "lowPrimary": 0.43662356802796,
+          "lowBackup": 0.43497671346653966,
+          "lowFloor": 0.426890851668668
+        },
+        {
+          "id": "defense",
+          "name": "Defense / counter",
+          "weight": 0.16,
+          "primary": 0.552255801376906,
+          "backup": 0.5468076350178959,
+          "floor": 0.5448983456111547,
+          "lowPrimary": 0.422255801376906,
+          "lowBackup": 0.41680763501789564,
+          "lowFloor": 0.4148983456111547
+        },
+        {
+          "id": "balance",
+          "name": "Adaptive balance",
+          "weight": 0.17,
+          "primary": 0.5616042593104977,
+          "backup": 0.5504271246843248,
+          "floor": 0.5504271246843248,
+          "lowPrimary": 0.43160425931049773,
+          "lowBackup": 0.42042712468432464,
+          "lowFloor": 0.42042712468432475
+        }
+      ]
+    },
+    "confidence": {
+      "label": "Hypothesis",
+      "games": 0,
+      "minimumCell": 0,
+      "covered": 0,
+      "score": 0
+    },
+    "lab": {
+      "deckId": "cx-standard-wolf-hunt-knuckle|1-50|Zap::dran-strike|0-60|Hexa::phoenix-wing|9-60|Free Flat",
+      "bestOrder": [
+        1,
+        2,
+        0
+      ],
+      "rate": 0.614,
+      "low": 0.5776631123929094,
+      "high": 0.6491095824439986,
+      "diff": 0.978,
+      "avgBattles": 3.164,
+      "profileRates": {
+        "heavy-attack": {
+          "rate": 0.6339285714285714,
+          "n": 112,
+          "diff": 1.0625
+        },
+        "low-attack": {
+          "rate": 0.5773195876288659,
+          "n": 97,
+          "diff": 0.6597938144329897
+        },
+        "stamina": {
+          "rate": 0.6521739130434783,
+          "n": 115,
+          "diff": 1.391304347826087
+        },
+        "defense": {
+          "rate": 0.5747126436781609,
+          "n": 87,
+          "diff": 0.8275862068965517
+        },
+        "balance": {
+          "rate": 0.6179775280898876,
+          "n": 89,
+          "diff": 0.8314606741573034
+        }
+      },
+      "robustness": 0.9225387306346826,
+      "orders": [
+        {
+          "order": [
+            1,
+            2,
+            0
+          ],
+          "wins": 307,
+          "total": 500,
+          "rate": 0.614,
+          "low": 0.5776631123929094,
+          "high": 0.6491095824439986,
+          "diff": 0.978,
+          "avgBattles": 3.164,
+          "profileRates": {
+            "heavy-attack": {
+              "rate": 0.6339285714285714,
+              "n": 112,
+              "diff": 1.0625
+            },
+            "low-attack": {
+              "rate": 0.5773195876288659,
+              "n": 97,
+              "diff": 0.6597938144329897
+            },
+            "stamina": {
+              "rate": 0.6521739130434783,
+              "n": 115,
+              "diff": 1.391304347826087
+            },
+            "defense": {
+              "rate": 0.5747126436781609,
+              "n": 87,
+              "diff": 0.8275862068965517
+            },
+            "balance": {
+              "rate": 0.6179775280898876,
+              "n": 89,
+              "diff": 0.8314606741573034
+            }
+          }
+        },
+        {
+          "order": [
+            0,
+            2,
+            1
+          ],
+          "wins": 298,
+          "total": 500,
+          "rate": 0.596,
+          "low": 0.5594778595018448,
+          "high": 0.6314886203608145,
+          "diff": 0.854,
+          "avgBattles": 3.13,
+          "profileRates": {
+            "heavy-attack": {
+              "rate": 0.5691056910569106,
+              "n": 123,
+              "diff": 0.8048780487804879
+            },
+            "low-attack": {
+              "rate": 0.5342465753424658,
+              "n": 73,
+              "diff": 0.3561643835616438
+            },
+            "stamina": {
+              "rate": 0.5833333333333334,
+              "n": 120,
+              "diff": 0.6333333333333333
+            },
+            "defense": {
+              "rate": 0.6419753086419753,
+              "n": 81,
+              "diff": 1.1111111111111112
+            },
+            "balance": {
+              "rate": 0.6504854368932039,
+              "n": 103,
+              "diff": 1.3203883495145632
+            }
+          }
+        },
+        {
+          "order": [
+            2,
+            1,
+            0
+          ],
+          "wins": 298,
+          "total": 500,
+          "rate": 0.596,
+          "low": 0.5594778595018448,
+          "high": 0.6314886203608145,
+          "diff": 0.794,
+          "avgBattles": 3.154,
+          "profileRates": {
+            "heavy-attack": {
+              "rate": 0.5462184873949579,
+              "n": 119,
+              "diff": 0.37815126050420167
+            },
+            "low-attack": {
+              "rate": 0.5268817204301075,
+              "n": 93,
+              "diff": 0.16129032258064516
+            },
+            "stamina": {
+              "rate": 0.6428571428571429,
+              "n": 126,
+              "diff": 1.1984126984126984
+            },
+            "defense": {
+              "rate": 0.7671232876712328,
+              "n": 73,
+              "diff": 2.0821917808219177
+            },
+            "balance": {
+              "rate": 0.5280898876404494,
+              "n": 89,
+              "diff": 0.38202247191011235
+            }
+          }
+        },
+        {
+          "order": [
+            1,
+            0,
+            2
+          ],
+          "wins": 296,
+          "total": 500,
+          "rate": 0.592,
+          "low": 0.555443523924967,
+          "high": 0.6275660192767482,
+          "diff": 0.78,
+          "avgBattles": 3.136,
+          "profileRates": {
+            "heavy-attack": {
+              "rate": 0.5714285714285714,
+              "n": 133,
+              "diff": 0.6390977443609023
+            },
+            "low-attack": {
+              "rate": 0.5764705882352941,
+              "n": 85,
+              "diff": 0.29411764705882354
+            },
+            "stamina": {
+              "rate": 0.6271186440677966,
+              "n": 118,
+              "diff": 1.1779661016949152
+            },
+            "defense": {
+              "rate": 0.7272727272727273,
+              "n": 66,
+              "diff": 1.8333333333333333
+            },
+            "balance": {
+              "rate": 0.5,
+              "n": 98,
+              "diff": 0.20408163265306123
+            }
+          }
+        },
+        {
+          "order": [
+            2,
+            0,
+            1
+          ],
+          "wins": 286,
+          "total": 500,
+          "rate": 0.572,
+          "low": 0.535308511257365,
+          "high": 0.6079163486396293,
+          "diff": 0.68,
+          "avgBattles": 3.196,
+          "profileRates": {
+            "heavy-attack": {
+              "rate": 0.5333333333333333,
+              "n": 135,
+              "diff": 0.3111111111111111
+            },
+            "low-attack": {
+              "rate": 0.4925373134328358,
+              "n": 67,
+              "diff": 0.2835820895522388
+            },
+            "stamina": {
+              "rate": 0.6299212598425197,
+              "n": 127,
+              "diff": 1
+            },
+            "defense": {
+              "rate": 0.5476190476190477,
+              "n": 84,
+              "diff": 0.5714285714285714
+            },
+            "balance": {
+              "rate": 0.632183908045977,
+              "n": 87,
+              "diff": 1.1954022988505748
+            }
+          }
+        },
+        {
+          "order": [
+            0,
+            1,
+            2
+          ],
+          "wins": 267,
+          "total": 500,
+          "rate": 0.534,
+          "low": 0.497217251451729,
+          "high": 0.5704167101662962,
+          "diff": 0.342,
+          "avgBattles": 3.276,
+          "profileRates": {
+            "heavy-attack": {
+              "rate": 0.5163934426229508,
+              "n": 122,
+              "diff": 0.16393442622950818
+            },
+            "low-attack": {
+              "rate": 0.47619047619047616,
+              "n": 84,
+              "diff": -0.023809523809523808
+            },
+            "stamina": {
+              "rate": 0.56,
+              "n": 125,
+              "diff": 0.488
+            },
+            "defense": {
+              "rate": 0.5263157894736842,
+              "n": 95,
+              "diff": 0.4
+            },
+            "balance": {
+              "rate": 0.5945945945945946,
+              "n": 74,
+              "diff": 0.7297297297297297
+            }
+          }
+        }
+      ]
+    }
+  },
+  "directives": [
+    "Current evidence status: Hypothesis. Treat the recommendation as a decision hypothesis, not a tournament-proven fact.",
+    "The deck's largest redundancy gap is Heavy smash attack; the conservative second-option signal is 41/100.",
+    "Every selected Bey must retain critical-finish access. Current critical floor: 72/100.",
+    "PhoenixWing 9-60FF has the highest self-KO exposure. Test level-hard against light-bank before increasing launch power.",
+    "Run the first 3 adaptive batches, then let Auto-Pilot rescore the deck. Do not complete the entire queue after the decision has already separated."
+  ],
+  "nextTests": [
+    {
+      "id": "phoenix-wing|9-60|free-flat|heavy-attack|coverage|1784276617632|0",
+      "kind": "coverage",
+      "comboId": "phoenix-wing|9-60|free-flat",
+      "comboName": "PhoenixWing 9-60FF",
+      "opponentArchetype": "heavy-attack",
+      "opponentName": "Heavy smash attack",
+      "games": 4,
+      "launch": "level-hard",
+      "alternateLaunch": "light-bank",
+      "position": "left",
+      "priority": 3.2665,
+      "purpose": "Resolve Heavy smash attack backup coverage; current evidence interval 3–97 with effective n=0.",
+      "status": "queued"
+    },
+    {
+      "id": "cx-standard-wolf-hunt-knuckle|1-50|zap|defense|coverage|1784276617632|1",
+      "kind": "coverage",
+      "comboId": "cx-standard-wolf-hunt-knuckle|1-50|zap",
+      "comboName": "WolfHunt Knuckle 1-50Z",
+      "opponentArchetype": "defense",
+      "opponentName": "Defense / counter",
+      "games": 4,
+      "launch": "level-controlled",
+      "alternateLaunch": "light-bank",
+      "position": "right",
+      "priority": 3.2377,
+      "purpose": "Resolve Defense / counter backup coverage; current evidence interval 3–97 with effective n=0.",
+      "status": "queued"
+    },
+    {
+      "id": "phoenix-wing|9-60|free-flat|low-attack|coverage|1784276617632|2",
+      "kind": "coverage",
+      "comboId": "phoenix-wing|9-60|free-flat",
+      "comboName": "PhoenixWing 9-60FF",
+      "opponentArchetype": "low-attack",
+      "opponentName": "Low destabilizer",
+      "games": 4,
+      "launch": "level-hard",
+      "alternateLaunch": "light-bank",
+      "position": "left",
+      "priority": 3.2213,
+      "purpose": "Resolve Low destabilizer backup coverage; current evidence interval 3–97 with effective n=0.",
+      "status": "queued"
+    },
+    {
+      "id": "phoenix-wing|9-60|free-flat|balance|coverage|1784276617632|3",
+      "kind": "coverage",
+      "comboId": "phoenix-wing|9-60|free-flat",
+      "comboName": "PhoenixWing 9-60FF",
+      "opponentArchetype": "balance",
+      "opponentName": "Adaptive balance",
+      "games": 4,
+      "launch": "level-hard",
+      "alternateLaunch": "light-bank",
+      "position": "right",
+      "priority": 3.2171,
+      "purpose": "Resolve Adaptive balance backup coverage; current evidence interval 3–97 with effective n=0.",
+      "status": "queued"
+    },
+    {
+      "id": "cx-standard-wolf-hunt-knuckle|1-50|zap|stamina|coverage|1784276617632|4",
+      "kind": "coverage",
+      "comboId": "cx-standard-wolf-hunt-knuckle|1-50|zap",
+      "comboName": "WolfHunt Knuckle 1-50Z",
+      "opponentArchetype": "stamina",
+      "opponentName": "Pure stamina",
+      "games": 4,
+      "launch": "level-controlled",
+      "alternateLaunch": "light-bank",
+      "position": "left",
+      "priority": 3.1341,
+      "purpose": "Resolve Pure stamina backup coverage; current evidence interval 3–97 with effective n=0.",
+      "status": "queued"
+    },
+    {
+      "id": "cx-standard-wolf-hunt-knuckle|1-50|zap|heavy-attack|coverage|1784276617632|5",
+      "kind": "coverage",
+      "comboId": "cx-standard-wolf-hunt-knuckle|1-50|zap",
+      "comboName": "WolfHunt Knuckle 1-50Z",
+      "opponentArchetype": "heavy-attack",
+      "opponentName": "Heavy smash attack",
+      "games": 4,
+      "launch": "level-controlled",
+      "alternateLaunch": "light-bank",
+      "position": "right",
+      "priority": 2.0318,
+      "purpose": "Resolve Heavy smash attack backup coverage; current evidence interval 3–97 with effective n=0.",
+      "status": "queued"
+    }
+  ]
+}
