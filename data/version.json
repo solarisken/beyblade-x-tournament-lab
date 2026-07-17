@@ -1,0 +1,12 @@
+{
+  "version": "4.0.0",
+  "build": "owned-pool-low-gap-championship-optimizer",
+  "database": "beylab-rebuild-v1 / schema 4",
+  "serviceWorker": "sw-v4.js",
+  "catalogProducts": 49,
+  "optimizer": {
+    "anchor": "DranStrike when owned",
+    "objective": "High floor + low performance/coverage/evidence gaps",
+    "officialRules": "Takara Tomy Regulation 12th edition, March 2026"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "rulesVersion": "Takara Tomy BEYBLADE X Regulation, 12th edition, March 2026",
+  "official3on3": {
+    "deckSize": 3,
+    "duplicateRestrictedParts": "The same part cannot be used more than once across the three Beys, including different colors.",
+    "lockChipException": "Custom Line Lock Chips may be repeated except Valkyrie and Emperor, which remain limited to one each.",
+    "battleFormat": "Three Beys, four points to win; order is fixed after submission."
+  },
+  "sources": [
+    "https://beyblade.takaratomy.co.jp/beyblade-x/_image/regulation.pdf",
+    "https://beyblade.takaratomy.co.jp/beyblade-x/event/ex/xtremepop.html"
+  ]
+}

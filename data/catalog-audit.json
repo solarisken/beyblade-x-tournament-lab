@@ -1,0 +1,250 @@
+{
+  "mappedCount": 48,
+  "excludedCount": 38,
+  "excluded": [
+    {
+      "code": "BX-09",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-10",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-11",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-12",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-16",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-18",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-20",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-24",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-25",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-27",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-28",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-29",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-30",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-32",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-35",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-36",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-37",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-39",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-40",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-41",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-42",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-43",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-46",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-47",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-48",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-05",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-07",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-12",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-16",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-18",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-04",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-05",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-06",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-07",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-08",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-16",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-17",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-18",
+      "reason": "mapping not verified"
+    }
+  ],
+  "cxCorrection": {
+    "CX-13": "Mapped as Lock Chip Bahamut, Over Blade Break, Metal Blade Blitz, Assist Blade Knuckle, Ratchet 1-50, Bit Ignition.",
+    "CX-16": "Added as special-color equivalent of CX-13 with identical functional components."
+  },
+  "allCxCorrection": {
+    "CX-01": [
+      "Lock Chip: Dran",
+      "Main Blade: Brave",
+      "Assist Blade: Slash",
+      "Ratchet: 6-60",
+      "Bit: Vortex"
+    ],
+    "CX-02": [
+      "Lock Chip: Wizard",
+      "Main Blade: Arc",
+      "Assist Blade: Round",
+      "Ratchet: 4-55",
+      "Bit: Low Orb"
+    ],
+    "CX-03": [
+      "Lock Chip: Perseus",
+      "Main Blade: Dark",
+      "Assist Blade: Bumper",
+      "Ratchet: 6-80",
+      "Bit: Wedge"
+    ],
+    "CX-09": [
+      "Lock Chip: Sol",
+      "Main Blade: Eclipse",
+      "Assist Blade: Dual",
+      "Ratchet: 5-70",
+      "Bit: Trans Kick"
+    ],
+    "CX-10": [
+      "Lock Chip: Wolf",
+      "Main Blade: Hunt",
+      "Assist Blade: Free",
+      "Ratchet: 0-60",
+      "Bit: Disc Ball"
+    ],
+    "CX-11": [
+      "Lock Chip: Emperor",
+      "Main Blade: Might",
+      "Assist Blade: Heavy",
+      "Ratchet Integrated Bit: Operate",
+      "Blade: GolemRock",
+      "Ratchet: M-85",
+      "Bit: High Needle",
+      "Blade: SharkGill",
+      "Ratchet: 5-60",
+      "Bit: Free Ball"
+    ],
+    "CX-12": [
+      "Lock Chip: Phoenix",
+      "Main Blade: Flare",
+      "Assist Blade: Zillion",
+      "Ratchet: 9-80",
+      "Bit: Wall Wedge"
+    ],
+    "CX-13": [
+      "Lock Chip: Bahamut",
+      "Over Blade: Break",
+      "Metal Blade: Blitz",
+      "Assist Blade: Knuckle",
+      "Ratchet: 1-50",
+      "Bit: Ignition"
+    ],
+    "CX-14": [
+      "Lock Chip: Knight",
+      "Over Blade: Guard",
+      "Metal Blade: Fortress",
+      "Assist Blade: Vertical",
+      "Ratchet: 8-70",
+      "Bit: Under Needle"
+    ],
+    "CX-15": [
+      "Lock Chip: Ragna",
+      "Over Blade: Flow",
+      "Metal Blade: Rage",
+      "Assist Blade: Erase",
+      "Ratchet: 4-55",
+      "Bit: Yielding"
+    ],
+    "CX-16": [
+      "Lock Chip: Bahamut",
+      "Over Blade: Break",
+      "Metal Blade: Blitz",
+      "Assist Blade: Knuckle",
+      "Ratchet: 1-50",
+      "Bit: Ignition"
+    ]
+  }
+}

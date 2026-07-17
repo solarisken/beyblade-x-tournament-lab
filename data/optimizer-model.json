@@ -1,0 +1,34 @@
+{
+  "modelVersion": "4.0.0",
+  "scope": "Owned-pool optimization only",
+  "candidateGeneration": {
+    "standard": "Every owned Blade × Ratchet × Bit",
+    "cx": "Every owned Lock Chip × Main Blade × Assist Blade × Ratchet × Bit",
+    "cxExpand": "Every owned Lock Chip × Over Blade × Metal Blade × Assist Blade × Ratchet × Bit",
+    "cxIntegrated": "Every owned Lock Chip × Main Blade × Assist Blade × integrated Ratchet/Bit"
+  },
+  "candidateScoreWeights": {
+    "mechanicalPrior": 0.44,
+    "observedEvidence": 0.31,
+    "reliability": 0.15,
+    "versatility": 0.1
+  },
+  "deckObjectiveWeights": {
+    "weakestBeyFloor": 0.3,
+    "averageCandidateStrength": 0.18,
+    "coverageFloor": 0.18,
+    "smallPerformanceGap": 0.13,
+    "smallCoverageGap": 0.1,
+    "smallEvidenceGap": 0.06,
+    "roleDiversity": 0.05
+  },
+  "anchor": {
+    "part": "DranStrike",
+    "requiredWhenOwned": true
+  },
+  "notes": [
+    "Mechanical priors are transparent heuristics, not laboratory measurements.",
+    "Recorded controlled matches progressively override generic priors.",
+    "The optimizer performs exact triple evaluation over a dominance-pruned candidate frontier."
+  ]
+}
