@@ -3,7 +3,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],uid
 let S={page:'home',catalog:[],parts:[],productsOwned:[],builds:[],tests:[],matches:[],projects:[],notebook:[],battle:null,pending:null};
 async function load(){const r=await fetch('./data/products.json',{cache:'no-store'});if(!r.ok)throw new Error('Could not load product catalog');S.catalog=await r.json();S.parts=await all('parts');S.productsOwned=await all('productsOwned');S.builds=await all('builds');S.tests=await all('tests');S.matches=await all('matches');S.projects=await all('projects');S.notebook=await all('notebook');render()}
 function nav(){return `<nav>${[['home','⌂','Home'],['collection','◫','Collection'],['builds','◇','Builds'],['research','☷','Lab'],['battle','⚔','Battle'],['stats','▥','Stats']].map(x=>`<button class="${S.page===x[0]?'active':''}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}</nav>`}
-function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Tournament Lab v2.0 · research projects, guided evidence, and notebook · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
+function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Tournament Lab v2.2 · Lab Coach Access · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
 function go(p){S.page=p;render()}
 function buildSystem(b){
  if(b.system)return b.system;
@@ -69,10 +69,18 @@ function notebookSummary(test){
  };
 }
 function home(){
- const a=aggregate(S.matches),coach=researchCoach({builds:S.builds,tests:S.tests,matches:S.matches}),best=[...a].sort((x,y)=>y.winRate-x.winRate||y.diff-x.diff)[0],active=S.tests.find(x=>x.status==='Active');
+ const a=aggregate(S.matches),coach=researchCoach({builds:S.builds,tests:S.tests,matches:S.matches,projects:S.projects}),best=[...a].sort((x,y)=>y.winRate-x.winRate||y.diff-x.diff)[0],active=S.tests.find(x=>x.status==='Active');
  const reasonList=coach.reasons?.map(x=>`<li>${x}</li>`).join('')||'';
  const ev=best?evidenceForBuild(best.name):null,legal=deckLegality(),project=active?projectForTest(active):S.projects.find(p=>p.status==='Active');
- return `<div class="card hero"><div class="top"><div><h2>Local Research Coach</h2><p class="muted">Offline, explainable, and free</p></div><span class="badge ${coach.level==='good'?'good':coach.level==='bad'?'bad':'warn'}">${coach.title}</span></div><div class="notice"><b>${coach.decision}</b></div>${reasonList?`<ul class="coach-reasons">${reasonList}</ul>`:''}<p><b>Next action:</b> ${coach.next}</p></div>
+ return `<div class="card hero"><div class="top"><div><h2>Local Research Coach</h2><p class="muted">Offline, explainable, and free</p></div><span class="badge ${coach.level==='good'?'good':coach.level==='bad'?'bad':'warn'}">${coach.title}</span></div><div class="notice"><b>${coach.decision}</b></div>
+ <div class="grid" style="margin-top:10px">
+  <div class="metric"><b>${coach.confidence??0}%</b><span>Coach confidence</span></div>
+  <div class="metric"><b>${coach.priorityScore??0}</b><span>Information priority</span></div>
+  <div class="metric"><b>${coach.warnings?.length||0}</b><span>Data-quality warnings</span></div>
+ </div>
+ ${reasonList?`<ul class="coach-reasons">${reasonList}</ul>`:''}
+ ${coach.warnings?.length?`<div class="notice">${coach.warnings.map(x=>`⚠ ${x}`).join('<br>')}</div>`:''}
+ <p><b>Next action:</b> ${coach.next}</p></div>
  <div class="grid"><div class="metric"><b>${S.parts.reduce((n,x)=>n+x.qty,0)}</b><span>Owned part copies</span></div><div class="metric"><b>${S.builds.length}</b><span>Saved builds</span></div><div class="metric"><b>${S.matches.length}</b><span>Controlled matches</span></div><div class="metric"><b>${ev?ev.score+'%':'—'}</b><span>Best evidence score</span></div></div>
  ${project?`<div class="card"><h3>Active Research Project</h3><p><b>${project.question}</b></p><p class="muted">${project.conditions||''}</p>${active?testCard(active):''}</div>`:active?testCard(active):''}
  <div class="card"><div class="top"><h3>Tournament Deck Legality</h3><span class="badge ${legal.legal?'good':'bad'}">${legal.legal?'Legal':'Conflict'}</span></div>${legal.legal?`<p class="muted">Assigned Bey 1–3 do not exceed owned quantities.</p>`:`<ul>${legal.issues.map(x=>`<li>${x}</li>`).join('')}</ul>`}</div>
@@ -87,7 +95,32 @@ function builds(){
  ${S.builds.length?S.builds.map(x=>{const ev=evidenceForBuild(x.name);return `<div class="queue"><div class="top"><div><b>${x.name}</b><br><span class="muted">${buildSystem(x)} · ${x.role||''} · ${x.slot||'Unassigned'}</span></div><span class="badge ${ev.score>=65?'good':ev.score>=20?'warn':''}">${ev.label} ${ev.score}%</span></div><div class="actions"><button class="btn secondary" data-edit-build="${x.id}">Edit</button><button class="btn danger" data-del-build="${x.id}">Delete</button></div></div>`}).join(''):`<p class="muted">No builds yet.</p>`}</div><div id="modal"></div>`
 }
 function research(){
- return `<div class="card"><div class="top"><h2>Research Projects</h2><button class="btn" data-new-project>Add Project</button></div>${S.projects.length?S.projects.map(p=>`<div class="queue"><div class="top"><div><b>${p.question}</b><br><span class="muted">${p.conditions||''}</span></div><span class="badge">${p.status||'Active'}</span></div><div class="actions"><button class="btn secondary" data-edit-project="${p.id}">Edit</button><button class="btn danger" data-del-project="${p.id}">Delete</button></div></div>`).join(''):`<p class="muted">Create a project before starting a controlled test.</p>`}</div>
+ const coach=researchCoach({builds:S.builds,tests:S.tests,matches:S.matches,projects:S.projects});
+ const activeProject=S.projects.find(p=>p.status==='Active');
+ return `<div class="card hero coach-console">
+   <div class="top">
+     <div>
+       <h2>Smart Research Coach</h2>
+       <p class="muted">Always available in Lab · offline and free</p>
+     </div>
+     <span class="badge ${coach.level==='good'?'good':coach.level==='bad'?'bad':'warn'}">${coach.title}</span>
+   </div>
+   <div class="notice"><b>${coach.decision}</b></div>
+   <div class="grid" style="margin-top:10px">
+     <div class="metric"><b>${coach.confidence??0}%</b><span>Coach confidence</span></div>
+     <div class="metric"><b>${coach.priorityScore??0}</b><span>Information priority</span></div>
+     <div class="metric"><b>${coach.warnings?.length||0}</b><span>Warnings</span></div>
+     <div class="metric"><b>${activeProject?'Active':'None'}</b><span>Research project</span></div>
+   </div>
+   <p><b>Recommended action:</b> ${coach.next}</p>
+   ${coach.warnings?.length?`<div class="notice">${coach.warnings.map(x=>`⚠ ${x}`).join('<br>')}</div>`:''}
+   <div class="actions">
+     ${coach.recommendedTest?`<button class="btn" data-start-test="${coach.recommendedTest}">Start Recommended Test</button>`:''}
+     ${!coach.recommendedTest&&S.builds.length>=2?`<button class="btn good" data-auto-plan>Auto-Create Coach Test</button>`:''}
+     <button class="btn secondary" data-refresh-coach>Refresh Coach</button>
+   </div>
+ </div>
+ <div class="card"><div class="top"><h2>Research Projects</h2><button class="btn" data-new-project>Add Project</button></div>${S.projects.length?S.projects.map(p=>`<div class="queue"><div class="top"><div><b>${p.question}</b><br><span class="muted">${p.conditions||''}</span></div><span class="badge">${p.status||'Active'}</span></div><div class="actions"><button class="btn secondary" data-edit-project="${p.id}">Edit</button><button class="btn danger" data-del-project="${p.id}">Delete</button></div></div>`).join(''):`<p class="muted">Create a project before starting a controlled test.</p>`}</div>
  <div class="card"><div class="top"><h2>Guided Test Queue</h2><button class="btn" data-new-test>Add Test</button></div>${S.tests.length?S.tests.sort((a,b)=>(a.status==='Active'?-1:1)).map(testCard).join(''):`<p class="muted">No tests yet.</p>`}</div>
  <div class="card"><h2>Research Notebook</h2>${S.notebook.length?S.notebook.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(n=>`<div class="queue"><b>${n.title}</b><p class="muted">${new Date(n.date).toLocaleString()}</p><p><b>Question:</b> ${n.question}</p><p><b>Conditions:</b> ${n.conditions}</p><p><b>Result:</b> ${n.result}</p><p><b>Decision:</b> ${n.decision}</p><p><b>Remaining uncertainty:</b> ${n.uncertainty}</p></div>`).join(''):`<p class="muted">Completed evidence stages will be summarized here automatically.</p>`}</div><div id="modal"></div>`
 }
@@ -95,7 +128,9 @@ function testCard(t){const a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x
 function battle(){const m=S.battle;if(!m)return `<div class="card"><h2>No active match</h2><button class="btn" data-go="research">Open Research</button></div>`;const done=m.aScore>=4||m.bScore>=4;return `<div class="card hero"><div class="scoreboard"><div><b>${m.a}</b><div class="score">${m.aScore}</div></div><div>VS</div><div><b>${m.b}</b><div class="score">${m.bScore}</div></div></div></div>${done?`<div class="card"><h2>${m.aScore>m.bScore?m.a:m.b} wins</h2><div class="actions"><button class="btn good" data-save-match>Save</button><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Discard</button></div></div>`:`${sideButtons('a',m.a)}${sideButtons('b',m.b)}<div class="actions"><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Cancel</button></div>`}<div class="card"><h3>Rounds</h3>${m.rounds.length?`<div class="scroll"><table><tr><th>#</th><th>Winner</th><th>Finish</th><th>Pts</th><th>Own</th></tr>${m.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${r.side==='a'?m.a:m.b}</td><td>${r.finish}</td><td>${r.points}</td><td>${r.own?'Yes':''}</td></tr>`).join('')}</table></div>`:`<p class="muted">No rounds.</p>`}</div>${S.pending?ownModal():''}`}
 function sideButtons(s,n){return `<div class="card"><h3>${n}</h3><div class="finish-grid">${[['Spin',1],['Burst',2],['Over',2],['Xtreme',3]].map(x=>`<button class="finish" data-finish="${s}|${x[0]}|${x[1]}">${x[0]}<small>${x[1]} point${x[1]>1?'s':''}</small></button>`).join('')}</div></div>`}function ownModal(){return `<div class="modal"><div class="card"><h3>Own Finish?</h3><p class="muted">Yes only when the losing Bey entered the zone without contact.</p><div class="actions"><button class="btn secondary" data-own="false">No</button><button class="btn danger" data-own="true">Yes</button></div></div></div>`}
 function stats(){const a=aggregate(S.matches);return `<div class="card"><h2>Analytics</h2><div class="scroll"><table><tr><th>Combo</th><th>Record</th><th>Win %</th><th>Diff</th><th>Evidence</th></tr>${a.length?a.sort((x,y)=>y.winRate-x.winRate).map(x=>`<tr><td>${x.name}</td><td>${x.w}-${x.l}</td><td>${(x.winRate*100).toFixed(1)}%</td><td>${x.diff>=0?'+':''}${x.diff}</td><td>${x.confidence}</td></tr>`).join(''):`<tr><td colspan="5" class="muted">No match data.</td></tr>`}</table></div></div>`}
-function bind(){$$('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));$('#prodSearch')?.addEventListener('input',filterProducts);$('#prodLine')?.addEventListener('change',filterProducts);$$('[data-product]').forEach(x=>x.onclick=()=>productModal(x.dataset.product));$('[data-loose]')?.addEventListener('click',()=>partModal());$$('[data-edit-part]').forEach(x=>x.onclick=()=>partModal(x.dataset.editPart));$('[data-new-build]')?.addEventListener('click',()=>buildModal());$$('[data-edit-build]').forEach(x=>x.onclick=()=>buildModal(x.dataset.editBuild));$$('[data-del-build]').forEach(x=>x.onclick=()=>deleteBuild(x.dataset.delBuild));$('[data-new-project]')?.addEventListener('click',()=>projectModal());$$('[data-edit-project]').forEach(x=>x.onclick=()=>projectModal(x.dataset.editProject));$$('[data-del-project]').forEach(x=>x.onclick=()=>deleteProject(x.dataset.delProject));$('[data-new-test]')?.addEventListener('click',()=>testModal());$$('[data-edit-test]').forEach(x=>x.onclick=()=>testModal(x.dataset.editTest));$$('[data-del-test]').forEach(x=>x.onclick=()=>deleteTest(x.dataset.delTest));$$('[data-start-test]').forEach(x=>x.onclick=()=>startTest(x.dataset.startTest));$$('[data-finish]').forEach(x=>x.onclick=()=>{const[a,b,c]=x.dataset.finish.split('|');finish(a,b,+c)});$$('[data-own]').forEach(x=>x.onclick=()=>confirmOwn(x.dataset.own==='true'));$('[data-undo]')?.addEventListener('click',undo);$('[data-discard]')?.addEventListener('click',discard);$('[data-save-match]')?.addEventListener('click',saveMatch);$('[data-export]')?.addEventListener('click',exportData);$('[data-import]')?.addEventListener('click',()=>$('#importFile').click());$('#importFile')?.addEventListener('change',importData);$('[data-reset]')?.addEventListener('click',resetAll)}
+function bind(){$$('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));$('#prodSearch')?.addEventListener('input',filterProducts);$('#prodLine')?.addEventListener('change',filterProducts);$$('[data-product]').forEach(x=>x.onclick=()=>productModal(x.dataset.product));$('[data-loose]')?.addEventListener('click',()=>partModal());$$('[data-edit-part]').forEach(x=>x.onclick=()=>partModal(x.dataset.editPart));$('[data-new-build]')?.addEventListener('click',()=>buildModal());$$('[data-edit-build]').forEach(x=>x.onclick=()=>buildModal(x.dataset.editBuild));$$('[data-del-build]').forEach(x=>x.onclick=()=>deleteBuild(x.dataset.delBuild));$('[data-new-project]')?.addEventListener('click',()=>projectModal());$$('[data-edit-project]').forEach(x=>x.onclick=()=>projectModal(x.dataset.editProject));$$('[data-del-project]').forEach(x=>x.onclick=()=>deleteProject(x.dataset.delProject));$('[data-new-test]')?.addEventListener('click',()=>testModal());$$('[data-edit-test]').forEach(x=>x.onclick=()=>testModal(x.dataset.editTest));$$('[data-del-test]').forEach(x=>x.onclick=()=>deleteTest(x.dataset.delTest));$$('[data-start-test]').forEach(x=>x.onclick=()=>startTest(x.dataset.startTest));
+ $('[data-auto-plan]')?.addEventListener('click',autoCreateCoachTest);
+ $('[data-refresh-coach]')?.addEventListener('click',render);$$('[data-finish]').forEach(x=>x.onclick=()=>{const[a,b,c]=x.dataset.finish.split('|');finish(a,b,+c)});$$('[data-own]').forEach(x=>x.onclick=()=>confirmOwn(x.dataset.own==='true'));$('[data-undo]')?.addEventListener('click',undo);$('[data-discard]')?.addEventListener('click',discard);$('[data-save-match]')?.addEventListener('click',saveMatch);$('[data-export]')?.addEventListener('click',exportData);$('[data-import]')?.addEventListener('click',()=>$('#importFile').click());$('#importFile')?.addEventListener('change',importData);$('[data-reset]')?.addEventListener('click',resetAll)}
 function filterProducts(){const q=($('#prodSearch')?.value||'').toLowerCase(),line=$('#prodLine')?.value||'All';$$('[data-product-row]').forEach(r=>r.style.display=(!q||r.dataset.search.includes(q))&&(line==='All'||r.children[2].textContent===line)?'':'none')}
 function productModal(code){
  const p=S.catalog.find(x=>x.code===code);
@@ -202,6 +237,35 @@ function buildModal(id=null){
 }
 async function deleteBuild(id){if(S.tests.some(t=>t.aId===id||t.bId===id))return alert('Build is used by a test');if(confirm('Delete build?')){await remove('builds',id);await load()}}
 function buildOptions(sel){return S.builds.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${x.name}</option>`).join('')}
+
+async function autoCreateCoachTest(){
+ if(S.builds.length<2)return alert('Create at least two builds first.');
+ let project=S.projects.find(p=>p.status==='Active');
+ if(!project){
+   project={
+     id:uid(),
+     question:`Can ${S.builds[0].name} consistently defeat ${S.builds[1].name}?`,
+     conditions:'Same stadium, alternating launch order, fixed builds, no part changes during the evidence stage.',
+     status:'Active'
+   };
+   await put('projects',project);
+ }
+ for(const t of S.tests.filter(t=>t.status==='Active')){
+   t.status='Paused';
+   await put('tests',t);
+ }
+ const test={
+   id:uid(),
+   projectId:project.id,
+   aId:S.builds[0].id,
+   bId:S.builds[1].id,
+   target:16,
+   status:'Active'
+ };
+ await put('tests',test);
+ await load();
+ startTest(test.id);
+}
 function projectModal(id=null){
  const p=id?S.projects.find(x=>x.id===id):{id:uid(),question:'',conditions:'Same stadium, alternating launch order, fixed builds.',status:'Active'};
  $('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Research Project</h3><label>Research question</label><textarea id="prq">${p.question||''}</textarea><label>Fixed conditions</label><textarea id="prc">${p.conditions||''}</textarea><label>Status</label><select id="prs">${['Active','Paused','Complete'].map(x=>`<option ${x===p.status?'selected':''}>${x}</option>`).join('')}</select><div class="actions"><button class="btn" id="saveProject">Save</button><button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;

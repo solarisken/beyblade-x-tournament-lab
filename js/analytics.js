@@ -31,53 +31,163 @@ export function aggregate(matches){
   })
 }
 
-export function researchCoach({builds,tests,matches}){
+
+export function researchCoach({builds,tests,matches,projects=[]}){
   const stats=aggregate(matches);
-  if(!builds.length){
-    return {title:'Create your first controlled build',decision:'Add owned parts, save a complete build, then create a benchmark opponent.',level:'warn',reasons:['No saved builds exist.'],next:'Open Builds and create at least two builds.'}
-  }
-  if(builds.length<2){
-    return {title:'Create a benchmark opponent',decision:'A controlled test requires two complete builds.',level:'warn',reasons:['Only one saved build exists.'],next:'Create a second build using owned parts.'}
-  }
   const active=tests.find(t=>t.status==='Active')||tests.find(t=>t.status==='Planned');
+  const result={
+    title:'Research setup required',
+    decision:'Create two complete builds and one controlled project.',
+    level:'warn', reasons:[], next:'Create the focus build and benchmark opponent.',
+    confidence:0, priorityScore:0, recommendedTest:null, warnings:[]
+  };
+  if(!builds.length){result.reasons=['No saved builds exist.'];return result;}
+  if(builds.length<2){
+    result.title='Create a benchmark opponent';
+    result.decision='A controlled comparison requires at least two complete builds.';
+    result.reasons=['Only one saved build exists.'];
+    result.next='Create a second optimized build from owned parts.';
+    return result;
+  }
+  const byName=name=>stats.find(s=>s.name===name);
+  const testRows=t=>matches.filter(m=>m.testId===t.id);
+  const buildOf=id=>builds.find(b=>b.id===id);
+
+  const scoredTests=tests.filter(t=>t.status!=='Complete').map(t=>{
+    const rows=testRows(t),a=buildOf(t.aId),b=buildOf(t.bId),focus=byName(a?.name);
+    const progress=t.target?rows.length/t.target:0;
+    const remaining=Math.max(0,(t.target||16)-rows.length);
+    const opponentNovelty=focus?Math.max(0,3-focus.opponents.length):3;
+    const uncertainty=focus?Math.max(0,1-Math.abs(focus.winRate-.5)*2):1;
+    const instability=focus&&focus.matches>=8?Math.max(0,1-focus.stability):.5;
+    const selfRisk=focus?.selfRate||0;
+    const score=remaining*2+opponentNovelty*12+uncertainty*20+instability*15+selfRisk*10+(t.status==='Active'?25:0)-progress*8;
+    return {test:t,a,b,rows,focus,remaining,score};
+  }).sort((x,y)=>y.score-x.score);
+  const top=scoredTests[0];
+
   if(active){
-    const done=matches.filter(m=>m.testId===active.id).length;
-    const a=builds.find(b=>b.id===active.aId),b=builds.find(b=>b.id===active.bId);
-    const focus=stats.find(s=>s.name===a?.name);
-    const remaining=Math.max(0,active.target-done);
-    const reasons=[`${done} of ${active.target} matches complete.`];
+    const a=buildOf(active.aId),b=buildOf(active.bId),rows=testRows(active);
+    const focus=byName(a?.name),remaining=Math.max(0,active.target-rows.length);
+    result.recommendedTest=active.id;
+    result.priorityScore=Math.round(top?.score||0);
+    result.reasons.push(`${rows.length} of ${active.target} matches complete.`);
     if(focus){
-      reasons.push(`Current record: ${focus.w}-${focus.l} (${(focus.winRate*100).toFixed(1)}%).`);
-      reasons.push(`Point differential: ${focus.diff>=0?'+':''}${focus.diff}.`);
-      if(focus.selfRate>.15) reasons.push(`Warning: self-exit rate is ${(focus.selfRate*100).toFixed(1)}%.`);
-      if(focus.matches>=8 && focus.stability<.75) reasons.push('Early and later results are inconsistent.');
+      result.reasons.push(`Current record: ${focus.w}-${focus.l} (${(focus.winRate*100).toFixed(1)}%).`);
+      result.reasons.push(`Point differential: ${focus.diff>=0?'+':''}${focus.diff}.`);
+      result.reasons.push(`Stability score: ${(focus.stability*100).toFixed(0)}%.`);
+      result.reasons.push(`Self-exit rate: ${(focus.selfRate*100).toFixed(1)}%.`);
+      result.confidence=Math.min(100,Math.round(
+        Math.min(40,focus.matches/96*40)+Math.min(20,focus.opponents.length/3*20)+
+        Math.min(20,focus.stability*20)+(focus.diff>0?10:0)+(focus.selfRate<.1?10:0)
+      ));
+      if(focus.selfRate>.18){
+        result.title='Investigate launch instability';
+        result.decision='Do not change parts yet. The self-exit rate is too high to isolate part performance.';
+        result.level='bad';
+        result.warnings.push('High self-exit rate may be masking the true matchup result.');
+        result.next=`Repeat the same matchup in a separate session and compare launch consistency before changing ${a?.name}.`;
+        return result;
+      }
+      if(focus.matches>=8&&focus.stability<.68){
+        result.title='Results are unstable';
+        result.decision='Continue the same test under identical conditions. Do not promote or reject the build yet.';
+        result.level='warn';
+        result.warnings.push('First-half and second-half results differ materially.');
+        result.next=`Complete ${remaining} more match${remaining===1?'':'es'} against ${b?.name||'the benchmark'}.`;
+        return result;
+      }
     }
     if(remaining>0){
-      return {title:'Continue the active test',decision:`Do not change parts yet. Complete ${remaining} more match${remaining===1?'':'es'} against ${b?.name||'the benchmark'}.`,level:'warn',reasons,next:`Resume ${a?.name||'focus build'} vs ${b?.name||'opponent'}.`}
+      result.title='Continue the active experiment';
+      result.decision='Keep both builds unchanged until the current evidence stage is complete.';
+      result.level='warn';
+      result.next=`Resume ${a?.name||'focus build'} vs ${b?.name||'opponent'} for ${remaining} more match${remaining===1?'':'es'}.`;
+      return result;
     }
   }
+
   if(!stats.length){
-    return {title:'Start a 16-match screening series',decision:'Use the same stadium, launch procedure, and builds for all matches.',level:'warn',reasons:['No controlled match data exists.'],next:'Create a test with a 16-match target.'}
+    result.title='Start a 16-match screening series';
+    result.decision='Use fixed conditions and record every valid first-to-4 match.';
+    result.reasons=['No controlled match data exists.'];
+    result.next='Create an active project and a 16-match controlled test.';
+    return result;
   }
-  const best=[...stats].sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff)[0];
-  const reasons=[`${best.name}: ${best.w}-${best.l}, ${(best.winRate*100).toFixed(1)}% win rate.`,`Point differential: ${best.diff>=0?'+':''}${best.diff}.`,`Evidence level: ${best.confidence}.`];
+
+  const best=[...stats].sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff||b.stability-a.stability)[0];
+  result.confidence=Math.min(100,Math.round(
+    Math.min(40,best.matches/96*40)+Math.min(20,best.opponents.length/3*20)+
+    Math.min(20,best.stability*20)+(best.diff>0?10:0)+(best.selfRate<.1?10:0)
+  ));
+  result.reasons=[
+    `${best.name}: ${best.w}-${best.l}, ${(best.winRate*100).toFixed(1)}% win rate.`,
+    `Point differential: ${best.diff>=0?'+':''}${best.diff}.`,
+    `Opponent coverage: ${best.opponents.length} distinct build${best.opponents.length===1?'':'s'}.`,
+    `Stability score: ${(best.stability*100).toFixed(0)}%.`,
+    `Self-exit rate: ${(best.selfRate*100).toFixed(1)}%.`,
+    `Evidence level: ${best.confidence}.`
+  ];
+
   if(best.selfRate>.15){
-    return {title:'Investigate launch instability',decision:'Do not lock this build yet. The self-exit rate is too high for tournament confidence.',level:'bad',reasons,next:'Repeat a controlled session and compare launch consistency before changing parts.'}
+    result.title='Resolve self-exit risk';
+    result.decision='The current build cannot be tournament-verified while self-exits remain elevated.';
+    result.level='bad';
+    result.next='Repeat the same matchup in a new session and compare launch technique before any part change.';
+    return result;
   }
   if(best.matches<16){
-    return {title:'Insufficient evidence',decision:`Extend ${best.name} to 16 controlled matches before drawing conclusions.`,level:'warn',reasons,next:'Continue the same matchup.'}
-  }
-  if(best.matches<32){
-    return {title:'Screening complete',decision:best.winRate>=.55&&best.diff>0?'The build passed screening. Extend to 32 matches.':'The result is inconclusive or negative. Review finishes before any part change.',level:best.winRate>=.55&&best.diff>0?'good':'warn',reasons,next:best.winRate>=.55&&best.diff>0?'Extend the same test target to 32.':'Inspect finish and self-exit patterns.'}
+    result.title='Complete screening';
+    result.decision='The sample is too small for a build decision.';
+    result.next=`Extend ${best.name} to 16 controlled matches against the same benchmark.`;
+    return result;
   }
   if(best.opponents.length<3){
-    return {title:'Archetype coverage gap',decision:`${best.name} needs testing against more distinct opponents.`,level:'warn',reasons:[...reasons,`Distinct opponents: ${best.opponents.length}.`],next:'Create a test against a different optimized archetype.'}
+    result.title='Expand matchup coverage';
+    result.decision='The build has insufficient archetype coverage for tournament verification.';
+    result.next=top?`Run ${top.a?.name||'the focus build'} vs ${top.b?.name||'the next benchmark'}; this is the highest-information unfinished test.`:'Create a test against a third optimized opponent archetype.';
+    result.recommendedTest=top?.test?.id||null;
+    result.priorityScore=Math.round(top?.score||0);
+    return result;
+  }
+  if(best.matches<32){
+    result.title='Advance to validation';
+    result.decision='The build passed screening but needs a larger sample.';
+    result.next=`Extend ${best.name} to 32 matches without changing parts.`;
+    return result;
   }
   if(best.matches<64){
-    return {title:'Validated, not yet verified',decision:`${best.name} has useful evidence but needs 64 total matches for high confidence.`,level:'good',reasons,next:'Continue controlled testing across multiple sessions.'}
+    result.title='Build is validated';
+    result.decision='Preserve the current configuration and continue toward high confidence.';
+    result.level='good';
+    result.next=`Continue ${best.name} to 64 controlled matches across multiple sessions.`;
+    return result;
   }
   if(best.matches<96){
-    return {title:'High confidence',decision:`${best.name} is a strong tournament candidate, but benchmark verification is incomplete.`,level:'good',reasons,next:'Extend critical benchmark matchups toward 96 matches.'}
+    result.title='High-confidence candidate';
+    result.decision='The build is promising, but one final evidence stage remains.';
+    result.level='good';
+    result.next=`Advance ${best.name} to 96 controlled matches and confirm no matchup is below 40%.`;
+    return result;
   }
-  return {title:'Tournament-verified evidence',decision:`${best.name} has reached the verification threshold. Preserve the build and validate it in actual tournament mode.`,level:'good',reasons,next:'Record event results separately and monitor whether performance transfers.'}
+
+  const weak=best.opponents.map(name=>{
+    const rows=matches.filter(m=>(m.a===best.name&&m.b===name)||(m.b===best.name&&m.a===name));
+    const wins=rows.filter(m=>m.winner===best.name).length;
+    return {name,rate:rows.length?wins/rows.length:0};
+  }).sort((a,b)=>a.rate-b.rate)[0];
+
+  if(weak&&weak.rate<.4){
+    result.title='Critical matchup weakness';
+    result.decision=`Do not lock the build yet. Win rate against ${weak.name} is ${(weak.rate*100).toFixed(1)}%.`;
+    result.level='bad';
+    result.next='Create a one-variable A/B experiment specifically against the weakest matchup.';
+    return result;
+  }
+  result.title='Tournament-verified candidate';
+  result.decision='The current evidence supports preserving this build for serious tournament use.';
+  result.level='good';
+  result.next='Freeze the build, document launch technique, and begin verification of the remaining deck slots.';
+  result.confidence=Math.max(result.confidence,90);
+  return result;
 }
