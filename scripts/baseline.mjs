@@ -1,0 +1,11 @@
+import {writeFileSync} from "node:fs";
+import {resolve,join} from "node:path";
+import {defaultSettings,DATA_VERSION} from "../src/data.js";
+import {fastOptimize,confidence,planTests,directives,exactDeckCount} from "../src/engine.js";
+import {runLab} from "../src/simulation.js";
+const root=resolve(new URL("..",import.meta.url).pathname),settings={...defaultSettings,fastBreadth:210,shortlistSize:16,labMatches:500};
+const search=fastOptimize(settings,[]),lab=runLab(search.decks.slice(0,8),{matches:500,seed:settings.seed}),byId=new Map(lab.results.map(x=>[x.deckId,x]));
+for(const d of search.decks)d.lab=byId.get(d.id)||null;
+search.decks.sort((a,b)=>(b.metrics.score+(b.lab?.robustness||0)*1.2+(b.lab?.diff||0)*.12)-(a.metrics.score+(a.lab?.robustness||0)*1.2+(a.lab?.diff||0)*.12));
+const deck=search.decks[0],report={generatedAt:new Date().toISOString(),version:DATA_VERSION,interpretation:"Deterministic zero-evidence baseline. This is a test hypothesis, not tournament proof.",search:search.search,exactSpace:exactDeckCount(),deck:{combos:deck.combos.map(c=>({name:c.name,components:c.blade.components,ratchet:c.ratchet?.name||"integrated",bit:c.bit.name,role:c.role,critical:c.critical,launch:c.launch})),decisionScore:deck.metrics.score,metrics:deck.metrics,confidence:confidence(deck,[]),lab:deck.lab},directives:directives(deck,search.decks.slice(1),[]),nextTests:planTests(deck,search.decks.slice(1),[],settings.testBatchSize)};
+writeFileSync(join(root,"data/baseline-report.json"),JSON.stringify(report,null,2)+"\n");console.log(JSON.stringify({deck:report.deck.combos.map(x=>x.name),score:report.deck.decisionScore,exactSpace:report.exactSpace.total},null,2));

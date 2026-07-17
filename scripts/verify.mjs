@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import {readFileSync,existsSync,readdirSync,statSync,writeFileSync} from "node:fs";
+import {join,resolve} from "node:path";
+import {products,officialRules,defaultSettings} from "../src/data.js";
+import {allBladeAssemblies,generateCombos,legalDeck,exactDeckCount,fastOptimize,deepOptimize} from "../src/engine.js";
+import {runLab} from "../src/simulation.js";
+
+const root=resolve(new URL("..",import.meta.url).pathname);
+const required=["index.html","styles.css","manifest.webmanifest","sw.js","src/app.js","src/data.js","src/engine.js","src/simulation.js","src/optimizer-worker.js","src/lab-worker.js",".github/workflows/pages.yml","README.md","MODEL_CARD.md","SOURCES.md"];
+for(const f of required)assert.ok(existsSync(join(root,f)),`Missing ${f}`);
+assert.equal(products.length,9);
+assert.deepEqual(officialRules.finishPoints,{spin:1,over:2,burst:2,xtreme:3});
+assert.equal(officialRules.reorderAfterCycle,true);
+const blades=allBladeAssemblies(),standard=blades.filter(x=>x.family==="cx-standard"),expand=blades.filter(x=>x.family==="cx-expand");
+assert.equal(blades.length,33);assert.equal(standard.length,18);assert.equal(expand.length,9);
+assert.ok(expand.every(x=>x.components.length===4));
+const combos=generateCombos([]);assert.equal(combos.length,2025);
+const bullet=combos.filter(x=>x.blade.id==="bullet-griffon");assert.equal(bullet.length,9);assert.ok(bullet.every(x=>x.ratchet===null));
+const twoNine=combos.filter(x=>x.ratchet?.canonical==="9-60"&&x.blade.id!=="bullet-griffon").slice(0,2);assert.equal(twoNine.length,2);assert.equal(legalDeck([twoNine[0],twoNine[1],combos.find(x=>x.blade.id==="bullet-griffon"&&x.bit.id!==twoNine[0].bit.id&&x.bit.id!==twoNine[1].bit.id)]),false,"Two 9-60 allocations must be illegal");
+const count=exactDeckCount();assert.deepEqual(count,{bladeTriples:1109,withIntegrated:253,withoutIntegrated:856,total:95954544});
+const settings={...defaultSettings,fastBreadth:105,shortlistSize:10,labMatches:100};
+const fast=fastOptimize(settings,[]);assert.ok(fast.decks.length>0);assert.ok(fast.decks.every(d=>legalDeck(d.combos)));assert.ok(fast.decks[0].metrics.criticalFloor>0);
+const deep=await deepOptimize({...settings,shortlistSize:5},[],{maxBladeTriples:1});assert.equal(deep.search.complete,false);assert.ok(deep.screened>0);assert.ok(deep.decks.every(d=>legalDeck(d.combos)));
+const lab=runLab(fast.decks.slice(0,2),{matches:40,seed:123});assert.equal(lab.stopped,false);assert.equal(lab.results.length,2);assert.ok(lab.results.every(x=>x.orders.length===6));
+const html=readFileSync(join(root,"index.html"),"utf8");assert.match(html,/Deep exhaustive audit/);assert.match(html,/CX-16 contributes Bahamut Lock/);assert.doesNotMatch(html,/guaranteed win rate/i);
+const report={verifiedAt:new Date().toISOString(),products:products.length,bladeAssemblies:blades.length,cxStandardAssemblies:standard.length,cxExpandAssemblies:expand.length,legalCombos:combos.length,exactDeckAllocations:count.total,fastScreened:fast.screened,fastLegal:fast.legal,topDeck:fast.decks[0].combos.map(c=>c.name),topDecisionScore:fast.decks[0].metrics.score,tests:["official scoring","CX Expand four-part model","BulletGriffon integrated ratchet","canonical duplicate-part rejection","exact space count","fast optimizer legality","limited deep audit","six-order adaptive-cycle lab"]};
+writeFileSync(join(root,"data/build-verification.json"),JSON.stringify(report,null,2)+"\n");
+console.log(JSON.stringify(report,null,2));
