@@ -1,159 +1,94 @@
-# Beyblade X Tournament Lab V4
+# X Deck Lab V3
 
-Version: 4.0.0
+A zero-cost, GitHub Pages-ready Beyblade X 3-on-3 decision system for the confirmed owned collection:
 
-V4 is the strongest owned-pool optimization build. It replaces role-based drafting with exhaustive legal build generation and low-gap 3-on-3 deck optimization.
+`UX-14, CX-16, UX-19, UX-08, CX-09, CX-10, BX-23, UX-11, BX-49`
 
-## Core objective
+V3 is built around mechanical legality, conservative ranking, adaptive physical testing, and an automated tournament lab. It does not present simulated results as tournament proof.
 
-Build the strongest serious tournament deck from the recorded owned collection while reducing internal gaps between the three Beys.
+## Material corrections from V2
 
-The default objective rewards:
+- CX-16 is modeled as the four-part CX Expand Blade system: Bahamut Lock, Break Over, Blitz Metal, and Knuckle Assist.
+- Those CX-16 components can be combined legally with the owned Sol/Wolf locks and Dual/Free/Knuckle assists according to their component resources.
+- BulletGriffon has an integrated ratchet and can never receive a separate ratchet.
+- The two physical 9-60 copies are both recorded as owned, but official 3-on-3 duplicate-part rules allow only one 9-60 in the deck.
+- The official first-to-four point structure is used: Spin 1, Over 2, Burst 2, Xtreme 3.
+- After the first three battles, the lab rebuilds the order when neither player has won instead of repeating one fixed cycle.
 
-- a high weakest-Bey floor;
-- a high average candidate score;
-- balanced Attack, Stamina, and Defense coverage;
-- a small performance gap between deck members;
-- a small role-coverage gap;
-- a small evidence gap;
-- legal role diversity;
-- official 3-on-3 no-duplicate-part compliance.
+## Search modes
 
-DranStrike is enforced as the anchor whenever it is owned. The other two Beys are optimized around it to raise the floor and close the remaining gaps.
+### Fast dominance-screened
 
-## Exhaustive build generation
+Runs automatically. It preserves strong options from every legal blade assembly, screens a broad candidate set, and optimizes for:
 
-V4 generates:
+- primary matchup coverage;
+- backup matchup coverage;
+- weakest backup;
+- conservative lower signals;
+- critical-finish access on every Bey;
+- self-KO control;
+- evidence support.
 
-- every owned Standard Blade × Ratchet × Bit combination;
-- every owned CX Lock Chip × Main Blade × Assist Blade × Ratchet × Bit combination;
-- every owned CX Expand Lock Chip × Over Blade × Metal Blade × Assist Blade × Ratchet × Bit combination;
-- every owned CX Integrated Lock Chip × Main Blade × Assist Blade × integrated Ratchet/Bit combination.
+This mode is not labeled exhaustive.
 
-Every generated build receives a transparent score based on:
+### Deep exhaustive allocation audit
 
-- mechanical role priors;
-- stock-product role priors;
-- exact or inherited controlled-match evidence;
-- launch/self-exit reliability;
-- versatility;
-- uncertainty penalty.
+Enumerates the complete owned-parts allocation space:
 
-Recorded evidence progressively overrides generic priors.
+- 33 legal blade assemblies;
+- 2,025 legal individual combinations;
+- 1,109 legal blade triples;
+- 95,954,544 legal 3-on-3 allocations.
 
-## 3-on-3 optimizer
+It is cancellable and shows progress. Desktop use is recommended.
 
-After generating every legal build, V4 creates a dominance-pruned candidate frontier. It then evaluates every official-legal three-Bey combination within that frontier.
+## Smart Coach Auto-Pilot
 
-The selected deck maximizes:
+Auto-Pilot performs the full decision cycle:
 
-- 30% weakest-Bey floor;
-- 18% average strength;
-- 18% role-coverage floor;
-- 13% small performance gap;
-- 10% small role-coverage gap;
-- 6% small evidence gap;
-- 5% role diversity.
+1. validate mechanical legality;
+2. generate legal combinations;
+3. optimize the deck;
+4. run all six blind first orders in the Tournament Lab;
+5. model order rebuilding after the first three battles;
+6. identify the largest redundancy gap;
+7. generate short adaptive physical-test batches;
+8. rescore automatically after each committed batch.
 
-The Deck page displays:
+## Evidence policy
 
-- objective score;
-- low-gap index;
-- weakest-Bey floor;
-- performance gap;
-- coverage gap;
-- evidence gap;
-- top alternative decks;
-- complete scoring rationale.
+Part descriptions generate only weak mechanistic decision signals. Physical results use neutral evidence posteriors. The app reports separate statuses:
 
-## Official 3-on-3 legality
+- Hypothesis
+- Developing
+- Supported
+- Validated locally
 
-V4 implements the Takara Tomy BEYBLADE X Regulation, 12th edition, March 2026:
+These statuses describe evidence collected in the user's environment. They are not external tournament guarantees.
 
-- three Beys are required;
-- the same restricted part cannot appear more than once across the deck, including color variants;
-- Custom Line Lock Chips may repeat except Valkyrie and Emperor;
-- physical owned quantity is still enforced.
+## Deploy on GitHub Pages
 
-Official sources:
+1. Create a public GitHub repository.
+2. Upload the contents of this folder to the repository root.
+3. Open **Settings → Pages**.
+4. Select **GitHub Actions** under Build and deployment.
+5. Push to `main` or run the included deployment workflow manually.
 
-- https://beyblade.takaratomy.co.jp/beyblade-x/_image/regulation.pdf
-- https://beyblade.takaratomy.co.jp/beyblade-x/event/ex/xtremepop.html
+## Local use
 
-## Smart Coach
+```bash
+python -m http.server 8080
+```
 
-The Smart Coach manages:
+Open `http://localhost:8080`.
 
-1. confirmed-collection loading;
-2. optimizer invalidation when collection or evidence changes;
-3. exhaustive recalculation;
-4. best-deck application;
-5. official legality repair;
-6. weakest/least-certain member selection;
-7. contrasting opponent selection;
-8. adaptive 4–16 match testing;
-9. early pass, rejection, or inconclusive decisions;
-10. one-variable repair recommendations;
-11. automatic re-optimization after repairs;
-12. final deck review.
+## Verify
 
-## One-variable repair
+Node 22 or later:
 
-After a matchup rejection, V4 searches generated candidates that differ by exactly one component. It ranks repairs by:
+```bash
+npm run verify
+npm run baseline
+```
 
-- deck-objective improvement;
-- low-gap-index improvement;
-- continued official legality.
-
-This avoids uncontrolled multi-part changes.
-
-## Scope and honesty
-
-The optimizer is strongest within the recorded owned pool and recorded controlled evidence. Mechanical priors are transparent heuristics, not laboratory measurements. “Serious Candidate” is not a claim of universal metagame dominance without external opposition.
-
-## Data compatibility
-
-V4 keeps the existing IndexedDB name and upgrades it to schema version 4. Existing collection, builds, tests, matches, projects, notebook entries, and coach logs are preserved. A new `optimizationRuns` store is added.
-
-## Deployment
-
-1. Delete the existing repository files.
-2. Extract this ZIP.
-3. Upload the extracted contents to the repository root.
-4. Confirm these files exist at the root:
-   - index.html
-   - reset-cache.html
-   - styles.css
-   - sw-v4.js
-   - js/app.js
-   - js/analytics.js
-   - js/optimizer.js
-   - js/db.js
-   - data/products.json
-   - data/rules.json
-   - data/optimizer-model.json
-   - data/version.json
-5. Commit and wait for GitHub Pages.
-6. Open:
-   https://solarisken.github.io/beyblade-x-tournament-lab/reset-cache.html
-
-## Verification
-
-The app must show:
-
-- Version 4.0.0
-- V4 ACTIVE
-- Smart Coach card above every page
-- Run Strongest Optimizer on the Deck page
-- DranStrike anchor notice
-- low-gap metrics and alternative decks
-
-## Validation performed
-
-- JavaScript syntax checks for app, analytics, optimizer, database, and service worker;
-- anchored optimizer smoke test on the confirmed collection;
-- official duplicate-part legality tests;
-- Custom Line Lock Chip exception tests;
-- generated-deck legality verification;
-- JSON integrity checks;
-- static asset path checks.
+No package installation is required.
