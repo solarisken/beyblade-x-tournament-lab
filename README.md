@@ -1,14 +1,12 @@
-# Beyblade X Tournament Lab — Stable Rebuild v1.2
+# Beyblade X Tournament Lab — Stable Rebuild v1.3
 
-Added a free offline Local Research Coach on Home.
+Catalog release:
+- Accessory-only releases removed from Collection.
+- No Catalog Only status remains.
+- 48 Bey-containing product entries have verified automatic mappings.
+- Direct stock combos are parsed into Blade, Ratchet, and Bit.
+- Verified multi-Bey sets add every included part.
+- Random boosters with bundled variant data require selection of the exact pull.
+- 38 unresolved or accessory entries were omitted rather than guessed.
 
-The coach uses deterministic rules from local data only:
-- active test progress
-- win rate and record
-- point differential
-- self-exit rate
-- result stability
-- sample-size evidence level
-- number of distinct opponents
-
-No API, subscription, account, or paid service is required.
+The catalog is stored in data/products.json and can be updated independently of application code.
