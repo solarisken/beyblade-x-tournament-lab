@@ -804,6 +804,310 @@
     "containsBey": true
   },
   {
+    "code": "CX-01",
+    "name": "Starter DranBrave S6-60V",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-03-29",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranBrave"
+      },
+      {
+        "category": "Ratchet",
+        "name": "S6-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Vortex"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-02",
+    "name": "Starter WizardArc R4-55LO",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-03-29",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WizardArc"
+      },
+      {
+        "category": "Ratchet",
+        "name": "R4-55"
+      },
+      {
+        "category": "Bit",
+        "name": "Low Orb"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-03",
+    "name": "Booster PerseusDark B6-80W",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2025-03-29",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "PerseusDark"
+      },
+      {
+        "category": "Ratchet",
+        "name": "B6-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Wedge"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-09",
+    "name": "SolEclipse D5-70TK",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-09-27",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SolEclipse"
+      },
+      {
+        "category": "Ratchet",
+        "name": "D5-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Trans Kick"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-10",
+    "name": "WolfHunt F0-60DB",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2025-11-01",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WolfHunt"
+      },
+      {
+        "category": "Ratchet",
+        "name": "F0-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Disc Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-11",
+    "name": "EmperorMight Deck Set",
+    "line": "CX",
+    "type": "Deck Set",
+    "releaseDate": "2025-11-01",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "EmperorMight"
+      },
+      {
+        "category": "Ratchet",
+        "name": "Integrated"
+      },
+      {
+        "category": "Bit",
+        "name": "Operate"
+      },
+      {
+        "category": "Blade",
+        "name": "GolemRock"
+      },
+      {
+        "category": "Ratchet",
+        "name": "M-85"
+      },
+      {
+        "category": "Bit",
+        "name": "High Needle"
+      },
+      {
+        "category": "Blade",
+        "name": "SharkGill"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Free Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-12",
+    "name": "Booster PhoenixFlare Z9-80WW",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2026-01-24",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "PhoenixFlare"
+      },
+      {
+        "category": "Ratchet",
+        "name": "Z9-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Wall Wedge"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-13",
+    "name": "Starter BahamutBlitz Break Knuckle 1-50I",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2026-03-28",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Bahamut"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Break"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Blitz"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Knuckle"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Ignition"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX Expand"
+  },
+  {
+    "code": "CX-14",
+    "name": "Starter KnightFortress GV8-70UN",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2026-03-28",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "KnightFortress"
+      },
+      {
+        "category": "Ratchet",
+        "name": "GV8-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Under Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-15",
+    "name": "Booster RagnaRage FE4-55Y",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2026-03-28",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "RagnaRage"
+      },
+      {
+        "category": "Ratchet",
+        "name": "FE4-55"
+      },
+      {
+        "category": "Bit",
+        "name": "Yield"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-16",
+    "name": "BahamutBlitz Break Knuckle 1-50I Special Color Ver.",
+    "line": "CX",
+    "type": "Set",
+    "releaseDate": "",
+    "system": "CX Expand",
+    "containsBey": true,
+    "mappingStatus": "verified",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Bahamut"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Break"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Blitz"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Knuckle"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Ignition"
+      }
+    ],
+    "notes": "Special-color equivalent of CX-13; functional parts are identical."
+  },
+  {
     "code": "UX-01",
     "name": "Starter DranBuster 1-60A",
     "line": "UX",
@@ -1196,260 +1500,6 @@
       {
         "category": "Bit",
         "name": "Hexa"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-01",
-    "name": "Starter DranBrave S6-60V",
-    "line": "CX",
-    "type": "Starter",
-    "releaseDate": "2025-03-29",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "DranBrave"
-      },
-      {
-        "category": "Ratchet",
-        "name": "S6-60"
-      },
-      {
-        "category": "Bit",
-        "name": "Vortex"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-02",
-    "name": "Starter WizardArc R4-55LO",
-    "line": "CX",
-    "type": "Starter",
-    "releaseDate": "2025-03-29",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "WizardArc"
-      },
-      {
-        "category": "Ratchet",
-        "name": "R4-55"
-      },
-      {
-        "category": "Bit",
-        "name": "Low Orb"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-03",
-    "name": "Booster PerseusDark B6-80W",
-    "line": "CX",
-    "type": "Booster",
-    "releaseDate": "2025-03-29",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "PerseusDark"
-      },
-      {
-        "category": "Ratchet",
-        "name": "B6-80"
-      },
-      {
-        "category": "Bit",
-        "name": "Wedge"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-09",
-    "name": "SolEclipse D5-70TK",
-    "line": "CX",
-    "type": "Starter",
-    "releaseDate": "2025-09-27",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "SolEclipse"
-      },
-      {
-        "category": "Ratchet",
-        "name": "D5-70"
-      },
-      {
-        "category": "Bit",
-        "name": "Trans Kick"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-10",
-    "name": "WolfHunt F0-60DB",
-    "line": "CX",
-    "type": "Booster",
-    "releaseDate": "2025-11-01",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "WolfHunt"
-      },
-      {
-        "category": "Ratchet",
-        "name": "F0-60"
-      },
-      {
-        "category": "Bit",
-        "name": "Disc Ball"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-11",
-    "name": "EmperorMight Deck Set",
-    "line": "CX",
-    "type": "Deck Set",
-    "releaseDate": "2025-11-01",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "EmperorMight"
-      },
-      {
-        "category": "Ratchet",
-        "name": "Integrated"
-      },
-      {
-        "category": "Bit",
-        "name": "Operate"
-      },
-      {
-        "category": "Blade",
-        "name": "GolemRock"
-      },
-      {
-        "category": "Ratchet",
-        "name": "M-85"
-      },
-      {
-        "category": "Bit",
-        "name": "High Needle"
-      },
-      {
-        "category": "Blade",
-        "name": "SharkGill"
-      },
-      {
-        "category": "Ratchet",
-        "name": "5-60"
-      },
-      {
-        "category": "Bit",
-        "name": "Free Ball"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-12",
-    "name": "Booster PhoenixFlare Z9-80WW",
-    "line": "CX",
-    "type": "Booster",
-    "releaseDate": "2026-01-24",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "PhoenixFlare"
-      },
-      {
-        "category": "Ratchet",
-        "name": "Z9-80"
-      },
-      {
-        "category": "Bit",
-        "name": "Wall Wedge"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-13",
-    "name": "Starter BahamutBlitz BK1-50I",
-    "line": "CX",
-    "type": "Starter",
-    "releaseDate": "2026-03-28",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "BahamutBlitz"
-      },
-      {
-        "category": "Ratchet",
-        "name": "BK1-50"
-      },
-      {
-        "category": "Bit",
-        "name": "Ignition"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-14",
-    "name": "Starter KnightFortress GV8-70UN",
-    "line": "CX",
-    "type": "Starter",
-    "releaseDate": "2026-03-28",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "KnightFortress"
-      },
-      {
-        "category": "Ratchet",
-        "name": "GV8-70"
-      },
-      {
-        "category": "Bit",
-        "name": "Under Needle"
-      }
-    ],
-    "mappingStatus": "verified",
-    "containsBey": true
-  },
-  {
-    "code": "CX-15",
-    "name": "Booster RagnaRage FE4-55Y",
-    "line": "CX",
-    "type": "Booster",
-    "releaseDate": "2026-03-28",
-    "parts": [
-      {
-        "category": "Blade",
-        "name": "RagnaRage"
-      },
-      {
-        "category": "Ratchet",
-        "name": "FE4-55"
-      },
-      {
-        "category": "Bit",
-        "name": "Yield"
       }
     ],
     "mappingStatus": "verified",

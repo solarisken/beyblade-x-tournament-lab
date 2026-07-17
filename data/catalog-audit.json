@@ -154,5 +154,9 @@
       "code": "CX-18",
       "reason": "mapping not verified"
     }
-  ]
+  ],
+  "cxCorrection": {
+    "CX-13": "Mapped as Lock Chip Bahamut, Over Blade Break, Metal Blade Blitz, Assist Blade Knuckle, Ratchet 1-50, Bit Ignition.",
+    "CX-16": "Added as special-color equivalent of CX-13 with identical functional components."
+  }
 }
