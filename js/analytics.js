@@ -78,7 +78,7 @@ export function researchCoach({builds,tests,matches,projects=[]}){
       result.reasons.push(`Stability score: ${(focus.stability*100).toFixed(0)}%.`);
       result.reasons.push(`Self-exit rate: ${(focus.selfRate*100).toFixed(1)}%.`);
       result.confidence=Math.min(100,Math.round(
-        Math.min(40,focus.matches/96*40)+Math.min(20,focus.opponents.length/3*20)+
+        Math.min(40,focus.matches/16*40)+Math.min(20,focus.opponents.length/3*20)+
         Math.min(20,focus.stability*20)+(focus.diff>0?10:0)+(focus.selfRate<.1?10:0)
       ));
       if(focus.selfRate>.18){
@@ -108,16 +108,16 @@ export function researchCoach({builds,tests,matches,projects=[]}){
   }
 
   if(!stats.length){
-    result.title='Start a 16-match screening series';
-    result.decision='Use fixed conditions and record every valid first-to-4 match.';
+    result.title='Start a four-match rapid screen';
+    result.decision='Use fixed conditions. The coach will stop early or extend only when the result remains unclear.';
     result.reasons=['No controlled match data exists.'];
-    result.next='Create an active project and a 16-match controlled test.';
+    result.next='Create an active project and a four-match Rapid screening test.';
     return result;
   }
 
   const best=[...stats].sort((a,b)=>b.winRate-a.winRate||b.diff-a.diff||b.stability-a.stability)[0];
   result.confidence=Math.min(100,Math.round(
-    Math.min(40,best.matches/96*40)+Math.min(20,best.opponents.length/3*20)+
+    Math.min(40,best.matches/16*40)+Math.min(20,best.opponents.length/3*20)+
     Math.min(20,best.stability*20)+(best.diff>0?10:0)+(best.selfRate<.1?10:0)
   ));
   result.reasons=[
@@ -136,41 +136,27 @@ export function researchCoach({builds,tests,matches,projects=[]}){
     result.next='Repeat the same matchup in a new session and compare launch technique before any part change.';
     return result;
   }
-  if(best.matches<16){
-    result.title='Complete screening';
-    result.decision='The sample is too small for a build decision.';
-    result.next=`Extend ${best.name} to 16 controlled matches against the same benchmark.`;
+  if(best.matches<4){
+    result.title='Collect initial evidence';
+    result.decision='The coach needs at least four controlled matches before making an early decision.';
+    result.next=`Continue ${best.name} under unchanged conditions.`;
     return result;
   }
   if(best.opponents.length<3){
     result.title='Expand matchup coverage';
-    result.decision='The build has insufficient archetype coverage for tournament verification.';
-    result.next=top?`Run ${top.a?.name||'the focus build'} vs ${top.b?.name||'the next benchmark'}; this is the highest-information unfinished test.`:'Create a test against a third optimized opponent archetype.';
+    result.decision='Serious tournament consideration requires evidence against contrasting opponent roles.';
+    result.next=top?`Run ${top.a?.name||'the focus build'} vs ${top.b?.name||'the next benchmark'}.`:'Create the next contrasting matchup.';
     result.recommendedTest=top?.test?.id||null;
     result.priorityScore=Math.round(top?.score||0);
     return result;
   }
-  if(best.matches<32){
-    result.title='Advance to validation';
-    result.decision='The build passed screening but needs a larger sample.';
-    result.next=`Extend ${best.name} to 32 matches without changing parts.`;
+  if(best.matches<12){
+    result.title='Promising candidate';
+    result.decision='The current evidence is useful, but matchup coverage and repeatability still control promotion.';
+    result.level='warn';
+    result.next='Let the app-wide coach select the next highest-value matchup.';
     return result;
   }
-  if(best.matches<64){
-    result.title='Build is validated';
-    result.decision='Preserve the current configuration and continue toward high confidence.';
-    result.level='good';
-    result.next=`Continue ${best.name} to 64 controlled matches across multiple sessions.`;
-    return result;
-  }
-  if(best.matches<96){
-    result.title='High-confidence candidate';
-    result.decision='The build is promising, but one final evidence stage remains.';
-    result.level='good';
-    result.next=`Advance ${best.name} to 96 controlled matches and confirm no matchup is below 40%.`;
-    return result;
-  }
-
   const weak=best.opponents.map(name=>{
     const rows=matches.filter(m=>(m.a===best.name&&m.b===name)||(m.b===best.name&&m.a===name));
     const wins=rows.filter(m=>m.winner===best.name).length;

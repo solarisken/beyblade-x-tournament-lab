@@ -1,9 +1,9 @@
 import {all,put,remove,clear,dump,restore,STORES} from './db.js';import {aggregate,researchCoach} from './analytics.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],uid=()=>crypto.randomUUID?.()||Date.now()+'-'+Math.random();
-let S={page:'home',catalog:[],parts:[],productsOwned:[],builds:[],tests:[],matches:[],projects:[],notebook:[],battle:null,pending:null};
+let S={page:'home',catalog:[],parts:[],productsOwned:[],builds:[],tests:[],matches:[],projects:[],notebook:[],battle:null,pending:null,lastSave:null};
 async function load(){const r=await fetch('./data/products.json',{cache:'no-store'});if(!r.ok)throw new Error('Could not load product catalog');S.catalog=await r.json();S.parts=await all('parts');S.productsOwned=await all('productsOwned');S.builds=await all('builds');S.tests=await all('tests');S.matches=await all('matches');S.projects=await all('projects');S.notebook=await all('notebook');render()}
 function nav(){return `<nav>${[['home','⌂','Home'],['collection','◫','Collection'],['builds','◇','Builds'],['research','☷','Lab'],['battle','⚔','Battle'],['stats','▥','Stats']].map(x=>`<button class="${S.page===x[0]?'active':''}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}</nav>`}
-function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Tournament Lab v2.2 · Lab Coach Access · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
+function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Tournament Lab v2.4 · Adaptive Rapid Evidence · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
 function go(p){S.page=p;render()}
 function buildSystem(b){
  if(b.system)return b.system;
@@ -24,8 +24,57 @@ function buildPartNames(b){
 }
 
 function testMatches(testId){return S.matches.filter(m=>m.testId===testId)}
-function testStage(target){return target>=96?'Tournament Verified':target>=64?'High Confidence':target>=32?'Validated':'Screening'}
-function nextStage(target){return target<16?16:target<32?32:target<64?64:target<96?96:96}
+function evidencePlan(mode='Rapid'){
+ if(mode==='Deep')return [16,32,64,96];
+ if(mode==='Standard')return [8,16,24,40];
+ return [4,8,12,16,20];
+}
+function testMode(t){return t?.mode||((t?.target||0)>=32?'Deep':'Rapid')}
+function testStage(target,mode='Rapid'){
+ const plan=evidencePlan(mode),i=Math.max(0,plan.indexOf(target));
+ if(mode==='Deep')return target>=96?'Tournament Verified':target>=64?'High Confidence':target>=32?'Validated':'Screening';
+ if(mode==='Standard')return target>=40?'Tournament Ready':target>=24?'Validated':target>=16?'Confirmed':'Screening';
+ return target>=20?'Tournament Ready':target>=12?'Tournament Candidate':target>=8?'Confirmed':'Rapid Screen';
+}
+function nextStage(target,mode='Rapid'){
+ const plan=evidencePlan(mode),i=plan.indexOf(target);
+ return i<0?plan[0]:plan[Math.min(plan.length-1,i+1)];
+}
+function matchupRecord(test){
+ const a=S.builds.find(x=>x.id===test.aId),rows=testMatches(test.id);
+ const wins=rows.filter(m=>m.winner===a?.name).length;
+ return {wins,losses:rows.length-wins,n:rows.length,rate:rows.length?wins/rows.length:0};
+}
+function adaptiveDecision(test){
+ const r=matchupRecord(test),mode=testMode(test);
+ if(mode!=='Rapid')return {status:r.n>=test.target?'stage-complete':'continue',next:nextStage(test.target,mode),record:r};
+ if(r.n<4)return {status:'continue',next:4,record:r,reason:'Complete the four-match screening block.'};
+ if(r.n===4){
+   if(r.wins===4)return {status:'pass',record:r,reason:'4-0 decisive screen.'};
+   if(r.wins===0)return {status:'fail',record:r,reason:'0-4 decisive rejection.'};
+   return {status:'continue',next:8,record:r,reason:'Mixed screen; extend to eight.'};
+ }
+ if(r.n<8)return {status:'continue',next:8,record:r,reason:'Complete eight matches.'};
+ if(r.n===8){
+   if(r.wins>=6)return {status:'pass',record:r,reason:'At least 6-2; matchup passed.'};
+   if(r.wins<=2)return {status:'fail',record:r,reason:'At most 2-6; matchup failed.'};
+   return {status:'continue',next:12,record:r,reason:'Close result; extend to twelve.'};
+ }
+ if(r.n<12)return {status:'continue',next:12,record:r,reason:'Complete twelve matches.'};
+ if(r.n===12){
+   if(r.wins>=8)return {status:'pass',record:r,reason:'At least 8-4; credible matchup pass.'};
+   if(r.wins<=4)return {status:'fail',record:r,reason:'At most 4-8; credible matchup failure.'};
+   return {status:'continue',next:16,record:r,reason:'Still close; extend to sixteen.'};
+ }
+ if(r.n<16)return {status:'continue',next:16,record:r,reason:'Complete sixteen matches.'};
+ if(r.n===16){
+   if(r.wins>=10)return {status:'pass',record:r,reason:'At least 10-6; matchup passed.'};
+   if(r.wins<=6)return {status:'fail',record:r,reason:'At most 6-10; matchup failed.'};
+   return {status:'continue',next:20,record:r,reason:'Borderline result; final rapid block required.'};
+ }
+ if(r.n<20)return {status:'continue',next:20,record:r,reason:'Complete the final rapid block.'};
+ return {status:r.wins>=12?'pass':r.wins<=8?'fail':'inconclusive',record:r,reason:'Rapid evidence cap reached.'};
+}
 function projectForTest(t){return S.projects.find(p=>p.id===t.projectId)}
 function evidenceForBuild(name){
  const x=aggregate(S.matches).find(s=>s.name===name);
@@ -60,7 +109,7 @@ function notebookSummary(test){
  const against=rows.reduce((n,m)=>n+(m.a===a?.name?m.bScore:m.aScore),0);
  return {
    id:uid(),projectId:test.projectId,testId:test.id,date:new Date().toISOString(),
-   title:`${testStage(test.target)}: ${a?.name} vs ${b?.name}`,
+   title:`${testStage(test.target,testMode(test))}: ${a?.name} vs ${b?.name}`,
    question:projectForTest(test)?.question||'Controlled matchup evaluation',
    conditions:projectForTest(test)?.conditions||'Use fixed stadium and launch procedure.',
    result:`${wins}-${losses}; point differential ${pts-against>=0?'+':''}${pts-against}.`,
@@ -84,7 +133,7 @@ function home(){
  <div class="grid"><div class="metric"><b>${S.parts.reduce((n,x)=>n+x.qty,0)}</b><span>Owned part copies</span></div><div class="metric"><b>${S.builds.length}</b><span>Saved builds</span></div><div class="metric"><b>${S.matches.length}</b><span>Controlled matches</span></div><div class="metric"><b>${ev?ev.score+'%':'—'}</b><span>Best evidence score</span></div></div>
  ${project?`<div class="card"><h3>Active Research Project</h3><p><b>${project.question}</b></p><p class="muted">${project.conditions||''}</p>${active?testCard(active):''}</div>`:active?testCard(active):''}
  <div class="card"><div class="top"><h3>Tournament Deck Legality</h3><span class="badge ${legal.legal?'good':'bad'}">${legal.legal?'Legal':'Conflict'}</span></div>${legal.legal?`<p class="muted">Assigned Bey 1–3 do not exceed owned quantities.</p>`:`<ul>${legal.issues.map(x=>`<li>${x}</li>`).join('')}</ul>`}</div>
- <div class="card"><h3>Research Method</h3><div class="grid"><div class="metric"><b>1</b><span>Define one question</span></div><div class="metric"><b>2</b><span>Change one variable</span></div><div class="metric"><b>3</b><span>Use fixed conditions</span></div><div class="metric"><b>4</b><span>Advance 16 → 32 → 64 → 96</span></div></div></div>`
+ <div class="card"><h3>Research Method</h3><div class="grid"><div class="metric"><b>1</b><span>Define one question</span></div><div class="metric"><b>2</b><span>Change one variable</span></div><div class="metric"><b>3</b><span>Use fixed conditions</span></div><div class="metric"><b>4</b><span>Stop early when evidence is decisive</span></div></div></div>`
 }
 function productRow(p){const o=S.productsOwned.find(x=>x.code===p.code),count=p.variants?.length||1;return `<tr data-product-row data-search="${(p.code+' '+p.name+' '+(p.parts||[]).map(x=>x.name).join(' ')+' '+(p.variants||[]).map(v=>v.name+' '+v.parts.map(x=>x.name).join(' ')).join(' ')).toLowerCase()}"><td>${p.code}</td><td>${p.name}</td><td>${p.line}</td><td>${p.type}</td><td>${p.releaseDate||''}</td><td>${o?.qty||0}</td><td>${p.variants?.length?`<span class="badge warn">${count} variants</span>`:'<span class="badge good">Mapped</span>'}</td><td><button class="btn secondary" data-product="${p.code}">Add</button></td></tr>`}
 function collection(){return `<div class="card hero"><h2>Released Product / Set Library</h2><p class="muted">Choose a mapped product. Its included parts are loaded automatically.</p><div class="search"><input id="prodSearch" placeholder="Search product or included part"><select id="prodLine"><option>All</option><option>BX</option><option>UX</option><option>CX</option></select></div><div class="scroll"><table><tr><th>Code</th><th>Product</th><th>Line</th><th>Type</th><th>Release</th><th>Owned</th><th>Mapping</th><th></th></tr>${S.catalog.map(productRow).join('')}</table></div></div><div class="card"><div class="top"><h2>Owned Parts</h2><button class="btn" data-loose>Add Independent Part</button></div><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${S.parts.length?S.parts.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||''}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`).join(''):`<tr><td colspan="5" class="muted">Collection is empty.</td></tr>`}</table></div></div><div class="card"><h3>Backup and reset</h3><div class="actions"><button class="btn" data-export>Export</button><button class="btn secondary" data-import>Import</button><button class="btn danger" data-reset>Factory Reset</button></div><input id="importFile" class="hidden" type="file" accept=".json"></div><div id="modal"></div>`}
@@ -124,13 +173,13 @@ function research(){
  <div class="card"><div class="top"><h2>Guided Test Queue</h2><button class="btn" data-new-test>Add Test</button></div>${S.tests.length?S.tests.sort((a,b)=>(a.status==='Active'?-1:1)).map(testCard).join(''):`<p class="muted">No tests yet.</p>`}</div>
  <div class="card"><h2>Research Notebook</h2>${S.notebook.length?S.notebook.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(n=>`<div class="queue"><b>${n.title}</b><p class="muted">${new Date(n.date).toLocaleString()}</p><p><b>Question:</b> ${n.question}</p><p><b>Conditions:</b> ${n.conditions}</p><p><b>Result:</b> ${n.result}</p><p><b>Decision:</b> ${n.decision}</p><p><b>Remaining uncertainty:</b> ${n.uncertainty}</p></div>`).join(''):`<p class="muted">Completed evidence stages will be summarized here automatically.</p>`}</div><div id="modal"></div>`
 }
-function testCard(t){const a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId),done=S.matches.filter(x=>x.testId===t.id).length;return `<div class="queue"><div class="top"><div><b>${a?.name||'Missing build'}</b><br><span class="muted">vs</span><br><b>${b?.name||'Missing build'}</b></div><span class="badge">${t.status}</span></div><div class="progress"><div style="width:${Math.min(100,done/t.target*100)}%"></div></div><p class="muted">${done}/${t.target} · ${testStage(t.target)}${projectForTest(t)?` · ${projectForTest(t).question}`:''}</p><div class="actions"><button class="btn" data-start-test="${t.id}">Continue</button><button class="btn secondary" data-edit-test="${t.id}">Edit</button><button class="btn danger" data-del-test="${t.id}">Delete</button></div></div>`}
-function battle(){const m=S.battle;if(!m)return `<div class="card"><h2>No active match</h2><button class="btn" data-go="research">Open Research</button></div>`;const done=m.aScore>=4||m.bScore>=4;return `<div class="card hero"><div class="scoreboard"><div><b>${m.a}</b><div class="score">${m.aScore}</div></div><div>VS</div><div><b>${m.b}</b><div class="score">${m.bScore}</div></div></div></div>${done?`<div class="card"><h2>${m.aScore>m.bScore?m.a:m.b} wins</h2><div class="actions"><button class="btn good" data-save-match>Save</button><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Discard</button></div></div>`:`${sideButtons('a',m.a)}${sideButtons('b',m.b)}<div class="actions"><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Cancel</button></div>`}<div class="card"><h3>Rounds</h3>${m.rounds.length?`<div class="scroll"><table><tr><th>#</th><th>Winner</th><th>Finish</th><th>Pts</th><th>Own</th></tr>${m.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${r.side==='a'?m.a:m.b}</td><td>${r.finish}</td><td>${r.points}</td><td>${r.own?'Yes':''}</td></tr>`).join('')}</table></div>`:`<p class="muted">No rounds.</p>`}</div>${S.pending?ownModal():''}`}
+function testCard(t){const a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId),done=S.matches.filter(x=>x.testId===t.id).length;return `<div class="queue"><div class="top"><div><b>${a?.name||'Missing build'}</b><br><span class="muted">vs</span><br><b>${b?.name||'Missing build'}</b></div><span class="badge">${t.status}</span></div><div class="progress"><div style="width:${Math.min(100,done/t.target*100)}%"></div></div><p class="muted">${done}/${t.target} · ${testMode(t)} · ${testStage(t.target,testMode(t))}${projectForTest(t)?` · ${projectForTest(t).question}`:''}</p><div class="actions"><button class="btn" data-start-test="${t.id}">Continue</button><button class="btn secondary" data-edit-test="${t.id}">Edit</button><button class="btn danger" data-del-test="${t.id}">Delete</button></div></div>`}
+function battle(){const m=S.battle;if(!m)return `${savedMatchPanel()||`<div class="card"><h2>No active match</h2><button class="btn" data-go="research">Open Lab</button></div>`}`;const done=m.aScore>=4||m.bScore>=4;return `<div class="card hero"><div class="scoreboard"><div><b>${m.a}</b><div class="score">${m.aScore}</div></div><div>VS</div><div><b>${m.b}</b><div class="score">${m.bScore}</div></div></div></div>${done?`<div class="card"><h2>${m.aScore>m.bScore?m.a:m.b} wins</h2><div class="actions"><button class="btn good" data-save-match>Save</button><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Discard</button></div></div>`:`${sideButtons('a',m.a)}${sideButtons('b',m.b)}<div class="actions"><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Cancel</button></div>`}<div class="card"><h3>Rounds</h3>${m.rounds.length?`<div class="scroll"><table><tr><th>#</th><th>Winner</th><th>Finish</th><th>Pts</th><th>Own</th></tr>${m.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${r.side==='a'?m.a:m.b}</td><td>${r.finish}</td><td>${r.points}</td><td>${r.own?'Yes':''}</td></tr>`).join('')}</table></div>`:`<p class="muted">No rounds.</p>`}</div>${S.pending?ownModal():''}`}
 function sideButtons(s,n){return `<div class="card"><h3>${n}</h3><div class="finish-grid">${[['Spin',1],['Burst',2],['Over',2],['Xtreme',3]].map(x=>`<button class="finish" data-finish="${s}|${x[0]}|${x[1]}">${x[0]}<small>${x[1]} point${x[1]>1?'s':''}</small></button>`).join('')}</div></div>`}function ownModal(){return `<div class="modal"><div class="card"><h3>Own Finish?</h3><p class="muted">Yes only when the losing Bey entered the zone without contact.</p><div class="actions"><button class="btn secondary" data-own="false">No</button><button class="btn danger" data-own="true">Yes</button></div></div></div>`}
 function stats(){const a=aggregate(S.matches);return `<div class="card"><h2>Analytics</h2><div class="scroll"><table><tr><th>Combo</th><th>Record</th><th>Win %</th><th>Diff</th><th>Evidence</th></tr>${a.length?a.sort((x,y)=>y.winRate-x.winRate).map(x=>`<tr><td>${x.name}</td><td>${x.w}-${x.l}</td><td>${(x.winRate*100).toFixed(1)}%</td><td>${x.diff>=0?'+':''}${x.diff}</td><td>${x.confidence}</td></tr>`).join(''):`<tr><td colspan="5" class="muted">No match data.</td></tr>`}</table></div></div>`}
 function bind(){$$('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));$('#prodSearch')?.addEventListener('input',filterProducts);$('#prodLine')?.addEventListener('change',filterProducts);$$('[data-product]').forEach(x=>x.onclick=()=>productModal(x.dataset.product));$('[data-loose]')?.addEventListener('click',()=>partModal());$$('[data-edit-part]').forEach(x=>x.onclick=()=>partModal(x.dataset.editPart));$('[data-new-build]')?.addEventListener('click',()=>buildModal());$$('[data-edit-build]').forEach(x=>x.onclick=()=>buildModal(x.dataset.editBuild));$$('[data-del-build]').forEach(x=>x.onclick=()=>deleteBuild(x.dataset.delBuild));$('[data-new-project]')?.addEventListener('click',()=>projectModal());$$('[data-edit-project]').forEach(x=>x.onclick=()=>projectModal(x.dataset.editProject));$$('[data-del-project]').forEach(x=>x.onclick=()=>deleteProject(x.dataset.delProject));$('[data-new-test]')?.addEventListener('click',()=>testModal());$$('[data-edit-test]').forEach(x=>x.onclick=()=>testModal(x.dataset.editTest));$$('[data-del-test]').forEach(x=>x.onclick=()=>deleteTest(x.dataset.delTest));$$('[data-start-test]').forEach(x=>x.onclick=()=>startTest(x.dataset.startTest));
  $('[data-auto-plan]')?.addEventListener('click',autoCreateCoachTest);
- $('[data-refresh-coach]')?.addEventListener('click',render);$$('[data-finish]').forEach(x=>x.onclick=()=>{const[a,b,c]=x.dataset.finish.split('|');finish(a,b,+c)});$$('[data-own]').forEach(x=>x.onclick=()=>confirmOwn(x.dataset.own==='true'));$('[data-undo]')?.addEventListener('click',undo);$('[data-discard]')?.addEventListener('click',discard);$('[data-save-match]')?.addEventListener('click',saveMatch);$('[data-export]')?.addEventListener('click',exportData);$('[data-import]')?.addEventListener('click',()=>$('#importFile').click());$('#importFile')?.addEventListener('change',importData);$('[data-reset]')?.addEventListener('click',resetAll)}
+ $('[data-refresh-coach]')?.addEventListener('click',render);$$('[data-finish]').forEach(x=>x.onclick=()=>{const[a,b,c]=x.dataset.finish.split('|');finish(a,b,+c)});$$('[data-own]').forEach(x=>x.onclick=()=>confirmOwn(x.dataset.own==='true'));$('[data-undo]')?.addEventListener('click',undo);$('[data-discard]')?.addEventListener('click',discard);$('[data-save-match]')?.addEventListener('click',saveMatch);$$('[data-next-match]').forEach(x=>x.onclick=()=>nextMatchForTest(x.dataset.nextMatch));$('[data-export]')?.addEventListener('click',exportData);$('[data-import]')?.addEventListener('click',()=>$('#importFile').click());$('#importFile')?.addEventListener('change',importData);$('[data-reset]')?.addEventListener('click',resetAll)}
 function filterProducts(){const q=($('#prodSearch')?.value||'').toLowerCase(),line=$('#prodLine')?.value||'All';$$('[data-product-row]').forEach(r=>r.style.display=(!q||r.dataset.search.includes(q))&&(line==='All'||r.children[2].textContent===line)?'':'none')}
 function productModal(code){
  const p=S.catalog.find(x=>x.code===code);
@@ -259,7 +308,8 @@ async function autoCreateCoachTest(){
    projectId:project.id,
    aId:S.builds[0].id,
    bId:S.builds[1].id,
-   target:16,
+   mode:'Rapid',
+   target:4,
    status:'Active'
  };
  await put('tests',test);
@@ -275,22 +325,103 @@ async function deleteProject(id){if(S.tests.some(t=>t.projectId===id))return ale
 function projectOptions(sel){return `<option value="">No project</option>`+S.projects.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${x.question}</option>`).join('')}
 function testModal(id=null){
  if(S.builds.length<2)return alert('Create at least two builds');
- const t=id?S.tests.find(x=>x.id===id):{id:uid(),projectId:S.projects.find(x=>x.status==='Active')?.id||'',aId:S.builds[0].id,bId:S.builds[1].id,target:16,status:'Active'};
- $('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Controlled Test</h3><label>Research project</label><select id="tpr">${projectOptions(t.projectId)}</select><label>Focus</label><select id="ta">${buildOptions(t.aId)}</select><label>Opponent</label><select id="tb">${buildOptions(t.bId)}</select><label>Evidence target</label><select id="tt">${[16,32,64,96].map(x=>`<option ${x===t.target?'selected':''}>${x} — ${testStage(x)}</option>`).join('')}</select><label>Status</label><select id="ts">${['Active','Planned','Paused','Complete'].map(x=>`<option ${x===t.status?'selected':''}>${x}</option>`).join('')}</select><div class="actions"><button class="btn" id="saveTest">Save</button><button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;
- $('#cancel').onclick=render;$('#saveTest').onclick=async()=>{const x={...t,projectId:$('#tpr').value,aId:$('#ta').value,bId:$('#tb').value,target:+$('#tt').value,status:$('#ts').value};if(x.aId===x.bId)return alert('Choose different builds');await put('tests',x);await load()}
+ const t=id?S.tests.find(x=>x.id===id):{id:uid(),projectId:S.projects.find(x=>x.status==='Active')?.id||'',aId:S.builds[0].id,bId:S.builds[1].id,mode:'Rapid',target:4,status:'Active'};
+ const mode=testMode(t);
+ const targetOptions=m=>evidencePlan(m).map(x=>`<option ${x===t.target?'selected':''}>${x} — ${testStage(x,m)}</option>`).join('');
+ $('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Controlled Test</h3>
+ <label>Research project</label><select id="tpr">${projectOptions(t.projectId)}</select>
+ <label>Focus</label><select id="ta">${buildOptions(t.aId)}</select>
+ <label>Opponent</label><select id="tb">${buildOptions(t.bId)}</select>
+ <label>Evidence mode</label><select id="tmode">${['Rapid','Standard','Deep'].map(x=>`<option ${x===mode?'selected':''}>${x}</option>`).join('')}</select>
+ <p class="muted" id="modeHelp"></p>
+ <label>Current target</label><select id="tt">${targetOptions(mode)}</select>
+ <label>Status</label><select id="ts">${['Active','Planned','Paused','Complete','Passed','Rejected','Inconclusive'].map(x=>`<option ${x===t.status?'selected':''}>${x}</option>`).join('')}</select>
+ <div class="actions"><button class="btn" id="saveTest">Save</button><button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;
+ const explain=()=>{
+   const m=$('#tmode').value;
+   $('#tt').innerHTML=targetOptions(m);
+   $('#modeHelp').textContent=m==='Rapid'?'Recommended: adaptive 4–20 match funnel with early pass/reject rules.':m==='Standard'?'8–40 matches for stronger confirmation.':'16–96 matches for exhaustive long-form evidence.';
+ };
+ $('#tmode').onchange=explain;explain();
+ $('#cancel').onclick=render;
+ $('#saveTest').onclick=async()=>{
+   const mode=$('#tmode').value;
+   const x={...t,projectId:$('#tpr').value,aId:$('#ta').value,bId:$('#tb').value,mode,target:+$('#tt').value,status:$('#ts').value};
+   if(x.aId===x.bId)return alert('Choose different builds');
+   await put('tests',x);await load()
+ }
 }
-async function deleteTest(id){if(confirm('Delete test?')){await remove('tests',id);await load()}}function startTest(id){const t=S.tests.find(x=>x.id===id),a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId);S.battle={id:uid(),testId:id,a:a.name,b:b.name,aScore:0,bScore:0,rounds:[]};go('battle')}function finish(side,f,p){if(['Over','Xtreme'].includes(f)){S.pending={side,f,p};render()}else addRound(side,f,p,false)}function confirmOwn(o){const x=S.pending;S.pending=null;addRound(x.side,x.f,x.p,o)}function addRound(side,finish,points,own){S.battle.rounds.push({side,finish,points,own});side==='a'?S.battle.aScore+=points:S.battle.bScore+=points;render()}function undo(){if(S.pending){S.pending=null;return render()}const r=S.battle?.rounds.pop();if(!r)return;r.side==='a'?S.battle.aScore-=r.points:S.battle.bScore-=r.points;render()}function discard(){if(confirm('Discard match?')){S.battle=null;render()}}async function saveMatch(){
- const m=S.battle;m.winner=m.aScore>m.bScore?m.a:m.b;m.date=new Date().toISOString();await put('matches',m);
+async function deleteTest(id){if(confirm('Delete test?')){await remove('tests',id);await load()}}function startTest(id){const t=S.tests.find(x=>x.id===id),a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId);S.lastSave=null;S.battle={id:uid(),testId:id,a:a.name,b:b.name,aScore:0,bScore:0,rounds:[]};go('battle')}function finish(side,f,p){if(['Over','Xtreme'].includes(f)){S.pending={side,f,p};render()}else addRound(side,f,p,false)}function confirmOwn(o){const x=S.pending;S.pending=null;addRound(x.side,x.f,x.p,o)}function addRound(side,finish,points,own){S.battle.rounds.push({side,finish,points,own});side==='a'?S.battle.aScore+=points:S.battle.bScore+=points;render()}function undo(){if(S.pending){S.pending=null;return render()}const r=S.battle?.rounds.pop();if(!r)return;r.side==='a'?S.battle.aScore-=r.points:S.battle.bScore-=r.points;render()}function discard(){if(confirm('Discard match?')){S.battle=null;render()}}function nextMatchForTest(testId){
+ const t=S.tests.find(x=>x.id===testId);
+ if(!t)return;
+ const a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId);
+ if(!a||!b)return;
+ S.battle={id:uid(),testId:t.id,a:a.name,b:b.name,aScore:0,bScore:0,rounds:[]};
+ S.page='battle';
+ render();
+}
+function savedMatchPanel(){
+ if(!S.lastSave)return '';
+ const s=S.lastSave;
+ return `<div class="card saved-banner">
+   <div class="top">
+     <div><b>${s.complete?'Rapid decision reached':'Match saved'}</b><br><span class="muted">${s.summary}</span></div>
+     <span class="badge ${s.decision==='fail'?'bad':s.decision==='pass'?'good':'warn'}">${s.done}/${s.target}</span>
+   </div>
+   <div class="notice"><b>${s.reason||''}</b></div>
+   <div class="progress"><div style="width:${Math.min(100,s.done/s.target*100)}%"></div></div>
+   <div class="actions">
+     ${s.complete?`<button class="btn" data-go="research">Review coach decision</button>`:`<button class="btn good" data-next-match="${s.testId}">Start next match</button>`}
+     <button class="btn secondary" data-go="research">Open Lab</button>
+   </div>
+ </div>`;
+}
+async function saveMatch(){
+ const m=S.battle;
+ m.winner=m.aScore>m.bScore?m.a:m.b;
+ m.date=new Date().toISOString();
+ await put('matches',m);
+
  const t=S.tests.find(x=>x.id===m.testId);
+ let stopped=false,done=0,target=t?.target||0,decision=null;
  if(t){
-   const count=testMatches(t.id).length+1;
-   if(count>=t.target){
+   done=testMatches(t.id).length+1;
+   // load() has not run yet, so evaluate with a temporary in-memory match
+   S.matches.push(m);
+   decision=adaptiveDecision(t);
+   S.matches.pop();
+
+   if(decision.status==='continue' && decision.next>t.target){
      await put('notebook',notebookSummary(t));
-     if(t.target<96){t.target=nextStage(t.target);t.status='Active'}else{t.status='Complete';const p=projectForTest(t);if(p){p.status='Complete';await put('projects',p)}}
+     t.target=decision.next;
+     t.status='Active';
+     await put('tests',t);
+   }else if(['pass','fail','inconclusive'].includes(decision.status)){
+     stopped=true;
+     t.status=decision.status==='pass'?'Passed':decision.status==='fail'?'Rejected':'Inconclusive';
+     await put('notebook',notebookSummary(t));
+     await put('tests',t);
+   }else if(done>=t.target && testMode(t)!=='Rapid'){
+     await put('notebook',notebookSummary(t));
+     const plan=evidencePlan(testMode(t));
+     if(t.target<plan[plan.length-1]){t.target=nextStage(t.target,testMode(t));t.status='Active'}
+     else t.status='Complete';
      await put('tests',t);
    }
  }
- S.battle=null;await load();go('home')
+ S.lastSave={
+   testId:m.testId,
+   done,
+   target:stopped?done:(t?.target||target),
+   complete:stopped,
+   decision:decision?.status||'continue',
+   reason:decision?.reason||'Match saved.',
+   summary:`${m.winner} won ${m.aScore}-${m.bScore}`
+ };
+ S.battle=null;
+ await load();
+ S.page='battle';
+ render();
 }
 async function exportData(){const o=await dump(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download='beylab-backup.json';a.click()}function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{await restore(JSON.parse(r.result));await load()}catch(err){alert('Invalid backup')}};r.readAsText(f)}async function resetAll(){if(!confirm('Erase collection, builds, tests, and matches?'))return;for(const s of STORES)await clear(s);await load()}
 window.addEventListener('error',e=>showError(e.error||e.message));window.addEventListener('unhandledrejection',e=>showError(e.reason));function showError(err){$('#app').innerHTML=`<div class="error card"><h2>App startup error</h2><p>The interface could not load. This message replaces the previous blank screen.</p><pre>${String(err?.stack||err)}</pre><button class="btn" onclick="location.reload()">Reload</button></div>`}
