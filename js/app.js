@@ -3,7 +3,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],uid
 let S={page:'home',catalog:[],parts:[],productsOwned:[],builds:[],tests:[],matches:[],battle:null,pending:null};
 async function load(){const r=await fetch('./data/products.json',{cache:'no-store'});if(!r.ok)throw new Error('Could not load product catalog');S.catalog=await r.json();S.parts=await all('parts');S.productsOwned=await all('productsOwned');S.builds=await all('builds');S.tests=await all('tests');S.matches=await all('matches');render()}
 function nav(){return `<nav>${[['home','⌂','Home'],['collection','◫','Collection'],['builds','◇','Builds'],['research','☷','Research'],['battle','⚔','Battle'],['stats','▥','Stats']].map(x=>`<button class="${S.page===x[0]?'active':''}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}</nav>`}
-function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Stable rebuild · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
+function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Stable rebuild v1.4.1 · CX component fix · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
 function go(p){S.page=p;render()}
 function buildSystem(b){
  if(b.system)return b.system;
