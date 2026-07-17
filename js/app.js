@@ -4,7 +4,22 @@ let S={page:'home',catalog:[],parts:[],productsOwned:[],builds:[],tests:[],match
 async function load(){const r=await fetch('./data/products.json',{cache:'no-store'});if(!r.ok)throw new Error('Could not load product catalog');S.catalog=await r.json();S.parts=await all('parts');S.productsOwned=await all('productsOwned');S.builds=await all('builds');S.tests=await all('tests');S.matches=await all('matches');render()}
 function nav(){return `<nav>${[['home','⌂','Home'],['collection','◫','Collection'],['builds','◇','Builds'],['research','☷','Research'],['battle','⚔','Battle'],['stats','▥','Stats']].map(x=>`<button class="${S.page===x[0]?'active':''}" data-go="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}</nav>`}
 function render(){const v={home:home,collection,builds,research,battle,stats};$('#app').innerHTML=`<header><h1>Beyblade X Tournament Lab</h1><p>Stable rebuild · offline inventory and controlled testing</p></header><main>${v[S.page]()}</main>${nav()}`;bind()}
-function go(p){S.page=p;render()}function bname(b){return `${b.blade} ${b.ratchet} ${b.bit}`}
+function go(p){S.page=p;render()}
+function buildSystem(b){
+ if(b.system)return b.system;
+ if(b.lockChip&&(b.overBlade||b.metalBlade))return 'CX Expand';
+ if(b.lockChip&&b.mainBlade)return 'CX';
+ return 'Standard';
+}
+function bname(b){
+ const system=buildSystem(b);
+ if(system==='CX Expand')return `${b.lockChip} ${b.overBlade} ${b.metalBlade} ${b.assistBlade} ${b.ratchet} ${b.bit}`.replace(/\s+/g,' ').trim();
+ if(system==='CX')return `${b.lockChip} ${b.mainBlade} ${b.assistBlade} ${b.ratchet} ${b.bit}`.replace(/\s+/g,' ').trim();
+ return `${b.blade} ${b.ratchet} ${b.bit}`.replace(/\s+/g,' ').trim();
+}
+function buildPartNames(b){
+ return [b.blade,b.lockChip,b.mainBlade,b.assistBlade,b.overBlade,b.metalBlade,b.ratchet,b.bit].filter(Boolean);
+}
 function home(){
  const a=aggregate(S.matches),coach=researchCoach({builds:S.builds,tests:S.tests,matches:S.matches}),best=[...a].sort((x,y)=>y.winRate-x.winRate||y.diff-x.diff)[0],active=S.tests.find(x=>x.status==='Active');
  const reasonList=coach.reasons?.map(x=>`<li>${x}</li>`).join('')||'';
@@ -15,7 +30,7 @@ function home(){
 }
 function productRow(p){const o=S.productsOwned.find(x=>x.code===p.code),count=p.variants?.length||1;return `<tr data-product-row data-search="${(p.code+' '+p.name+' '+(p.parts||[]).map(x=>x.name).join(' ')+' '+(p.variants||[]).map(v=>v.name+' '+v.parts.map(x=>x.name).join(' ')).join(' ')).toLowerCase()}"><td>${p.code}</td><td>${p.name}</td><td>${p.line}</td><td>${p.type}</td><td>${p.releaseDate||''}</td><td>${o?.qty||0}</td><td>${p.variants?.length?`<span class="badge warn">${count} variants</span>`:'<span class="badge good">Mapped</span>'}</td><td><button class="btn secondary" data-product="${p.code}">Add</button></td></tr>`}
 function collection(){return `<div class="card hero"><h2>Released Product / Set Library</h2><p class="muted">Choose a mapped product. Its included parts are loaded automatically.</p><div class="search"><input id="prodSearch" placeholder="Search product or included part"><select id="prodLine"><option>All</option><option>BX</option><option>UX</option><option>CX</option></select></div><div class="scroll"><table><tr><th>Code</th><th>Product</th><th>Line</th><th>Type</th><th>Release</th><th>Owned</th><th>Mapping</th><th></th></tr>${S.catalog.map(productRow).join('')}</table></div></div><div class="card"><div class="top"><h2>Owned Parts</h2><button class="btn" data-loose>Add Independent Part</button></div><div class="scroll"><table><tr><th>Category</th><th>Part</th><th>Qty</th><th>Source</th><th></th></tr>${S.parts.length?S.parts.sort((a,b)=>a.category.localeCompare(b.category)||a.name.localeCompare(b.name)).map(x=>`<tr><td>${x.category}</td><td>${x.name}</td><td>${x.qty}</td><td>${x.source||''}</td><td><button class="btn secondary" data-edit-part="${x.id}">Edit</button></td></tr>`).join(''):`<tr><td colspan="5" class="muted">Collection is empty.</td></tr>`}</table></div></div><div class="card"><h3>Backup and reset</h3><div class="actions"><button class="btn" data-export>Export</button><button class="btn secondary" data-import>Import</button><button class="btn danger" data-reset>Factory Reset</button></div><input id="importFile" class="hidden" type="file" accept=".json"></div><div id="modal"></div>`}
-function builds(){return `<div class="card"><div class="top"><h2>Saved Builds</h2><button class="btn" data-new-build>Add Build</button></div>${S.builds.length?S.builds.map(x=>`<div class="queue"><div class="top"><div><b>${x.name}</b><br><span class="muted">${x.role||''}</span></div><span class="badge">${x.status||'Experimental'}</span></div><div class="actions"><button class="btn secondary" data-edit-build="${x.id}">Edit</button><button class="btn danger" data-del-build="${x.id}">Delete</button></div></div>`).join(''):`<p class="muted">No builds yet.</p>`}</div><div id="modal"></div>`}
+function builds(){return `<div class="card"><div class="top"><h2>Saved Builds</h2><button class="btn" data-new-build>Add Build</button></div>${S.builds.length?S.builds.map(x=>`<div class="queue"><div class="top"><div><b>${x.name}</b><br><span class="muted">${buildSystem(x)} · ${x.role||''}</span></div><span class="badge">${x.status||'Experimental'}</span></div><div class="actions"><button class="btn secondary" data-edit-build="${x.id}">Edit</button><button class="btn danger" data-del-build="${x.id}">Delete</button></div></div>`).join(''):`<p class="muted">No builds yet.</p>`}</div><div id="modal"></div>`}
 function research(){return `<div class="card"><div class="top"><h2>Controlled Tests</h2><button class="btn" data-new-test>Add Test</button></div>${S.tests.length?S.tests.map(testCard).join(''):`<p class="muted">No tests yet.</p>`}</div><div id="modal"></div>`}
 function testCard(t){const a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId),done=S.matches.filter(x=>x.testId===t.id).length;return `<div class="queue"><div class="top"><div><b>${a?.name||'Missing build'}</b><br><span class="muted">vs</span><br><b>${b?.name||'Missing build'}</b></div><span class="badge">${t.status}</span></div><div class="progress"><div style="width:${Math.min(100,done/t.target*100)}%"></div></div><p class="muted">${done}/${t.target}</p><div class="actions"><button class="btn" data-start-test="${t.id}">Continue</button><button class="btn secondary" data-edit-test="${t.id}">Edit</button><button class="btn danger" data-del-test="${t.id}">Delete</button></div></div>`}
 function battle(){const m=S.battle;if(!m)return `<div class="card"><h2>No active match</h2><button class="btn" data-go="research">Open Research</button></div>`;const done=m.aScore>=4||m.bScore>=4;return `<div class="card hero"><div class="scoreboard"><div><b>${m.a}</b><div class="score">${m.aScore}</div></div><div>VS</div><div><b>${m.b}</b><div class="score">${m.bScore}</div></div></div></div>${done?`<div class="card"><h2>${m.aScore>m.bScore?m.a:m.b} wins</h2><div class="actions"><button class="btn good" data-save-match>Save</button><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Discard</button></div></div>`:`${sideButtons('a',m.a)}${sideButtons('b',m.b)}<div class="actions"><button class="btn secondary" data-undo>Undo</button><button class="btn danger" data-discard>Cancel</button></div>`}<div class="card"><h3>Rounds</h3>${m.rounds.length?`<div class="scroll"><table><tr><th>#</th><th>Winner</th><th>Finish</th><th>Pts</th><th>Own</th></tr>${m.rounds.map((r,i)=>`<tr><td>${i+1}</td><td>${r.side==='a'?m.a:m.b}</td><td>${r.finish}</td><td>${r.points}</td><td>${r.own?'Yes':''}</td></tr>`).join('')}</table></div>`:`<p class="muted">No rounds.</p>`}</div>${S.pending?ownModal():''}`}
@@ -56,8 +71,70 @@ function productModal(code){
    o.qty+=qty;await put('productsOwned',o);await load()
  }
 }
-function partModal(id=null){const p=id?S.parts.find(x=>x.id===id):{id:uid(),category:'Blade',name:'',qty:1,source:'Loose / independent'};$('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Independent Part</h3><label>Category</label><select id="pc">${['Blade','Ratchet','Bit','Lock Chip','Main Blade','Assist Blade','Metal Blade','Over Blade'].map(x=>`<option ${x===p.category?'selected':''}>${x}</option>`).join('')}</select><label>Name</label><input id="pn" value="${p.name}"><label>Quantity</label><input id="pq" type="number" min="0" value="${p.qty}"><label>Source</label><input id="ps" value="${p.source||''}"><div class="actions"><button class="btn" id="savePart">Save</button>${id?'<button class="btn danger" id="deletePart">Delete</button>':''}<button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;$('#cancel').onclick=render;$('#savePart').onclick=async()=>{const x={id:p.id,category:$('#pc').value,name:$('#pn').value.trim(),qty:Math.max(0,+$('#pq').value||0),source:$('#ps').value.trim()};if(!x.name)return alert('Enter a name');await put('parts',x);await load()};if(id)$('#deletePart').onclick=async()=>{if(S.builds.some(b=>[b.blade,b.ratchet,b.bit].includes(p.name)))return alert('Part is used by a saved build');await remove('parts',p.id);await load()}}
-function opts(cat,sel){return S.parts.filter(x=>x.category===cat&&x.qty>0).map(x=>`<option ${x.name===sel?'selected':''}>${x.name}</option>`).join('')}function buildModal(id=null){if(!S.parts.length)return alert('Add owned parts first');const b=id?S.builds.find(x=>x.id===id):{id:uid(),blade:S.parts.find(x=>x.category==='Blade')?.name||'',ratchet:S.parts.find(x=>x.category==='Ratchet')?.name||'',bit:S.parts.find(x=>x.category==='Bit')?.name||'',role:'',status:'Experimental'};$('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Build</h3><label>Blade</label><select id="bb">${opts('Blade',b.blade)}</select><label>Ratchet</label><select id="br">${opts('Ratchet',b.ratchet)}</select><label>Bit</label><select id="bi">${opts('Bit',b.bit)}</select><label>Role</label><input id="bro" value="${b.role||''}"><label>Status</label><select id="bs">${['Experimental','Benchmark','Tournament Candidate','Validated'].map(x=>`<option ${x===b.status?'selected':''}>${x}</option>`).join('')}</select><div class="actions"><button class="btn" id="saveBuild">Save</button><button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;$('#cancel').onclick=render;$('#saveBuild').onclick=async()=>{const x={...b,blade:$('#bb').value,ratchet:$('#br').value,bit:$('#bi').value,role:$('#bro').value,status:$('#bs').value};x.name=bname(x);await put('builds',x);await load()}}
+function partModal(id=null){const p=id?S.parts.find(x=>x.id===id):{id:uid(),category:'Blade',name:'',qty:1,source:'Loose / independent'};$('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Independent Part</h3><label>Category</label><select id="pc">${['Blade','Ratchet','Bit','Lock Chip','Main Blade','Assist Blade','Metal Blade','Over Blade'].map(x=>`<option ${x===p.category?'selected':''}>${x}</option>`).join('')}</select><label>Name</label><input id="pn" value="${p.name}"><label>Quantity</label><input id="pq" type="number" min="0" value="${p.qty}"><label>Source</label><input id="ps" value="${p.source||''}"><div class="actions"><button class="btn" id="savePart">Save</button>${id?'<button class="btn danger" id="deletePart">Delete</button>':''}<button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;$('#cancel').onclick=render;$('#savePart').onclick=async()=>{const x={id:p.id,category:$('#pc').value,name:$('#pn').value.trim(),qty:Math.max(0,+$('#pq').value||0),source:$('#ps').value.trim()};if(!x.name)return alert('Enter a name');await put('parts',x);await load()};if(id)$('#deletePart').onclick=async()=>{if(S.builds.some(b=>buildPartNames(b).includes(p.name)))return alert('Part is used by a saved build');await remove('parts',p.id);await load()}}
+function opts(cat,sel){
+ const rows=S.parts.filter(x=>x.category===cat&&x.qty>0);
+ return rows.length
+  ?rows.map(x=>`<option ${x.name===sel?'selected':''}>${x.name}</option>`).join('')
+  :`<option value="">No owned ${cat}</option>`;
+}
+function buildFields(system,b){
+ if(system==='CX Expand')return `
+   <label>Lock Chip</label><select id="blc">${opts('Lock Chip',b.lockChip)}</select>
+   <label>Over Blade</label><select id="bob">${opts('Over Blade',b.overBlade)}</select>
+   <label>Metal Blade</label><select id="bmb">${opts('Metal Blade',b.metalBlade)}</select>
+   <label>Assist Blade</label><select id="bab">${opts('Assist Blade',b.assistBlade)}</select>
+   <label>Ratchet</label><select id="br">${opts('Ratchet',b.ratchet)}</select>
+   <label>Bit</label><select id="bi">${opts('Bit',b.bit)}</select>`;
+ if(system==='CX')return `
+   <label>Lock Chip</label><select id="blc">${opts('Lock Chip',b.lockChip)}</select>
+   <label>Main Blade</label><select id="bmain">${opts('Main Blade',b.mainBlade)}</select>
+   <label>Assist Blade</label><select id="bab">${opts('Assist Blade',b.assistBlade)}</select>
+   <label>Ratchet</label><select id="br">${opts('Ratchet',b.ratchet)}</select>
+   <label>Bit</label><select id="bi">${opts('Bit',b.bit)}</select>`;
+ return `
+   <label>Blade</label><select id="bb">${opts('Blade',b.blade)}</select>
+   <label>Ratchet</label><select id="br">${opts('Ratchet',b.ratchet)}</select>
+   <label>Bit</label><select id="bi">${opts('Bit',b.bit)}</select>`;
+}
+function readBuildFields(system,b){
+ const base={...b,system,role:$('#bro').value,status:$('#bs').value};
+ if(system==='CX Expand')return {...base,blade:'',mainBlade:'',lockChip:$('#blc').value,overBlade:$('#bob').value,metalBlade:$('#bmb').value,assistBlade:$('#bab').value,ratchet:$('#br').value,bit:$('#bi').value};
+ if(system==='CX')return {...base,blade:'',overBlade:'',metalBlade:'',lockChip:$('#blc').value,mainBlade:$('#bmain').value,assistBlade:$('#bab').value,ratchet:$('#br').value,bit:$('#bi').value};
+ return {...base,lockChip:'',mainBlade:'',assistBlade:'',overBlade:'',metalBlade:'',blade:$('#bb').value,ratchet:$('#br').value,bit:$('#bi').value};
+}
+function buildModal(id=null){
+ if(!S.parts.length)return alert('Add owned parts first');
+ const b=id?S.builds.find(x=>x.id===id):{
+   id:uid(),system:'Standard',
+   blade:S.parts.find(x=>x.category==='Blade')?.name||'',
+   ratchet:S.parts.find(x=>x.category==='Ratchet')?.name||'',
+   bit:S.parts.find(x=>x.category==='Bit')?.name||'',
+   role:'',status:'Experimental'
+ };
+ const initialSystem=buildSystem(b);
+ $('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Build</h3>
+   <label>Build System</label>
+   <select id="buildSystem">
+     ${['Standard','CX','CX Expand'].map(x=>`<option ${x===initialSystem?'selected':''}>${x}</option>`).join('')}
+   </select>
+   <div id="buildFields"></div>
+   <label>Role</label><input id="bro" value="${b.role||''}">
+   <label>Status</label><select id="bs">${['Experimental','Benchmark','Tournament Candidate','Validated'].map(x=>`<option ${x===b.status?'selected':''}>${x}</option>`).join('')}</select>
+   <div class="actions"><button class="btn" id="saveBuild">Save</button><button class="btn secondary" id="cancel">Cancel</button></div>
+ </div></div>`;
+ const paint=()=>{$('#buildFields').innerHTML=buildFields($('#buildSystem').value,b)};
+ $('#buildSystem').onchange=paint;paint();
+ $('#cancel').onclick=render;
+ $('#saveBuild').onclick=async()=>{
+   const x=readBuildFields($('#buildSystem').value,b);
+   const required=buildPartNames(x);
+   if(required.some(v=>!v))return alert('Complete every required component.');
+   x.name=bname(x);
+   await put('builds',x);
+   await load();
+ };
+}
 async function deleteBuild(id){if(S.tests.some(t=>t.aId===id||t.bId===id))return alert('Build is used by a test');if(confirm('Delete build?')){await remove('builds',id);await load()}}
 function buildOptions(sel){return S.builds.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${x.name}</option>`).join('')}function testModal(id=null){if(S.builds.length<2)return alert('Create at least two builds');const t=id?S.tests.find(x=>x.id===id):{id:uid(),aId:S.builds[0].id,bId:S.builds[1].id,target:16,status:'Active'};$('#modal').innerHTML=`<div class="modal"><div class="card"><h3>${id?'Edit':'Add'} Test</h3><label>Focus</label><select id="ta">${buildOptions(t.aId)}</select><label>Opponent</label><select id="tb">${buildOptions(t.bId)}</select><label>Target</label><select id="tt">${[16,32,64,96].map(x=>`<option ${x===t.target?'selected':''}>${x}</option>`).join('')}</select><label>Status</label><select id="ts">${['Active','Planned','Paused','Complete'].map(x=>`<option ${x===t.status?'selected':''}>${x}</option>`).join('')}</select><div class="actions"><button class="btn" id="saveTest">Save</button><button class="btn secondary" id="cancel">Cancel</button></div></div></div>`;$('#cancel').onclick=render;$('#saveTest').onclick=async()=>{const x={...t,aId:$('#ta').value,bId:$('#tb').value,target:+$('#tt').value,status:$('#ts').value};if(x.aId===x.bId)return alert('Choose different builds');await put('tests',x);await load()}}
 async function deleteTest(id){if(confirm('Delete test?')){await remove('tests',id);await load()}}function startTest(id){const t=S.tests.find(x=>x.id===id),a=S.builds.find(x=>x.id===t.aId),b=S.builds.find(x=>x.id===t.bId);S.battle={id:uid(),testId:id,a:a.name,b:b.name,aScore:0,bScore:0,rounds:[]};go('battle')}function finish(side,f,p){if(['Over','Xtreme'].includes(f)){S.pending={side,f,p};render()}else addRound(side,f,p,false)}function confirmOwn(o){const x=S.pending;S.pending=null;addRound(x.side,x.f,x.p,o)}function addRound(side,finish,points,own){S.battle.rounds.push({side,finish,points,own});side==='a'?S.battle.aScore+=points:S.battle.bScore+=points;render()}function undo(){if(S.pending){S.pending=null;return render()}const r=S.battle?.rounds.pop();if(!r)return;r.side==='a'?S.battle.aScore-=r.points:S.battle.bScore-=r.points;render()}function discard(){if(confirm('Discard match?')){S.battle=null;render()}}async function saveMatch(){const m=S.battle;m.winner=m.aScore>m.bScore?m.a:m.b;m.date=new Date().toISOString();await put('matches',m);S.battle=null;await load();go('home')}
