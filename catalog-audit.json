@@ -1,0 +1,1593 @@
+[
+  {
+    "code": "BX-01",
+    "name": "Starter DranSword 3-60F",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranSword"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Flat"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-02",
+    "name": "Starter HellsScythe 4-60T",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "HellsScythe"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Taper"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-03",
+    "name": "Starter WizardArrow 4-80B",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WizardArrow"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-04",
+    "name": "Starter KnightShield 3-80N",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "KnightShield"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-05",
+    "name": "Booster WizardArrow 4-80B",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WizardArrow"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-06",
+    "name": "Booster KnightShield 3-80N",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "KnightShield"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-07",
+    "name": "Start Dash Set",
+    "line": "BX",
+    "type": "Start Dash Set",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranSword"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Flat"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-08",
+    "name": "3on3 Deck Set",
+    "line": "BX",
+    "type": "Deck Set",
+    "releaseDate": "2023-07-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "HellsScythe"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Ball"
+      },
+      {
+        "category": "Blade",
+        "name": "WizardArrow"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Needle"
+      },
+      {
+        "category": "Blade",
+        "name": "KnightShield"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Taper"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-13",
+    "name": "Booster KnightLance 4-80HN",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-08-10",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "KnightLance"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-80"
+      },
+      {
+        "category": "Bit",
+        "name": "High Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-14",
+    "name": "Random Booster Vol. 1",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2023-09-09",
+    "variants": [
+      {
+        "id": "01",
+        "name": "SharkEdge 3-60LF",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "SharkEdge"
+          },
+          {
+            "category": "Ratchet",
+            "name": "3-60"
+          },
+          {
+            "category": "Bit",
+            "name": "Low Flat"
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "name": "SharkEdge 4-80N",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "SharkEdge"
+          },
+          {
+            "category": "Ratchet",
+            "name": "4-80"
+          },
+          {
+            "category": "Bit",
+            "name": "Needle"
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "name": "DranSword 3-80B",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "DranSword"
+          },
+          {
+            "category": "Ratchet",
+            "name": "3-80"
+          },
+          {
+            "category": "Bit",
+            "name": "Ball"
+          }
+        ]
+      },
+      {
+        "id": "04",
+        "name": "HellsScythe 4-80LF",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "HellsScythe"
+          },
+          {
+            "category": "Ratchet",
+            "name": "4-80"
+          },
+          {
+            "category": "Bit",
+            "name": "Low Flat"
+          }
+        ]
+      },
+      {
+        "id": "05",
+        "name": "KnightShield 4-60LF",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "KnightShield"
+          },
+          {
+            "category": "Ratchet",
+            "name": "4-60"
+          },
+          {
+            "category": "Bit",
+            "name": "Low Flat"
+          }
+        ]
+      },
+      {
+        "id": "06",
+        "name": "WizardArrow 3-60T",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "WizardArrow"
+          },
+          {
+            "category": "Ratchet",
+            "name": "3-60"
+          },
+          {
+            "category": "Bit",
+            "name": "Taper"
+          }
+        ]
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-15",
+    "name": "Starter LeonClaw 5-60P",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-10-07",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "LeonClaw"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Point"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-17",
+    "name": "Battle Entry Set",
+    "line": "BX",
+    "type": "Battle Entry Set",
+    "releaseDate": "2023-10-07",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranSword"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Flat"
+      },
+      {
+        "category": "Blade",
+        "name": "WizardArrow"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-19",
+    "name": "Booster RhinoHorn 3-80S",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2023-11-02",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "RhinoHorn"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Spike"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-21",
+    "name": "HellsChain Deck Set",
+    "line": "BX",
+    "type": "Deck Set",
+    "releaseDate": "2023-11-02",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "HellsChain"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-60"
+      },
+      {
+        "category": "Bit",
+        "name": "High Taper"
+      },
+      {
+        "category": "Blade",
+        "name": "KnightLance"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Low Flat"
+      },
+      {
+        "category": "Blade",
+        "name": "WizardArrow"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-22",
+    "name": "DranSword 3-60F Entry Package",
+    "line": "BX",
+    "type": "Entry Package",
+    "releaseDate": "2023-12-02",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranSword"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Flat"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-23",
+    "name": "PhoenixWing 9-60GF",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2023-12-27",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "PhoenixWing"
+      },
+      {
+        "category": "Ratchet",
+        "name": "9-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Gear Flat"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-26",
+    "name": "Booster UnicornSting 5-60GP",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2024-01-27",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "UnicornSting"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Gear Point"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-31",
+    "name": "Random Booster Vol. 3",
+    "line": "BX",
+    "type": "Random Booster",
+    "releaseDate": "2024-04-27",
+    "variants": [
+      {
+        "id": "01",
+        "name": "TyrannoBeat 4-70Q",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "TyrannoBeat"
+          },
+          {
+            "category": "Ratchet",
+            "name": "4-70"
+          },
+          {
+            "category": "Bit",
+            "name": "Quake"
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "name": "TyrannoBeat 3-60S",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "TyrannoBeat"
+          },
+          {
+            "category": "Ratchet",
+            "name": "3-60"
+          },
+          {
+            "category": "Bit",
+            "name": "Spike"
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "name": "HellsChain 9-80O",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "HellsChain"
+          },
+          {
+            "category": "Ratchet",
+            "name": "9-80"
+          },
+          {
+            "category": "Bit",
+            "name": "Orb"
+          }
+        ]
+      },
+      {
+        "id": "04",
+        "name": "DranDagger 4-70P",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "DranDagger"
+          },
+          {
+            "category": "Ratchet",
+            "name": "4-70"
+          },
+          {
+            "category": "Bit",
+            "name": "Point"
+          }
+        ]
+      },
+      {
+        "id": "05",
+        "name": "SharkEdge 1-60Q",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "SharkEdge"
+          },
+          {
+            "category": "Ratchet",
+            "name": "1-60"
+          },
+          {
+            "category": "Bit",
+            "name": "Quake"
+          }
+        ]
+      },
+      {
+        "id": "06",
+        "name": "RhinoHorn 5-80Q",
+        "parts": [
+          {
+            "category": "Blade",
+            "name": "RhinoHorn"
+          },
+          {
+            "category": "Ratchet",
+            "name": "5-80"
+          },
+          {
+            "category": "Bit",
+            "name": "Quake"
+          }
+        ]
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-33",
+    "name": "Booster WeissTiger 3-60U",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2024-06-15",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WeissTiger"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Unite"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-34",
+    "name": "Starter CobaltDragoon 2-60C",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2024-07-13",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "CobaltDragoon"
+      },
+      {
+        "category": "Ratchet",
+        "name": "2-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Cyclone"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-38",
+    "name": "Booster CrimsonGaruda 4-70TP",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2024-11-02",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "CrimsonGaruda"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Trans Point"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-44",
+    "name": "Booster TriceraPress M-85BS",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2025-06-28",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "TriceraPress"
+      },
+      {
+        "category": "Ratchet",
+        "name": "M-85"
+      },
+      {
+        "category": "Bit",
+        "name": "Bound Spike"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-45",
+    "name": "Booster SamuraiCalibur 6-70M",
+    "line": "BX",
+    "type": "Booster",
+    "releaseDate": "2025-08-09",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SamuraiCalibur"
+      },
+      {
+        "category": "Ratchet",
+        "name": "6-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Merge"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "BX-49",
+    "name": "DranStrike 4-50FF",
+    "line": "BX",
+    "type": "Starter",
+    "releaseDate": "2026-05-16",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranStrike"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Free Flat"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "CX-01",
+    "name": "Starter DranBrave S6-60V",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-03-29",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Dran"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Brave"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Slash"
+      },
+      {
+        "category": "Ratchet",
+        "name": "6-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Vortex"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX"
+  },
+  {
+    "code": "CX-02",
+    "name": "Starter WizardArc R4-55LO",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-03-29",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Wizard"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Arc"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Round"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-55"
+      },
+      {
+        "category": "Bit",
+        "name": "Low Orb"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX"
+  },
+  {
+    "code": "CX-03",
+    "name": "Booster PerseusDark B6-80W",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2025-03-29",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Perseus"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Dark"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Bumper"
+      },
+      {
+        "category": "Ratchet",
+        "name": "6-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Wedge"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX"
+  },
+  {
+    "code": "CX-09",
+    "name": "Starter SolEclipse D5-70TK",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2025-09-27",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Sol"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Eclipse"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Dual"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Trans Kick"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX"
+  },
+  {
+    "code": "CX-10",
+    "name": "Booster WolfHunt F0-60DB",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2025-11-01",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Wolf"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Hunt"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Free"
+      },
+      {
+        "category": "Ratchet",
+        "name": "0-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Disc Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX"
+  },
+  {
+    "code": "CX-11",
+    "name": "EmperorMight Deck Set",
+    "line": "CX",
+    "type": "Deck Set",
+    "releaseDate": "2025-11-01",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Emperor"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Might"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Heavy"
+      },
+      {
+        "category": "Ratchet Integrated Bit",
+        "name": "Operate"
+      },
+      {
+        "category": "Blade",
+        "name": "GolemRock"
+      },
+      {
+        "category": "Ratchet",
+        "name": "M-85"
+      },
+      {
+        "category": "Bit",
+        "name": "High Needle"
+      },
+      {
+        "category": "Blade",
+        "name": "SharkGill"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Free Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "Mixed Set"
+  },
+  {
+    "code": "CX-12",
+    "name": "Booster PhoenixFlare Z9-80WW",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2026-01-24",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Phoenix"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Flare"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Zillion"
+      },
+      {
+        "category": "Ratchet",
+        "name": "9-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Wall Wedge"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX"
+  },
+  {
+    "code": "CX-13",
+    "name": "Starter BahamutBlitz BK1-50I",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2026-03-28",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Bahamut"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Break"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Blitz"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Knuckle"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Ignition"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX Expand"
+  },
+  {
+    "code": "CX-14",
+    "name": "Starter KnightFortress GV8-70UN",
+    "line": "CX",
+    "type": "Starter",
+    "releaseDate": "2026-03-28",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Knight"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Guard"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Fortress"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Vertical"
+      },
+      {
+        "category": "Ratchet",
+        "name": "8-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Under Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX Expand"
+  },
+  {
+    "code": "CX-15",
+    "name": "Booster RagnaRage FE4-55Y",
+    "line": "CX",
+    "type": "Booster",
+    "releaseDate": "2026-03-28",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Ragna"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Flow"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Rage"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Erase"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-55"
+      },
+      {
+        "category": "Bit",
+        "name": "Yielding"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true,
+    "system": "CX Expand"
+  },
+  {
+    "code": "CX-16",
+    "name": "Start Dash Set C — BahamutBlitz BK1-50I Special Color",
+    "line": "CX",
+    "type": "Set",
+    "releaseDate": "",
+    "system": "CX Expand",
+    "containsBey": true,
+    "mappingStatus": "verified",
+    "parts": [
+      {
+        "category": "Lock Chip",
+        "name": "Bahamut"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Break"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Blitz"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Knuckle"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Ignition"
+      }
+    ],
+    "notes": "Set contains the special-color BahamutBlitz configuration; non-Bey accessories are excluded from inventory."
+  },
+  {
+    "code": "UX-01",
+    "name": "Starter DranBuster 1-60A",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-03-30",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranBuster"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Accel"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-02",
+    "name": "Starter HellsHammer 3-70H",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-03-30",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "HellsHammer"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Hexa"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-03",
+    "name": "Booster WizardRod 5-70DB",
+    "line": "UX",
+    "type": "Booster",
+    "releaseDate": "2024-03-30",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "WizardRod"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Disc Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-04",
+    "name": "Battle Entry Set U",
+    "line": "UX",
+    "type": "Battle Entry Set",
+    "releaseDate": "2024-04-27",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "DranBuster"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Accel"
+      },
+      {
+        "category": "Blade",
+        "name": "WizardRod"
+      },
+      {
+        "category": "Ratchet",
+        "name": "5-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Disc Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-06",
+    "name": "Booster LeonCrest 7-60GN",
+    "line": "UX",
+    "type": "Booster",
+    "releaseDate": "2024-08-10",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "LeonCrest"
+      },
+      {
+        "category": "Ratchet",
+        "name": "7-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Gear Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-08",
+    "name": "SilverWolf 3-80FB",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-10-12",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SilverWolf"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-80"
+      },
+      {
+        "category": "Bit",
+        "name": "Free Ball"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-09",
+    "name": "Starter SamuraiSaber 2-70L",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-11-02",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SamuraiSaber"
+      },
+      {
+        "category": "Ratchet",
+        "name": "2-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Level"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-10",
+    "name": "Customize Set U",
+    "line": "UX",
+    "type": "Customize Set",
+    "releaseDate": "2024-11-02",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "KnightMail"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-85"
+      },
+      {
+        "category": "Bit",
+        "name": "Bound Spike"
+      },
+      {
+        "category": "Blade",
+        "name": "PteraSwing"
+      },
+      {
+        "category": "Blade",
+        "name": "HellsHammer"
+      },
+      {
+        "category": "Blade",
+        "name": "TyrannoBeat"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-60"
+      },
+      {
+        "category": "Ratchet",
+        "name": "7-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Ball"
+      },
+      {
+        "category": "Bit",
+        "name": "Metal Needle"
+      },
+      {
+        "category": "Bit",
+        "name": "Point"
+      },
+      {
+        "category": "Bit",
+        "name": "Rubber Accel"
+      },
+      {
+        "category": "Bit",
+        "name": "Rush"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-11",
+    "name": "ImpactDrake 9-60LR",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2024-12-28",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "ImpactDrake"
+      },
+      {
+        "category": "Ratchet",
+        "name": "9-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Low Rush"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-13",
+    "name": "Booster GolemRock 1-60UN",
+    "line": "UX",
+    "type": "Booster",
+    "releaseDate": "2025-01-25",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "GolemRock"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Under Needle"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-14",
+    "name": "ScorpioSpear 0-70Z",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2025-04-26",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "ScorpioSpear"
+      },
+      {
+        "category": "Ratchet",
+        "name": "0-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Zap"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-15",
+    "name": "SharkScale Deck Set",
+    "line": "UX",
+    "type": "Deck Set",
+    "releaseDate": "2025-08-09",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "SharkScale"
+      },
+      {
+        "category": "Ratchet",
+        "name": "4-50"
+      },
+      {
+        "category": "Bit",
+        "name": "Under Flat"
+      },
+      {
+        "category": "Blade",
+        "name": "TyrannoRoar"
+      },
+      {
+        "category": "Ratchet",
+        "name": "1-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Level"
+      },
+      {
+        "category": "Blade",
+        "name": "HellsBrave"
+      },
+      {
+        "category": "Ratchet",
+        "name": "J3-60"
+      },
+      {
+        "category": "Bit",
+        "name": "Gear Flat"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-17",
+    "name": "Starter MeteorDragoon 3-70J",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2025-12-27",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "MeteorDragoon"
+      },
+      {
+        "category": "Ratchet",
+        "name": "3-70"
+      },
+      {
+        "category": "Bit",
+        "name": "Jaggy"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  },
+  {
+    "code": "UX-19",
+    "name": "BulletGriffon H",
+    "line": "UX",
+    "type": "Starter",
+    "releaseDate": "2026-04-25",
+    "parts": [
+      {
+        "category": "Blade",
+        "name": "BulletGriffon"
+      },
+      {
+        "category": "Ratchet",
+        "name": "Integrated"
+      },
+      {
+        "category": "Bit",
+        "name": "Hexa"
+      }
+    ],
+    "mappingStatus": "verified",
+    "containsBey": true
+  }
+]
