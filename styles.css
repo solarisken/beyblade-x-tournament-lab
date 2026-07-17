@@ -4,3 +4,5 @@ header{position:sticky;top:0;z-index:20;background:rgba(7,16,31,.96);border-bott
 nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:grid;grid-template-columns:repeat(6,1fr);background:rgba(7,16,31,.98);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}nav button{background:transparent;border:0;color:var(--muted);padding:9px 3px;font-size:10px}nav button.active{color:var(--accent);font-weight:900}nav span{display:block;font-size:19px}
 @media(max-width:680px){.search{grid-template-columns:1fr}.finish-grid{grid-template-columns:repeat(2,1fr)}.score{font-size:44px}}
 .coach-reasons{margin:12px 0;padding-left:20px;color:var(--muted)}.coach-reasons li{margin:5px 0}.badge.bad{background:#431929;color:#ffd7df;border-color:#8d2d4a}
+
+.coach-console{position:relative}.coach-console .actions{position:sticky;bottom:84px;background:linear-gradient(180deg,rgba(18,30,52,.94),rgba(12,23,41,.98));padding-top:10px;z-index:4}

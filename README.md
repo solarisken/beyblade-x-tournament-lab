@@ -1,21 +1,15 @@
-# Beyblade X Tournament Lab v2.0
+# Beyblade X Tournament Lab v2.2 — Lab Coach Access
 
-Core workflow:
-1. Own products or independent parts.
-2. Create Standard, CX, CX Integrated, or CX Expand builds.
-3. Assign tournament deck slots.
-4. Create a research project with a defined question and fixed conditions.
-5. Add a controlled test.
-6. Record first-to-4 matches.
-7. The test advances automatically through 16, 32, 64, and 96 matches.
-8. Each completed evidence stage creates a permanent Research Notebook summary.
+The Smart Research Coach is now always visible at the top of the Lab tab.
 
 Added:
-- Research Projects
-- Guided Test Queue
-- Automatic evidence-stage advancement
-- Research Notebook
-- Build evidence score
-- Deck legality checks against owned quantities
-- Offline deterministic Research Coach
-- Existing corrected product catalog and CX component model retained
+- Persistent coach console in Lab
+- Coach confidence, information priority, warning count, and project status
+- Start Recommended Test button
+- Auto-Create Coach Test when no recommendation/test exists
+- Automatic creation of a default research project if needed
+- Automatic 16-match controlled test using the first two saved builds
+- Refresh Coach button
+- Sticky coach action controls for easier mobile access
+
+The coach remains fully offline and free.
