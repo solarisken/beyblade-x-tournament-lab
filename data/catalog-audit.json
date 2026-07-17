@@ -1,0 +1,158 @@
+{
+  "mappedCount": 48,
+  "excludedCount": 38,
+  "excluded": [
+    {
+      "code": "BX-09",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-10",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-11",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-12",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-16",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-18",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-20",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-24",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-25",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-27",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-28",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-29",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-30",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-32",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-35",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-36",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-37",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-39",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-40",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-41",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-42",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-43",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-46",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "BX-47",
+      "reason": "accessory-only"
+    },
+    {
+      "code": "BX-48",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-05",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-07",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-12",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-16",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "UX-18",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-04",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-05",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-06",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-07",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-08",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-16",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-17",
+      "reason": "mapping not verified"
+    },
+    {
+      "code": "CX-18",
+      "reason": "mapping not verified"
+    }
+  ]
+}
