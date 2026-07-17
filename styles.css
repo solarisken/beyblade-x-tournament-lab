@@ -6,3 +6,14 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:grid;grid-template
 .coach-reasons{margin:12px 0;padding-left:20px;color:var(--muted)}.coach-reasons li{margin:5px 0}.badge.bad{background:#431929;color:#ffd7df;border-color:#8d2d4a}
 
 .coach-console{position:relative}.coach-console .actions{position:sticky;bottom:84px;background:linear-gradient(180deg,rgba(18,30,52,.94),rgba(12,23,41,.98));padding-top:10px;z-index:4}
+
+.saved-banner{margin-top:12px}
+.saved-banner .progress{margin:12px 0}
+.saved-banner .actions .btn{min-height:48px}
+
+.mode-note{font-size:.9rem;opacity:.82}
+.badge.bad{background:#5b1f2a}
+
+.coach-global{position:sticky;top:8px;z-index:8;border:1px solid rgba(164,205,60,.45);box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.coach-global p{margin:.55rem 0}
+@media(max-width:640px){.coach-global{top:4px}.coach-global .actions .btn{flex:1}}

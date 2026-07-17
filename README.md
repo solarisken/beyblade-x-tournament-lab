@@ -1,15 +1,19 @@
-# Beyblade X Tournament Lab v2.2 — Lab Coach Access
+# Beyblade X Tournament Lab v2.5 — Coach-Managed Workflow
 
-The Smart Research Coach is now always visible at the top of the Lab tab.
+The Smart Coach now operates across the entire app.
 
-Added:
-- Persistent coach console in Lab
-- Coach confidence, information priority, warning count, and project status
-- Start Recommended Test button
-- Auto-Create Coach Test when no recommendation/test exists
-- Automatic creation of a default research project if needed
-- Automatic 16-match controlled test using the first two saved builds
-- Refresh Coach button
-- Sticky coach action controls for easier mobile access
+It manages:
+- Collection readiness and owned-quantity constraints
+- Automatic formulation of missing candidate builds
+- Legal three-Bey deck assignment
+- Research-project creation
+- Opponent selection based on role contrast and prior coverage
+- Adaptive testing with a four-match minimum and sixteen-match cap
+- Match continuation
+- Early pass, rejection, or inconclusive decisions
+- Research Notebook entries
+- Automatic build promotion after multiple distinct matchup passes
+- Evidence interpretation in Stats
+- The next recommended action on every tab
 
-The coach remains fully offline and free.
+A persistent Smart Coach control card appears above every page. The coach never adds unowned parts and does not claim a build is tournament-ready solely because it won a small number of matches.

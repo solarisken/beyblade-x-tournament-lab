@@ -1,4 +1,4 @@
-const C='beylab-tournament-lab-v2-2-lab-coach';
+const C='beylab-tournament-lab-v2-5-coach-managed';
 const A=['./','index.html','styles.css','manifest.webmanifest','data/products.json','js/app.js','js/db.js','js/analytics.js','icons/icon-192.png','icons/icon-512.png'];
 
 self.addEventListener('install',e=>{
