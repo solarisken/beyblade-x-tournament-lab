@@ -811,12 +811,20 @@
     "releaseDate": "2025-03-29",
     "parts": [
       {
-        "category": "Blade",
-        "name": "DranBrave"
+        "category": "Lock Chip",
+        "name": "Dran"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Brave"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Slash"
       },
       {
         "category": "Ratchet",
-        "name": "S6-60"
+        "name": "6-60"
       },
       {
         "category": "Bit",
@@ -824,7 +832,8 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX"
   },
   {
     "code": "CX-02",
@@ -834,12 +843,20 @@
     "releaseDate": "2025-03-29",
     "parts": [
       {
-        "category": "Blade",
-        "name": "WizardArc"
+        "category": "Lock Chip",
+        "name": "Wizard"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Arc"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Round"
       },
       {
         "category": "Ratchet",
-        "name": "R4-55"
+        "name": "4-55"
       },
       {
         "category": "Bit",
@@ -847,7 +864,8 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX"
   },
   {
     "code": "CX-03",
@@ -857,12 +875,20 @@
     "releaseDate": "2025-03-29",
     "parts": [
       {
-        "category": "Blade",
-        "name": "PerseusDark"
+        "category": "Lock Chip",
+        "name": "Perseus"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Dark"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Bumper"
       },
       {
         "category": "Ratchet",
-        "name": "B6-80"
+        "name": "6-80"
       },
       {
         "category": "Bit",
@@ -870,22 +896,31 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX"
   },
   {
     "code": "CX-09",
-    "name": "SolEclipse D5-70TK",
+    "name": "Starter SolEclipse D5-70TK",
     "line": "CX",
     "type": "Starter",
     "releaseDate": "2025-09-27",
     "parts": [
       {
-        "category": "Blade",
-        "name": "SolEclipse"
+        "category": "Lock Chip",
+        "name": "Sol"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Eclipse"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Dual"
       },
       {
         "category": "Ratchet",
-        "name": "D5-70"
+        "name": "5-70"
       },
       {
         "category": "Bit",
@@ -893,22 +928,31 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX"
   },
   {
     "code": "CX-10",
-    "name": "WolfHunt F0-60DB",
+    "name": "Booster WolfHunt F0-60DB",
     "line": "CX",
     "type": "Booster",
     "releaseDate": "2025-11-01",
     "parts": [
       {
-        "category": "Blade",
-        "name": "WolfHunt"
+        "category": "Lock Chip",
+        "name": "Wolf"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Hunt"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Free"
       },
       {
         "category": "Ratchet",
-        "name": "F0-60"
+        "name": "0-60"
       },
       {
         "category": "Bit",
@@ -916,7 +960,8 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX"
   },
   {
     "code": "CX-11",
@@ -926,15 +971,19 @@
     "releaseDate": "2025-11-01",
     "parts": [
       {
-        "category": "Blade",
-        "name": "EmperorMight"
+        "category": "Lock Chip",
+        "name": "Emperor"
       },
       {
-        "category": "Ratchet",
-        "name": "Integrated"
+        "category": "Main Blade",
+        "name": "Might"
       },
       {
-        "category": "Bit",
+        "category": "Assist Blade",
+        "name": "Heavy"
+      },
+      {
+        "category": "Ratchet Integrated Bit",
         "name": "Operate"
       },
       {
@@ -963,7 +1012,8 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "Mixed Set"
   },
   {
     "code": "CX-12",
@@ -973,12 +1023,20 @@
     "releaseDate": "2026-01-24",
     "parts": [
       {
-        "category": "Blade",
-        "name": "PhoenixFlare"
+        "category": "Lock Chip",
+        "name": "Phoenix"
+      },
+      {
+        "category": "Main Blade",
+        "name": "Flare"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Zillion"
       },
       {
         "category": "Ratchet",
-        "name": "Z9-80"
+        "name": "9-80"
       },
       {
         "category": "Bit",
@@ -986,11 +1044,12 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX"
   },
   {
     "code": "CX-13",
-    "name": "Starter BahamutBlitz Break Knuckle 1-50I",
+    "name": "Starter BahamutBlitz BK1-50I",
     "line": "CX",
     "type": "Starter",
     "releaseDate": "2026-03-28",
@@ -1032,12 +1091,24 @@
     "releaseDate": "2026-03-28",
     "parts": [
       {
-        "category": "Blade",
-        "name": "KnightFortress"
+        "category": "Lock Chip",
+        "name": "Knight"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Guard"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Fortress"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Vertical"
       },
       {
         "category": "Ratchet",
-        "name": "GV8-70"
+        "name": "8-70"
       },
       {
         "category": "Bit",
@@ -1045,7 +1116,8 @@
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX Expand"
   },
   {
     "code": "CX-15",
@@ -1055,24 +1127,37 @@
     "releaseDate": "2026-03-28",
     "parts": [
       {
-        "category": "Blade",
-        "name": "RagnaRage"
+        "category": "Lock Chip",
+        "name": "Ragna"
+      },
+      {
+        "category": "Over Blade",
+        "name": "Flow"
+      },
+      {
+        "category": "Metal Blade",
+        "name": "Rage"
+      },
+      {
+        "category": "Assist Blade",
+        "name": "Erase"
       },
       {
         "category": "Ratchet",
-        "name": "FE4-55"
+        "name": "4-55"
       },
       {
         "category": "Bit",
-        "name": "Yield"
+        "name": "Yielding"
       }
     ],
     "mappingStatus": "verified",
-    "containsBey": true
+    "containsBey": true,
+    "system": "CX Expand"
   },
   {
     "code": "CX-16",
-    "name": "BahamutBlitz Break Knuckle 1-50I Special Color Ver.",
+    "name": "Start Dash Set C — BahamutBlitz BK1-50I Special Color",
     "line": "CX",
     "type": "Set",
     "releaseDate": "",
@@ -1105,7 +1190,7 @@
         "name": "Ignition"
       }
     ],
-    "notes": "Special-color equivalent of CX-13; functional parts are identical."
+    "notes": "Set contains the special-color BahamutBlitz configuration; non-Bey accessories are excluded from inventory."
   },
   {
     "code": "UX-01",

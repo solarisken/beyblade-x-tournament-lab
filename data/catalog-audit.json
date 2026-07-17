@@ -158,5 +158,93 @@
   "cxCorrection": {
     "CX-13": "Mapped as Lock Chip Bahamut, Over Blade Break, Metal Blade Blitz, Assist Blade Knuckle, Ratchet 1-50, Bit Ignition.",
     "CX-16": "Added as special-color equivalent of CX-13 with identical functional components."
+  },
+  "allCxCorrection": {
+    "CX-01": [
+      "Lock Chip: Dran",
+      "Main Blade: Brave",
+      "Assist Blade: Slash",
+      "Ratchet: 6-60",
+      "Bit: Vortex"
+    ],
+    "CX-02": [
+      "Lock Chip: Wizard",
+      "Main Blade: Arc",
+      "Assist Blade: Round",
+      "Ratchet: 4-55",
+      "Bit: Low Orb"
+    ],
+    "CX-03": [
+      "Lock Chip: Perseus",
+      "Main Blade: Dark",
+      "Assist Blade: Bumper",
+      "Ratchet: 6-80",
+      "Bit: Wedge"
+    ],
+    "CX-09": [
+      "Lock Chip: Sol",
+      "Main Blade: Eclipse",
+      "Assist Blade: Dual",
+      "Ratchet: 5-70",
+      "Bit: Trans Kick"
+    ],
+    "CX-10": [
+      "Lock Chip: Wolf",
+      "Main Blade: Hunt",
+      "Assist Blade: Free",
+      "Ratchet: 0-60",
+      "Bit: Disc Ball"
+    ],
+    "CX-11": [
+      "Lock Chip: Emperor",
+      "Main Blade: Might",
+      "Assist Blade: Heavy",
+      "Ratchet Integrated Bit: Operate",
+      "Blade: GolemRock",
+      "Ratchet: M-85",
+      "Bit: High Needle",
+      "Blade: SharkGill",
+      "Ratchet: 5-60",
+      "Bit: Free Ball"
+    ],
+    "CX-12": [
+      "Lock Chip: Phoenix",
+      "Main Blade: Flare",
+      "Assist Blade: Zillion",
+      "Ratchet: 9-80",
+      "Bit: Wall Wedge"
+    ],
+    "CX-13": [
+      "Lock Chip: Bahamut",
+      "Over Blade: Break",
+      "Metal Blade: Blitz",
+      "Assist Blade: Knuckle",
+      "Ratchet: 1-50",
+      "Bit: Ignition"
+    ],
+    "CX-14": [
+      "Lock Chip: Knight",
+      "Over Blade: Guard",
+      "Metal Blade: Fortress",
+      "Assist Blade: Vertical",
+      "Ratchet: 8-70",
+      "Bit: Under Needle"
+    ],
+    "CX-15": [
+      "Lock Chip: Ragna",
+      "Over Blade: Flow",
+      "Metal Blade: Rage",
+      "Assist Blade: Erase",
+      "Ratchet: 4-55",
+      "Bit: Yielding"
+    ],
+    "CX-16": [
+      "Lock Chip: Bahamut",
+      "Over Blade: Break",
+      "Metal Blade: Blitz",
+      "Assist Blade: Knuckle",
+      "Ratchet: 1-50",
+      "Bit: Ignition"
+    ]
   }
 }
