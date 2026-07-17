@@ -1,4 +1,4 @@
-const C='beylab-rebuild-v1-4-2-all-cx';
+const C='beylab-tournament-lab-v2-0';
 const A=['./','index.html','styles.css','manifest.webmanifest','data/products.json','js/app.js','js/db.js','js/analytics.js','icons/icon-192.png','icons/icon-512.png'];
 
 self.addEventListener('install',e=>{

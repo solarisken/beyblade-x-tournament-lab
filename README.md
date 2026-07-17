@@ -1,18 +1,21 @@
-# Beyblade X Tournament Lab — Stable Rebuild v1.4.2 All CX Fix
+# Beyblade X Tournament Lab v2.0
 
-All CX products currently shown in the catalog are mapped at component level.
+Core workflow:
+1. Own products or independent parts.
+2. Create Standard, CX, CX Integrated, or CX Expand builds.
+3. Assign tournament deck slots.
+4. Create a research project with a defined question and fixed conditions.
+5. Add a controlled test.
+6. Record first-to-4 matches.
+7. The test advances automatically through 16, 32, 64, and 96 matches.
+8. Each completed evidence stage creates a permanent Research Notebook summary.
 
-Corrected:
-- CX-01 Dran / Brave / Slash / 6-60 / Vortex
-- CX-02 Wizard / Arc / Round / 4-55 / Low Orb
-- CX-03 Perseus / Dark / Bumper / 6-80 / Wedge
-- CX-09 Sol / Eclipse / Dual / 5-70 / Trans Kick
-- CX-10 Wolf / Hunt / Free / 0-60 / Disc Ball
-- CX-11 Emperor / Might / Heavy / Operate, plus GolemRock M-85 High Needle and SharkGill 5-60 Free Ball
-- CX-12 Phoenix / Flare / Zillion / 9-80 / Wall Wedge
-- CX-13 Bahamut / Break / Blitz / Knuckle / 1-50 / Ignition
-- CX-14 Knight / Guard / Fortress / Vertical / 8-70 / Under Needle
-- CX-15 Ragna / Flow / Rage / Erase / 4-55 / Yielding
-- CX-16 same functional BahamutBlitz parts as CX-13, special color
-
-Build editor supports Standard, CX, CX Integrated, and CX Expand.
+Added:
+- Research Projects
+- Guided Test Queue
+- Automatic evidence-stage advancement
+- Research Notebook
+- Build evidence score
+- Deck legality checks against owned quantities
+- Offline deterministic Research Coach
+- Existing corrected product catalog and CX component model retained
