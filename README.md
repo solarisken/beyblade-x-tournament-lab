@@ -1,18 +1,18 @@
-# Beyblade X Tournament Lab — Stable Rebuild v1.4.1 Cache Fix
+# Beyblade X Tournament Lab — Stable Rebuild v1.4.2 All CX Fix
 
-This build forces a new service-worker cache and uses network-first loading for:
-- data/products.json
-- js/app.js
-- js/db.js
-- js/analytics.js
-- index.html
+All CX products currently shown in the catalog are mapped at component level.
 
-The header displays v1.4.1 so you can verify that the corrected build is active.
+Corrected:
+- CX-01 Dran / Brave / Slash / 6-60 / Vortex
+- CX-02 Wizard / Arc / Round / 4-55 / Low Orb
+- CX-03 Perseus / Dark / Bumper / 6-80 / Wedge
+- CX-09 Sol / Eclipse / Dual / 5-70 / Trans Kick
+- CX-10 Wolf / Hunt / Free / 0-60 / Disc Ball
+- CX-11 Emperor / Might / Heavy / Operate, plus GolemRock M-85 High Needle and SharkGill 5-60 Free Ball
+- CX-12 Phoenix / Flare / Zillion / 9-80 / Wall Wedge
+- CX-13 Bahamut / Break / Blitz / Knuckle / 1-50 / Ignition
+- CX-14 Knight / Guard / Fortress / Vertical / 8-70 / Under Needle
+- CX-15 Ragna / Flow / Rage / Erase / 4-55 / Yielding
+- CX-16 same functional BahamutBlitz parts as CX-13, special color
 
-CX-13 and CX-16 map to:
-- Lock Chip: Bahamut
-- Over Blade: Break
-- Metal Blade: Blitz
-- Assist Blade: Knuckle
-- Ratchet: 1-50
-- Bit: Ignition
+Build editor supports Standard, CX, CX Integrated, and CX Expand.
