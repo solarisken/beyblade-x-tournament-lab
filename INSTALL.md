@@ -1,24 +1,8 @@
-# Clean replacement
+# Installation
 
-The screenshot showing only the header and numbered buttons came from broken flattened module imports. This edition eliminates modules and folders.
-
-## Replace the old repository contents
-
-Delete all old app files and folders, then upload these four files directly to the repository root:
-
-- `index.html`
-- `.nojekyll`
-- `README.md`
-- `INSTALL.md`
-
-Keep `CNAME` only when using a custom domain. Do not upload the ZIP itself.
-
-## GitHub Pages
-
-- Source: Deploy from a branch
-- Branch: main
-- Folder: / (root)
-
-## Confirm the corrected build
-
-The lower-right corner displays `Root build 2.1`. The first page must show **Build your owned collection**, not an empty dark screen.
+1. Delete the previous app files from the repository.
+2. Keep `CNAME` only if you use a custom domain.
+3. Upload `index.html`, `.nojekyll`, `README.md`, `INSTALL.md`, and `VERIFICATION.json` directly to the repository root.
+4. GitHub Pages: **Deploy from a branch → main → / (root)**.
+5. Open the project URL ending in `/beyblade-x-tournament-lab/`.
+6. If the old build appears, clear website data for the GitHub Pages domain and reload.

@@ -1,12 +1,5 @@
-# X Tournament Director 2.1 — root-only edition
+# X Tournament Director — Mobile build 2.2
 
-This release uses one self-contained `index.html`. There are no JavaScript, CSS, source, data, test, or workflow folders.
+Single-file GitHub Pages build optimized for phones. The catalog search no longer rerenders the page while typing, so the on-screen keyboard remains open.
 
-## Publish
-
-1. Delete the old application files and folders from the repository.
-2. Keep `CNAME` only if you use a custom domain.
-3. Upload `index.html`, `.nojekyll`, `README.md`, and `INSTALL.md` directly to the repository root.
-4. Set GitHub Pages to **Deploy from a branch → main → / (root)**.
-
-The app begins with an empty inventory.
+Upload every file in this package directly to the repository root.

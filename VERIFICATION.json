@@ -1,17 +1,13 @@
 {
-  "build": "2.1-root-single-file",
-  "moduleImports": 0,
-  "allFilesAtRoot": true,
-  "archiveFiles": [
-    ".nojekyll",
-    "INSTALL.md",
-    "README.md",
-    "VERIFICATION.json",
-    "index.html"
-  ],
-  "indexSha256": "56ad3604edc7df8322244625a494976c031f24d12808de67eba57e07939eec61",
-  "zipSha256": "07c4d841b13d1d65c6e0a385c26fc5d22848579232bd3c1f13cb11091eb2c31c",
-  "initialRouteRendersSynchronously": true,
-  "mobileNavigationLabelsVisible": true,
-  "startupErrorPanel": true
+  "singleFileApplication": true,
+  "mobileBuildMarker": true,
+  "viewportKeyboardResize": true,
+  "searchDoesNotCallRouteRenderer": true,
+  "searchInputNodePreserved": true,
+  "backgroundRerenderDeferredDuringSearch": true,
+  "iosInputFontAtLeast16": true,
+  "mobileNestedCatalogScrollRemoved": true,
+  "bottomThumbNavigation": true,
+  "safeAreaBottomUsed": true,
+  "noExternalAssets": true
 }
