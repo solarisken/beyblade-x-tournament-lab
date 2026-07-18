@@ -7,5 +7,4 @@
 5. Keep GitHub Pages configured for `main` and `/ (root)`.
 6. Reload the project-site URL.
 
-The storage namespace is unchanged. Existing inventory and evidence should
-remain available.
+The storage namespace is unchanged, so existing inventory and evidence should remain.
