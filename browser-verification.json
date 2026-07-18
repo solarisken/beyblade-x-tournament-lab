@@ -1,0 +1,91 @@
+{
+  "empty_first_launch": "0 entries",
+  "wolfhunt_owned_opponents": {
+    "wolf": "WolfHunt Knuckle 0-70 Z",
+    "comboCount": 2025,
+    "rows": [
+      {
+        "archetype": "Heavy smash attack",
+        "opponent": "DranStrike 1-50 I",
+        "compatible": true,
+        "sources": [
+          "BX-49 \u00b7 DranStrike 4-50FF",
+          "CX-16 \u00b7 BahamutBlitz BK1-50I \u00b7 Special Color"
+        ],
+        "exactParts": [
+          "DranStrike",
+          "1-50",
+          "Ignition"
+        ]
+      },
+      {
+        "archetype": "Low destabilizer",
+        "opponent": "DranStrike 3-80 LR",
+        "compatible": true,
+        "sources": [
+          "BX-49 \u00b7 DranStrike 4-50FF",
+          "UX-08 \u00b7 SilverWolf 3-80FB",
+          "UX-11 \u00b7 ImpactDrake 9-60LR"
+        ],
+        "exactParts": [
+          "DranStrike",
+          "3-80",
+          "Low Rush"
+        ]
+      },
+      {
+        "archetype": "Pure stamina",
+        "opponent": "SilverWolf 5-70 FB",
+        "compatible": true,
+        "sources": [
+          "UX-08 \u00b7 SilverWolf 3-80FB",
+          "CX-09 \u00b7 SolEclipse D5-70TK"
+        ],
+        "exactParts": [
+          "SilverWolf",
+          "5-70",
+          "Free Ball"
+        ]
+      },
+      {
+        "archetype": "Defense / counter",
+        "opponent": "BulletGriffon H",
+        "compatible": true,
+        "sources": [
+          "UX-19 \u00b7 BulletGriffon H"
+        ],
+        "exactParts": [
+          "BulletGriffon",
+          "Hexa"
+        ]
+      },
+      {
+        "archetype": "Adaptive balance",
+        "opponent": "BulletGriffon H",
+        "compatible": true,
+        "sources": [
+          "UX-19 \u00b7 BulletGriffon H"
+        ],
+        "exactParts": [
+          "BulletGriffon",
+          "Hexa"
+        ]
+      }
+    ],
+    "deck": [
+      "BulletGriffon H",
+      "WolfHunt Free 3-80 FB",
+      "DranStrike 0-60 FF"
+    ]
+  },
+  "lab_ui": {
+    "use": "WolfHunt Free 3-80 FB",
+    "against": "SilverWolf 0-60 DB",
+    "field": "SilverWolf 0-60 DB",
+    "title": "WolfHunt Free 3-80 FB vs SilverWolf 0-60 DB",
+    "readonly": true,
+    "overflow": 0
+  },
+  "page_errors": [],
+  "passed": true
+}

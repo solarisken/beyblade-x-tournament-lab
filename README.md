@@ -1,15 +1,14 @@
-# X Tournament Director · Evidence First
+# X Tournament Director — Owned Opponent Lab
 
-A zero-cost, local-first Beyblade X tournament decision system.
+Open `index.html` directly or publish this folder through GitHub Pages.
 
-## Core workflow
+## Lab correction
 
-1. **Collection** — starts empty. Add only owned sets and loose parts.
-2. **Deck** — Autopilot generates legal combinations, allocates physical parts, searches legal decks, audits alternatives, and reports posterior decision confidence.
-3. **Match** — use the registered deck, opponent scout, and first-to-four score sheet.
+The coach no longer asks you to interpret a generic opponent archetype. Every priority test now shows an exact opposing combo assembled from the owned inventory. The selected opponent:
 
-The Deck screen now distinguishes four evidence states: **Hypothesis**, **Developing**, **Contender**, and **Tournament-ready**. It does not call a prior-only recommendation proven.
+- uses only owned parts;
+- can be assembled at the same time as the tested combo;
+- is chosen to represent the target matchup archetype;
+- is saved automatically with the three-battle result.
 
-The validation planner selects the next three-battle test based on uncertainty, meta weight, and the probability that the result can change the leading deck. Runner-up combinations may be selected when testing them has more decision value than retesting the current deck.
-
-No backend, account, API key, paid AI, or network connection is required after download.
+The app still starts with zero owned items. The catalog is only a reference until a set is added.
