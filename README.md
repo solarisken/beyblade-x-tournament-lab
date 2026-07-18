@@ -1,15 +1,16 @@
-# X Tournament Director — Mobile 2.3
+# X Tournament Director — Mobile 2.4
 
-Single-file, root-only GitHub Pages build.
+## Finish-aware physical testing
 
-## New testing rule
+Each test battle records:
 
-The coach does not schedule Attack-category Bit versus Attack-category Bit tests.
+- winning Bey;
+- Spin, Over, Burst, or Xtreme finish;
+- official point value;
+- optional self-KO or launch-error context.
 
-- If the selected Bey uses an Attack Bit, the opponent must use a Balance,
-  Defense, or Stamina Bit.
-- The coach may select another recommended Bey when needed.
-- When the owned inventory cannot produce a valid matchup, the app reports that
-  no test is available instead of falling back to an Attack-bit mirror.
+The learning model uses both battle reliability and finish quality. Higher-value
+finishes receive more decision weight, while wins caused by an opponent's
+self-KO receive less offensive credit.
 
-The inventory still starts empty.
+Attack-category Bit versus Attack-category Bit testing remains excluded.
