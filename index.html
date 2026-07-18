@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d14">
+  <meta name="description" content="Empty-start Beyblade X tournament director with manual inventory, evidence-weighted deck confidence, decisive test planning, and match mode.">
+  <title>X Tournament Director · Manual Collection Autopilot</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <button class="brand" data-nav="inventory" aria-label="Go to inventory">
+      <span class="brand-mark">X</span>
+      <span><strong>X Tournament Director</strong><small>Manual collection · Autopilot deck coach</small></span>
+    </button>
+    <div class="header-status" id="headerStatus"><span class="status-dot"></span><span>Inventory empty</span></div>
+    <div class="header-actions">
+      <button class="icon-button" id="openTools" title="Lab, upgrades, and tools" aria-label="Open tools">•••</button>
+      <button class="icon-button" id="openBackup" title="Backup and restore" aria-label="Backup and restore">⇅</button>
+      <button class="icon-button" id="openSettings" title="Coach settings" aria-label="Coach settings">⚙</button>
+    </div>
+  </header>
+
+  <nav class="main-nav" aria-label="Main workflow">
+    <button class="nav-button active" data-nav="inventory"><span>1</span>Collection</button>
+    <button class="nav-button" data-nav="coach"><span>2</span>Deck</button>
+    <button class="nav-button" data-nav="tournament"><span>3</span>Match</button>
+  </nav>
+
+  <main>
+    <section class="coach-command" id="coachCommand" aria-live="polite">
+      <div><p class="eyebrow">NEXT ACTION</p><strong id="commandTitle">Add your first set or part</strong><span id="commandText">The inventory is intentionally empty.</span></div>
+      <button class="button secondary" id="commandAction" data-action="add">Quick add</button>
+    </section>
+    <section class="view active" id="view-inventory">
+      <div class="hero compact">
+        <div>
+          <p class="eyebrow">STEP 1 · COLLECTION</p>
+          <h1>Add only the sets and parts you own.</h1>
+          <p>The inventory starts empty. Enter a product code below, use the manual forms, or paste a list. The Director takes over as soon as a legal 3-on-3 deck becomes possible.</p>
+        </div>
+        <div class="hero-actions inventory-actions">
+          <div class="quick-add-box">
+            <label for="quickAdd">Quick add a known set</label>
+            <div><input id="quickAdd" list="quickCatalog" autocomplete="off" placeholder="Type BX-49 or DranStrike"><button class="button primary" id="quickAddButton">Add</button></div>
+            <datalist id="quickCatalog"></datalist>
+          </div>
+          <div class="secondary-add-actions">
+            <button class="button secondary" data-open-add="set">Browse sets</button>
+            <button class="button secondary" data-open-add="part">Loose part</button>
+            <button class="button ghost" data-open-add="paste">Paste list</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="inventory-layout">
+        <aside class="panel readiness-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">LEGALITY AUDITOR</p><h2 id="readinessTitle">Collection empty</h2></div>
+            <span class="badge neutral" id="readinessBadge">0%</span>
+          </div>
+          <p id="readinessText">Add a set or loose part to begin.</p>
+          <div class="progress"><span id="readinessProgress"></span></div>
+          <div class="audit-list" id="auditList"></div>
+          <button class="button primary wide" id="goCoach" disabled>View coach decision</button>
+        </aside>
+
+        <section class="panel inventory-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">OWNED ITEMS</p><h2 id="inventoryCount">0 entries</h2><p id="inventorySummary">No assumptions. No preloaded sets.</p></div>
+            <div class="segmented" role="group" aria-label="Inventory filter">
+              <button class="active" data-filter="all">All</button>
+              <button data-filter="set">Sets</button>
+              <button data-filter="loose">Loose</button>
+            </div>
+          </div>
+          <div class="inventory-list" id="inventoryList"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-coach">
+      <div class="hero compact">
+        <div>
+          <p class="eyebrow">STEP 2 · COACH DECISION</p>
+          <h1 id="coachHeroTitle">Autopilot is waiting for inventory.</h1>
+          <p id="coachHeroText">Complete your collection first. The coach will not fabricate missing parts.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="button primary" id="runCoach" disabled>Recheck deck</button>
+          <button class="button secondary" id="coachPreferences">Preferences</button>
+        </div>
+      </div>
+
+      <div id="coachEmpty" class="empty-state panel">
+        <div class="empty-icon">X</div>
+        <h2>Waiting for a legal 3-on-3 inventory</h2>
+        <p>The coach needs three non-conflicting blade assemblies, three bits, and the required ratchets.</p>
+        <button class="button primary" data-nav="inventory">Return to inventory</button>
+      </div>
+
+      <div id="coachWorking" class="panel working hidden">
+        <div class="spinner"></div>
+        <div><h2 id="workingTitle">Building legal combinations</h2><p id="workingText">Screening physical parts, same-name restrictions, role coverage, and evidence.</p></div>
+      </div>
+
+      <div id="coachResults" class="hidden">
+        <article class="decision-brief panel">
+          <div>
+            <p class="eyebrow">COACH DECISION</p>
+            <h2 id="decisionTitle">Current tournament hypothesis</h2>
+            <p id="decisionSummary"></p>
+          </div>
+          <div class="decision-metrics extended">
+            <div><span>Evidence</span><strong id="decisionEvidence">Prior only</strong></div>
+            <div><span>Risk</span><strong id="decisionRisk">Balanced</strong></div>
+            <div><span>Coverage floor</span><strong id="decisionFloor">—</strong></div>
+            <div><span>Critical audit</span><strong id="decisionCritical">—</strong></div>
+            <div><span>Order resilience</span><strong id="decisionOrder">—</strong></div>
+            <div><span>Decks screened</span><strong id="decisionScreened">0</strong></div>
+          </div>
+        </article>
+
+        <section class="deck-grid" id="deckGrid"></section>
+
+        <article class="panel validation-panel" id="validationPanel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">DECISION CONFIDENCE</p><h2 id="validationTitle">Mechanical hypothesis</h2><p id="validationSummary">The Director is measuring whether the current deck is likely to remain the leader after more evidence.</p></div>
+            <span class="badge warn" id="validationBadge">Hypothesis</span>
+          </div>
+          <div class="validation-layout">
+            <div class="confidence-card">
+              <div class="confidence-ring" id="confidenceRing"><strong id="leaderConfidence">—</strong><span>leader probability</span></div>
+              <p id="confidenceDetail">Waiting for analysis.</p>
+            </div>
+            <div class="validation-checklist" id="validationChecklist"></div>
+            <div class="validation-action">
+              <p class="eyebrow">NEXT DECISIVE ACTION</p>
+              <strong id="validationNextTitle">No action yet</strong>
+              <p id="validationNextText">The coach will identify the shortest useful test.</p>
+              <button class="button secondary wide" id="openValidationTest">Open recommended test</button>
+            </div>
+          </div>
+        </article>
+
+        <div class="coach-grid">
+          <article class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">WHY THIS DECK</p><h2>Decision logic</h2></div></div>
+            <div class="reason-list" id="reasonList"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">OPENING ORDER</p><h2 id="launchOrder">1 → 2 → 3</h2></div></div>
+            <p id="launchReason"></p>
+            <div class="order-list" id="orderList"></div>
+          </article>
+        </div>
+
+        <details class="panel audit-panel advanced-details">
+          <summary><div><p class="eyebrow">ADVANCED AUDIT</p><h2>Open tournament model checks</h2><p>Coverage, critical routes, order resilience, and the matchup matrix.</p></div><span>Open</span></summary>
+          <div class="details-body">
+            <div class="audit-metrics" id="tournamentAudit"></div>
+            <div class="table-wrap"><table class="matchup-table" id="matchupMatrix"></table></div>
+            <p class="helper" id="labPolicy">Physical testing budget is zero.</p>
+          </div>
+        </details>
+
+        <details class="panel alternatives-panel advanced-details">
+          <summary><div><p class="eyebrow">CLOSE ALTERNATIVES</p><h2>Open runner-up decks</h2><p>Compare the exact trade-off only when you need it.</p></div><span>Open</span></summary>
+          <div class="details-body"><div class="alternatives-list" id="alternativesList"></div></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="view" id="view-lab">
+      <div class="hero compact">
+        <div><p class="eyebrow">ADAPTIVE LAB</p><h1>Test only what can change the decision.</h1><p>Autopilot completes the virtual lab automatically. Physical testing is optional and limited by your chosen battle budget.</p></div>
+        <div class="hero-actions"><button class="button secondary" id="requestTest">Request one optional test</button><button class="button ghost" id="manualMatch">Log existing results</button></div>
+      </div>
+
+      <div class="lab-layout">
+        <section class="panel" id="nextTestPanel">
+          <div class="panel-heading"><div><p class="eyebrow">NEXT PRIORITY TEST</p><h2 id="testTitle">No test available</h2><p id="testWhy">Wait for Autopilot or run the Director analysis first.</p></div><span class="badge neutral" id="testConfidence">—</span></div>
+          <div class="test-card" id="testCard">
+            <div><span>Use</span><strong id="testUse">—</strong></div>
+            <div><span>Against</span><strong id="testAgainst">—</strong></div>
+            <div><span>Launch</span><strong id="testLaunch">—</strong></div>
+          </div>
+          <label class="field">Exact opponent combo, optional<input id="testOpponentCombo" placeholder="Example: WizardRod 9-60B"></label>
+          <button class="button primary wide" id="startTest" disabled>Start three-battle test</button>
+
+          <div id="activeTest" class="active-test hidden">
+            <div class="score-row"><div><p class="eyebrow">BATTLE <span id="battleNumber">1</span> OF 3</p><h2 id="activeTestName">Test</h2></div><strong id="testScore">0–0</strong></div>
+            <p>Record the actual finish. A launch error is tracked separately from a normal loss.</p>
+            <div class="result-buttons">
+              <button data-result="win:spin">Win · Spin</button><button data-result="win:over">Win · Over</button>
+              <button data-result="win:burst">Win · Burst</button><button data-result="win:xtreme">Win · Xtreme</button>
+              <button class="loss" data-result="loss:spin">Loss · Spin</button><button class="loss" data-result="loss:over">Loss · Over</button>
+              <button class="loss" data-result="loss:burst">Loss · Burst</button><button class="loss" data-result="loss:xtreme">Loss · Xtreme</button>
+              <button class="error" data-result="error:selfko">Self-KO / launch error</button>
+            </div>
+            <div class="inline-actions"><button class="button ghost small" id="undoTest">Undo</button><button class="button danger small" id="cancelTest">Cancel</button></div>
+          </div>
+        </section>
+
+        <aside class="panel evidence-panel">
+          <div class="panel-heading"><div><p class="eyebrow">EVIDENCE</p><h2 id="evidenceHeading">0 battles recorded</h2></div></div>
+          <div class="stat-grid" id="evidenceStats"></div>
+          <div class="evidence-history" id="evidenceHistory"></div>
+        </aside>
+      </div>
+    </section>
+
+
+    <section class="view" id="view-upgrade">
+      <div class="hero compact">
+        <div>
+          <p class="eyebrow">UPGRADE LAB</p>
+          <h1>Test a purchase before spending.</h1>
+          <p>Add a hypothetical set or loose part. The Director temporarily injects it into your collection, rebuilds the legal deck, and reports whether the purchase changes the decision.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="button primary" data-open-candidate="set">Add candidate set</button>
+          <button class="button secondary" data-open-candidate="part">Add candidate part</button>
+          <button class="button ghost" id="evaluateCandidates">Evaluate candidates</button>
+        </div>
+      </div>
+
+      <div class="upgrade-layout">
+        <section class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">HYPOTHETICAL ITEMS</p><h2 id="candidateCount">0 candidates</h2><p>These do not count as owned and cannot appear in your tournament deck until marked purchased.</p></div></div>
+          <div id="candidateList" class="inventory-list"></div>
+        </section>
+        <aside class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">DIRECTOR BUY VERDICT</p><h2 id="upgradeVerdict">No evaluation yet</h2><p id="upgradeSummary">Add a candidate and run the evaluation.</p></div><span class="badge neutral" id="upgradeBadge">—</span></div>
+          <div id="upgradeResults" class="upgrade-results"></div>
+          <p class="helper">Impact is expressed in internal model points. It is comparative, not a promised real-world win-rate increase.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="view" id="view-tournament">
+      <div class="hero compact">
+        <div><p class="eyebrow">STEP 3 · MATCH DAY</p><h1>Your deck card and live score sheet.</h1><p>Use the recommended order, record match points, and rebuild the order after an unresolved three-battle cycle.</p></div>
+        <div class="hero-actions"><button class="button secondary" id="printDeck">Print deck card</button><button class="button ghost" id="resetMatch">Reset match</button></div>
+      </div>
+
+      <div id="tournamentEmpty" class="empty-state panel"><div class="empty-icon">3</div><h2>No active deck</h2><p>Run the coach and select a deck before using tournament mode.</p><button class="button primary" data-nav="coach">Build my tournament deck</button></div>
+
+      <div id="tournamentWorkspace" class="tournament-layout hidden">
+        <section class="panel tournament-card">
+          <div class="panel-heading"><div><p class="eyebrow">REGISTERED DECK</p><h2 id="tournamentDeckTitle">Current coach deck</h2></div><span class="badge" id="tournamentLegality">Legal</span></div>
+          <div id="tournamentDeck" class="tournament-deck"></div>
+          <div class="rule-note">Official TT 3-on-3 model: first to 4 points; Xtreme 3, Over/Burst 2, Spin 1; reorder after three unresolved battles.</div>
+        </section>
+
+        <section class="panel scout-panel">
+          <div class="panel-heading"><div><p class="eyebrow">OPPONENT SCOUT</p><h2>Adapt the next order</h2></div><span class="badge neutral" id="scoutConfidence">Unscouted</span></div>
+          <label class="field">Observed opponent style<select id="scoutStyle"><option value="unknown">Unknown / mixed</option><option value="attack">Attack pressure</option><option value="stamina">Stamina control</option><option value="defense">Defense / counter</option><option value="balance">Adaptive balance</option></select></label>
+          <label class="field">Observed Bey or notes<input id="scoutNotes" placeholder="Example: heavy attack opener, stamina closer"></label>
+          <button class="button secondary wide" id="runScout">Recommend order</button>
+          <div id="scoutOrder" class="scout-order"><p class="helper">Use this after scouting the opponent or after the first unresolved three-battle cycle.</p></div>
+        </section>
+        <section class="panel score-sheet">
+          <div class="match-score"><div><span>You</span><strong id="ourPoints">0</strong></div><b>–</b><div><span>Opponent</span><strong id="oppPoints">0</strong></div></div>
+          <p id="matchInstruction">Battle 1 · use deck slot 1</p>
+          <div class="score-actions">
+            <button data-score="ours:spin">You · Spin +1</button><button data-score="ours:over">You · Over +2</button><button data-score="ours:burst">You · Burst +2</button><button data-score="ours:xtreme">You · Xtreme +3</button>
+            <button class="loss" data-score="opp:spin">Opponent · Spin +1</button><button class="loss" data-score="opp:over">Opponent · Over +2</button><button class="loss" data-score="opp:burst">Opponent · Burst +2</button><button class="loss" data-score="opp:xtreme">Opponent · Xtreme +3</button>
+          </div>
+          <div id="matchLog" class="match-log"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+
+  <dialog id="toolsDialog" class="dialog compact-dialog">
+    <form method="dialog" class="dialog-shell">
+      <div class="dialog-heading"><div><p class="eyebrow">OPTIONAL TOOLS</p><h2>Lab and planning</h2><p class="helper">The main workflow stays Collection → Deck → Match. Open these only when needed.</p></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <div class="tools-grid">
+        <button type="button" class="tool-card" data-tool-nav="lab"><strong>Physical test lab</strong><span>Run one short three-battle test chosen by the coach.</span></button>
+        <button type="button" class="tool-card" data-tool-nav="upgrade"><strong>Purchase evaluator</strong><span>Test a hypothetical set or loose part before buying it.</span></button>
+        <button type="button" class="tool-card" id="toolsSettings"><strong>Coach policy</strong><span>Adjust meta emphasis, risk objective, favorite blade, or testing budget.</span></button>
+        <button type="button" class="tool-card" id="toolsBackup"><strong>Backup and restore</strong><span>Export inventory, evidence, and match data.</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="addDialog" class="dialog">
+    <form method="dialog" class="dialog-shell" id="addDialogForm">
+      <div class="dialog-heading"><div><p class="eyebrow">ADD INVENTORY</p><h2 id="addDialogTitle">Add a set</h2><p id="addTargetHint" class="helper">Adding to owned inventory</p></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <div class="tabs"><button type="button" class="active" data-add-tab="set">Known set</button><button type="button" data-add-tab="custom">Unlisted set</button><button type="button" data-add-tab="part">Loose part</button><button type="button" data-add-tab="paste">Paste list</button></div>
+
+      <section class="tab-pane active" data-pane="set">
+        <label class="field">Search product code or Bey name<input id="catalogSearch" type="search" placeholder="Example: BX-49 or DranStrike"></label>
+        <div class="catalog-results" id="catalogResults"></div>
+      </section>
+
+      <section class="tab-pane" data-pane="custom">
+        <div class="form-grid"><label class="field">Set code<input id="customCode" placeholder="Example: BX-00"></label><label class="field">Set / stock Bey name<input id="customName" placeholder="Example: BladeName 3-60F"></label></div>
+        <label class="field">System<select id="customSystem"><option value="standard">Standard · blade + ratchet + bit</option><option value="integrated">Integrated-ratchet blade + bit</option><option value="cx-standard">CX Standard · lock + main + assist + ratchet + bit</option><option value="cx-expand">CX Expand · lock + over + metal + assist + ratchet + bit</option></select></label>
+        <div id="customParts" class="custom-parts"></div>
+        <div class="form-grid"><label class="field">Copies<input id="customQuantity" type="number" min="1" max="20" value="1"></label><label class="field">Notes<input id="customNotes" placeholder="Optional"></label></div>
+        <button type="button" class="button primary wide" id="addCustomSet">Add unlisted set</button>
+      </section>
+
+      <section class="tab-pane" data-pane="part">
+        <div class="form-grid"><label class="field">Part category<select id="partCategory"></select></label><label class="field">Part name<input id="partName" placeholder="Example: 7-60 or Rush"></label></div>
+        <div class="form-grid"><label class="field">Closest role<select id="partRole"><option value="attack">Attack</option><option value="balance" selected>Balance</option><option value="stamina">Stamina</option><option value="defense">Defense</option></select></label><label class="field">Copies<input id="partQuantity" type="number" min="1" max="20" value="1"></label></div>
+        <div id="partExtra"></div>
+        <label class="field">Notes<input id="partNotes" placeholder="Optional condition, mold, or restriction"></label>
+        <button type="button" class="button primary wide" id="addLoosePart">Add loose part</button>
+      </section>
+
+      <section class="tab-pane" data-pane="paste">
+        <p class="helper">Use one product code or standard stock combo per line. Nothing is added until you confirm.</p>
+        <textarea id="pasteInput" rows="10" placeholder="BX-49\nUX-11\nPhoenixWing 9-60GF"></textarea>
+        <div class="paste-preview" id="pastePreview"></div>
+        <button type="button" class="button primary wide" id="importPaste">Add recognized lines</button>
+      </section>
+    </form>
+  </dialog>
+
+  <dialog id="editDialog" class="dialog">
+    <form method="dialog" class="dialog-shell" id="editForm">
+      <div class="dialog-heading"><div><p class="eyebrow">EDIT INVENTORY</p><h2 id="editTitle">Edit entry</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <input type="hidden" id="editId">
+      <div class="form-grid"><label class="field">Code<input id="editCode"></label><label class="field">Display name<input id="editName"></label></div>
+      <label class="field">Notes<input id="editNotes"></label>
+      <div id="editParts" class="edit-parts"></div>
+      <div class="inline-actions"><button type="button" class="button danger" id="deleteEdited">Delete entry</button><button type="button" class="button primary" id="saveEdited">Save changes</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog" class="dialog-shell" id="settingsForm">
+      <div class="dialog-heading"><div><p class="eyebrow">COACH POLICY</p><h2>Preferences</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <label class="field">Tournament objective<select id="objective"><option value="balanced">Balanced tournament consistency</option><option value="aggressive">Aggressive KO pressure</option><option value="stable">Low-variance consistency</option><option value="counter">Counter-meta coverage</option></select></label>
+      <label class="field">Build around a favorite blade, optional<select id="favoriteBlade"><option value="">No required blade</option></select></label>
+      <label class="field">Expected meta emphasis<select id="metaPreset"><option value="mixed">Mixed field</option><option value="stamina">Stamina-heavy</option><option value="attack">Attack-heavy</option><option value="defense">Defense-heavy</option></select></label>
+      <label class="field">Physical testing budget<select id="practiceBudget"><option value="0">0 battles · virtual lab only</option><option value="3">3 battles</option><option value="6">6 battles</option><option value="9">9 battles</option><option value="18">18 battles</option></select></label>
+      <label class="field">Custom local meta, optional<textarea id="metaTargets" rows="5" placeholder="One opponent per line:
+WizardRod 9-60B | stamina | 4
+PhoenixWing 1-60R | attack | 3"></textarea></label>
+      <p class="helper">Format: opponent name | attack, stamina, defense, or balance | relative weight. Custom entries replace the generic meta model.</p>
+      <label class="checkbox"><input type="checkbox" id="preferOwnedEvidence" checked><span>Prefer combinations supported by my physical test evidence</span></label>
+      <p class="helper">The coach enforces legal parts first, then optimizes worst-matchup coverage, high-point finish routes, order resilience, and evidence.</p>
+      <label class="checkbox"><input type="checkbox" id="autopilot"><span>Run Director automatically when inventory, evidence, locks, or policy changes.</span></label>
+      <button type="button" class="button primary wide" id="saveSettings">Save and rerun coach</button>
+    </form>
+  </dialog>
+
+  <dialog id="backupDialog" class="dialog">
+    <form method="dialog" class="dialog-shell">
+      <div class="dialog-heading"><div><p class="eyebrow">DATA</p><h2>Backup and restore</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <div class="backup-grid"><button type="button" class="button secondary" id="exportJson">Export JSON backup</button><label class="button ghost file-label">Import JSON<input type="file" id="importJson" accept="application/json"></label><button type="button" class="button ghost" id="exportCsv">Export battle CSV</button><button type="button" class="button danger" id="clearAll">Erase all local data</button></div>
+      <p class="helper" id="storageSummary"></p>
+    </form>
+  </dialog>
+
+  <dialog id="manualMatchDialog" class="dialog">
+    <form method="dialog" class="dialog-shell">
+      <div class="dialog-heading"><div><p class="eyebrow">MANUAL EVIDENCE</p><h2>Log a completed matchup</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+      <label class="field">Your combination<select id="manualCombo"></select></label>
+      <div class="form-grid"><label class="field">Opponent archetype<select id="manualArchetype"></select></label><label class="field">Exact opponent, optional<input id="manualOpponent" placeholder="Example: WizardRod 9-60B"></label></div>
+      <div class="form-grid"><label class="field">Wins<input id="manualWins" type="number" min="0" max="100" value="3"></label><label class="field">Losses<input id="manualLosses" type="number" min="0" max="100" value="2"></label></div>
+      <label class="field">Launch notes<input id="manualNotes" placeholder="Tilt, power level, errors, stadium"></label>
+      <button type="button" class="button primary wide" id="saveManualMatch">Save evidence and rerun</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

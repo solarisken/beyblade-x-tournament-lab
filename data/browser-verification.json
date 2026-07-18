@@ -1,0 +1,36 @@
+{
+  "empty": {
+    "entries": "0 entries",
+    "analysis_null": true,
+    "validation_hidden": true
+  },
+  "analysis": {
+    "entries": 9,
+    "legal": true,
+    "status": "Hypothesis",
+    "confidence": "12%",
+    "validation_checks": 5,
+    "test_action": "Enable one short validation batch"
+  },
+  "test_open": {
+    "lab_active": true,
+    "start_enabled": true,
+    "side": "leader",
+    "flip_potential": 1.4,
+    "decision_impact": "This current slot is the main difference from the runner-up deck; the result can change the recommendation."
+  },
+  "after_test": {
+    "evidence_batches": 1,
+    "direct_total": 3,
+    "status": "Hypothesis",
+    "confidence": "12%"
+  },
+  "rules": {
+    "bullet_separate_ratchet": false,
+    "duplicate_9_60_accepted": false
+  },
+  "mobile": {
+    "overflow": 0
+  },
+  "errors": []
+}
