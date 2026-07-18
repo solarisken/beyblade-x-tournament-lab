@@ -1,0 +1,41 @@
+{
+  "edition": "flat-root",
+  "allFilesAtRepositoryRoot": true,
+  "fileCount": 23,
+  "nestedFiles": [],
+  "removedFolders": [
+    ".github",
+    "src",
+    "tests",
+    "components",
+    "engine",
+    "data"
+  ],
+  "indexModule": "./app.js",
+  "badNestedReferences": [],
+  "rootFiles": [
+    ".nojekyll",
+    "INSTALL.md",
+    "README.md",
+    "START_HERE.md",
+    "X-Tournament-Director-2-Standalone.html",
+    "app.js",
+    "browser-verification.json",
+    "catalog.js",
+    "coach.js",
+    "collection.js",
+    "combinations.js",
+    "common.js",
+    "deck.js",
+    "engine.test.mjs",
+    "index.html",
+    "inventory.js",
+    "match.js",
+    "profiles.js",
+    "router.js",
+    "state.js",
+    "styles.css",
+    "sw.js",
+    "test.js"
+  ]
+}
