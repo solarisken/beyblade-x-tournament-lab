@@ -1,16 +1,20 @@
-# X Tournament Director — Mobile 2.4
+# X Tournament Director — Evidence Coach 3.0
 
-## Finish-aware physical testing
+This release upgrades the coach's decision model rather than adding more dashboard features.
 
-Each test battle records:
+## Implemented
 
-- winning Bey;
-- Spin, Over, Burst, or Xtreme finish;
-- official point value;
-- optional self-KO or launch-error context.
+- Hierarchical evidence transfer across exact combinations, Blade/core, Ratchet, Bit, Blade–Bit pairing, role, system, and shared CX components.
+- Separate matchup records against Attack, Stamina, Defense, and Balance profiles.
+- Adaptive three-battle testing selected by uncertainty and its chance to change the deck.
+- Automatic testing stop rules when the recommendation becomes sufficiently stable.
+- Evidence-driven launch orders for unknown, Attack-first, Stamina-first, Defense-first, and Balance-first opponents.
+- Decision confidence and visible readiness gates.
+- Exact explanations when the recommended deck changes or holds.
+- Finish type, points, self-KO, launch error, launch technique, stadium position, and meaningful-contact recording.
+- Attack-Bit versus Attack-Bit test exclusion.
+- Empty first launch, with optional migration of inventory and evidence already stored by the previous V2 app.
 
-The learning model uses both battle reliability and finish quality. Higher-value
-finishes receive more decision weight, while wins caused by an opponent's
-self-KO receive less offensive credit.
+## Important
 
-Attack-category Bit versus Attack-category Bit testing remains excluded.
+Mechanical values remain priors. Physical evidence progressively takes authority, but the application does not claim that an untested recommendation is tournament-proven.
