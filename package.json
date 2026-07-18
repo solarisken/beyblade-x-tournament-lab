@@ -1,7 +1,0 @@
-{
-  "name":"x-deck-lab-v3",
-  "version":"3.0.0",
-  "private":true,
-  "type":"module",
-  "scripts":{"verify":"node scripts/verify.mjs","baseline":"node scripts/baseline.mjs"}
-}
