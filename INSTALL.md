@@ -1,13 +1,11 @@
 # Installation
 
-1. Export a backup from the current app if you need to preserve its inventory or evidence.
-2. Delete the current app files from the GitHub repository.
-3. Keep `CNAME` only when using a custom domain.
-4. Extract the new ZIP.
-5. Upload every extracted file directly to the repository root.
-6. Keep GitHub Pages set to:
-   - Branch: `main`
-   - Folder: `/ (root)`
-7. Confirm the lower-right marker reads **Evidence Coach 3.0**.
+1. Delete the current app files from the GitHub repository.
+2. Keep `CNAME` only if you use a custom domain.
+3. Extract this ZIP.
+4. Upload every extracted file directly to the repository root.
+5. Keep GitHub Pages configured for `main` and `/ (root)`.
+6. Reload the project-site URL.
 
-The new app can migrate locally stored V2 inventory and evidence when it is deployed at the same GitHub Pages address.
+This build uses the same storage namespace, so your collection and evidence
+should remain available.

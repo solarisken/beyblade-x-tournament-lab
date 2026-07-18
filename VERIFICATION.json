@@ -1,124 +1,21 @@
 {
-  "build": "Evidence Coach 3.0",
+  "build": "Evidence Coach 3.2",
   "singleFileApplication": true,
   "allPackageFilesAtRoot": true,
   "javascriptSyntax": "passed",
-  "inventoryStartsEmpty": true,
-  "legacyV2InventoryMigration": true,
-  "hierarchicalEvidenceTransfer": {
-    "exactCombination": "full weight",
-    "bladeOrCore": "conservative transfer",
-    "bit": "conservative transfer",
-    "ratchet": "limited transfer",
-    "bladeBitPair": "conservative transfer",
-    "sharedCXComponents": "limited transfer",
-    "role": "low-weight transfer",
-    "system": "low-weight transfer",
-    "fixture": {
-      "exactDirectGames": 2.45,
-      "transferredGames": 2.205,
-      "matchupDirectGames": 2.45,
-      "orderScenarios": [
-        "unknown",
-        "attack",
-        "stamina",
-        "defense",
-        "balance"
-      ],
-      "readinessState": "Hypothesis"
-    }
-  },
-  "matchupSpecificRecords": [
-    "attack",
-    "stamina",
-    "defense",
-    "balance"
+  "storageNamespaceChanged": false,
+  "coachEngineChanged": false,
+  "deckInformationOrder": [
+    "recommended deck",
+    "exact next test",
+    "unknown-opponent launch order",
+    "practical Bey instructions",
+    "collapsed technical details"
   ],
-  "adaptiveTesting": {
-    "batchSize": 3,
-    "canSelectRunnerUpChallenger": true,
-    "stopsWhenStable": true,
-    "attackBitVsAttackBit": "excluded"
-  },
-  "battleFields": [
-    "winner",
-    "finish",
-    "points",
-    "selfKO",
-    "launchError",
-    "launchTechnique",
-    "stadiumPosition",
-    "meaningfulContact"
-  ],
-  "orderScenarios": [
-    "unknown opponent",
-    "attack-first",
-    "stamina-first",
-    "defense-first",
-    "balance-first"
-  ],
-  "readinessStates": [
-    "Hypothesis",
-    "Developing",
-    "Contender",
-    "Tournament-ready"
-  ],
-  "nineSetWorkflow": {
-    "analysisMs": 229,
-    "generatedCombinations": 2025,
-    "candidateCombinations": 81,
-    "legalDecksAudited": 4760,
-    "recommendedDeck": [
-      "BulletGriffon H",
-      "SilverWolf 1-50FF",
-      "DranStrike 0-70FB"
-    ],
-    "decisionConfidence": 0.09722222222222222,
-    "readiness": "Hypothesis",
-    "readinessGates": [
-      {
-        "id": "legal",
-        "label": "Legal simultaneous allocation",
-        "pass": true,
-        "value": "Passed"
-      },
-      {
-        "id": "slots",
-        "label": "Direct evidence for every slot",
-        "pass": false,
-        "value": "0 / 0 / 0"
-      },
-      {
-        "id": "total",
-        "label": "Total direct battles",
-        "pass": false,
-        "value": "0 / 30"
-      },
-      {
-        "id": "threats",
-        "label": "All threat profiles tested",
-        "pass": false,
-        "value": "attack 0 \u00b7 stamina 0 \u00b7 defense 0 \u00b7 balance 0"
-      },
-      {
-        "id": "confidence",
-        "label": "Deck decision confidence",
-        "pass": false,
-        "value": "10% / 72%"
-      }
-    ],
-    "orderScenarios": [
-      "unknown",
-      "attack",
-      "stamina",
-      "defense",
-      "balance"
-    ],
-    "nextTest": {
-      "subject": "DranStrike 1-50FB",
-      "opponent": "ScorpioSpear 0-70Z",
-      "challenger": true,
-      "reason": "DranStrike 1-50FB is a close challenger. A strong result could replace SilverWolf 1-50FF. This matchup targets Adaptive balance, where uncertainty is highest. Attack-bit mirrors remain excluded."
-    }
-  }
+  "readinessCollapsedByDefault": true,
+  "allScoutOrdersCollapsedByDefault": true,
+  "modelMetricsCollapsedByDefault": true,
+  "alternativesCollapsedByDefault": true,
+  "mobileHeaderReduced": true,
+  "mobileBottomNavigationReduced": true
 }
