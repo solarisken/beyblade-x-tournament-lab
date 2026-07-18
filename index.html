@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
   <meta name="theme-color" content="#071016">
-  <title>X Tournament Director — Evidence Coach 3.2 Product Final</title>
+  <title>X Tournament Director — Evidence Coach 3.4</title>
   <style>
 :root{
   color-scheme:dark;--bg:#071016;--surface:#0d1822;--surface2:#132235;--line:#26374c;
@@ -120,6 +120,78 @@ main{max-width:1000px;margin:0 auto;padding:20px 18px 80px}.page-head{display:fl
   .bey-card .detail-list{margin-top:12px}
 }
 
+
+/* Collection mobile final */
+.collection-status{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
+.collection-status h2{font-size:28px;line-height:1.08;margin:6px 0}
+.collection-status p{margin:0;color:var(--muted);line-height:1.5}
+.collection-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.collection-actions .button{min-width:150px}
+.collection-layout{display:grid;gap:14px;margin-top:14px}
+.collection-section{padding:0;overflow:hidden}
+.collection-section>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:17px 18px;background:#0f1d29;font-weight:900}
+.collection-section>summary::-webkit-details-marker{display:none}
+.collection-section>summary:after{content:'＋';font-size:20px;color:var(--accent)}
+.collection-section[open]>summary:after{content:'−'}
+.collection-section>summary span{min-width:0}
+.collection-section>summary small{display:block;color:var(--muted);font-weight:600;margin-top:4px;line-height:1.35}
+.collection-section-body{padding:16px 18px;border-top:1px solid var(--line)}
+.inventory-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:13px}
+.inventory-summary-item{padding:11px;border:1px solid var(--line);border-radius:13px;background:#0a1721}
+.inventory-summary-item small{display:block;color:var(--muted);font-size:11px}
+.inventory-summary-item strong{display:block;margin-top:3px;font-size:17px}
+.catalog-item-main,.inventory-item-main{min-width:0}
+.catalog-add{min-width:92px;flex:0 0 auto;padding:11px 14px}
+.catalog-count{font-size:12px;color:var(--muted);margin:10px 0 0}
+.collection-empty-guide{display:grid;gap:10px}
+.collection-empty-step{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:start;padding:11px;border:1px solid var(--line);border-radius:13px;background:#0a1721}
+.collection-empty-step b{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#19324a;color:var(--accent)}
+.collection-empty-step strong{display:block}.collection-empty-step small{display:block;color:var(--muted);margin-top:3px;line-height:1.4}
+.catalog-search-label{display:block;margin-bottom:8px;color:var(--muted);font-size:12px;font-weight:750}
+@media(max-width:760px){
+  .collection-status{grid-template-columns:1fr;gap:11px;padding:14px}
+  .collection-status h2{font-size:24px;margin:4px 0}
+  .collection-status p{font-size:14px}
+  .collection-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .collection-actions .button{min-width:0;width:100%;padding:12px 9px;font-size:14px}
+  .collection-layout{gap:10px;margin-top:10px}
+  .collection-section>summary{padding:14px}
+  .collection-section-body{padding:13px}
+  .inventory-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .inventory-summary-item{padding:9px 7px}.inventory-summary-item strong{font-size:15px}
+  .filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;overflow:visible;margin:0;padding:2px 0 10px}
+  .filter{width:100%;min-width:0;padding:9px 5px;text-align:center;font-size:13px}
+  .catalog-item{display:grid;grid-template-columns:1fr;gap:11px;align-items:stretch}
+  .catalog-add{width:100%;min-width:0}
+  .inventory-item{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:10px;align-items:start}
+  .inventory-list,.catalog-list{padding-bottom:16px}
+  .catalog-list>*,.inventory-list>*{scroll-margin-bottom:110px}
+  .catalog-tools{margin-bottom:10px}
+  .catalog-tools .button{display:none}
+  .collection-section[open]{scroll-margin-top:72px}
+  main{padding-bottom:calc(150px + env(safe-area-inset-bottom));scroll-padding-bottom:150px}
+}
+@media(max-width:390px){
+  .collection-actions{grid-template-columns:1fr}
+  .inventory-summary-item small{font-size:10px}
+  .inventory-summary-item strong{font-size:14px}
+}
+
+
+/* Field-final collection first viewport */
+.collection-actions .deck-primary{order:-1;flex-basis:100%}
+@media(max-width:760px){
+  .collection-status{padding:13px}
+  .collection-status h2{font-size:23px}
+  .collection-actions{grid-template-columns:1fr 1fr}
+  .collection-actions .deck-primary{grid-column:1/-1;min-height:46px}
+  .collection-actions .button:not(.deck-primary){min-height:44px}
+}
+@media(max-width:390px){
+  .collection-actions{grid-template-columns:1fr 1fr}
+  .collection-actions .deck-primary{grid-column:1/-1}
+}
+
 </style>
 
 <script>
@@ -148,7 +220,7 @@ window.addEventListener('error',function(event){
   </nav>
 
   <main id="app" tabindex="-1"></main>
-  <div class="build-mark" aria-hidden="true">Evidence Coach 3.2 Product Final</div>
+  <div class="build-mark" aria-hidden="true">Evidence Coach 3.4 Field Final</div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <dialog id="settingsDialog" class="dialog">
@@ -304,12 +376,13 @@ function empty(title,text,action='',label=''){return `<div class="card empty"><d
 let query='',filter='all';
 function partsText(product){return product.beys.map(b=>b.system==='standard'?`${b.blade} ${b.ratchet}${b.bit}`:b.system==='integrated'?`${b.blade} ${b.bit}`:b.system==='cx-standard'?`${b.lock}${b.main} ${b.assist}${b.ratchet}${b.bit}`:b.system==='cx-expand'?`${b.lock}${b.over}${b.metal} ${b.assist}${b.ratchet}${b.bit}`:`${b.lock}${b.main} ${b.assist}${b.fused}`).join(' · ')}
 function catalogResults(){return CATALOG.filter(p=>(filter==='all'||p.line===filter||(filter==='random'&&p.random)||(filter==='limited'&&p.limited))&&(!query||`${p.code} ${p.title} ${p.type}`.toLowerCase().includes(query))).slice(0,120)}
-function catalogListHtml(results){return results.map(p=>`<article class="catalog-item"><div><strong>${esc(p.code)} · ${esc(p.title)}</strong><small>${esc(p.type)} · ${esc(partsText(p))}</small></div><button class="mini" data-add-product="${esc(p.id)}" aria-label="Add ${esc(p.title)}">+</button></article>`).join('')||'<p class="muted">No catalog matches.</p>'}
+function catalogListHtml(results){return results.map(p=>`<article class="catalog-item"><div class="catalog-item-main"><strong>${esc(p.code)} · ${esc(p.title)}</strong><small>${esc(p.type)} · ${esc(partsText(p))}</small></div><button class="button secondary catalog-add" data-add-product="${esc(p.id)}" aria-label="Add ${esc(p.title)}">Add set</button></article>`).join('')||'<p class="muted">No catalog matches.</p>'}
 function updateCatalogList(){const node=document.querySelector('[data-catalog-list]');if(node)node.innerHTML=catalogListHtml(catalogResults())}
-function renderCollection(state){const results=catalogResults();const inventory=state.inventory;return `${pageHead('Step 1','Build your owned collection','Nothing is preloaded. Add only products or loose parts that you physically own.')}
-<section class="card accent command"><div><div class="eyebrow">Collection status</div><h2>${inventory.length?`${inventory.length} owned ${inventory.length===1?'entry':'entries'}`:'Inventory is empty'}</h2><p>${state.analysis?.ready?'A legal tournament deck is available.':'Add enough compatible parts for three legal Beys.'}</p></div>${state.analysis?.ready?'<a class="button" href="#/deck">View deck →</a>':''}</section>
-<div class="grid two" style="margin-top:16px"><section class="card"><h2>Known sets with Beys</h2><p class="muted">Search by product code or Bey name. Catalog items remain unowned until added.</p><div class="catalog-tools"><input class="field" id="catalogSearch" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search known sets" placeholder="Example: UX-08 or SilverWolf" value="${esc(query)}"><button class="button secondary" data-action="open-loose">Add loose part</button></div><div class="filter-row">${['all','BX','UX','CX','random','limited'].map(f=>`<button class="filter ${filter===f?'active':''}" data-filter="${f}">${f==='all'?'All':f}</button>`).join('')}</div><div class="catalog-list" data-catalog-list>${catalogListHtml(results)}</div></section>
-<section class="card"><h2>Owned inventory</h2><p class="muted">Each row is one physical copy. Add a set again when you own another copy.</p><div class="inventory-list">${inventory.length?inventory.map(e=>`<article class="inventory-item"><div><strong>${esc(e.code)} · ${esc(e.name)}</strong><small>${e.parts.length} parts · ${esc(e.type||e.kind)}</small><div class="part-pills">${e.parts.slice(0,7).map(p=>`<span class="pill">${esc(p.name)}</span>`).join('')}</div></div><button class="mini" data-remove-entry="${esc(e.id)}" aria-label="Remove ${esc(e.name)}">×</button></article>`).join(''):'<div class="empty"><div class="empty-icon">＋</div><h3>No owned items yet</h3><p class="muted">Use the catalog to add your first set.</p></div>'}</div></section></div>
+function renderCollection(state){const results=catalogResults(),inventory=state.inventory,partCount=inventory.reduce((s,e)=>s+(e.parts?.length||0),0),setCount=inventory.filter(e=>e.kind!=='loose').length,looseCount=inventory.filter(e=>e.kind==='loose').length,legal=Boolean(state.analysis?.ready),catalogOpen=!inventory.length||Boolean(query)||filter!=='all';return `<section class="card accent collection-status"><div><div class="eyebrow">Collection</div><h2>${inventory.length?`${inventory.length} owned ${inventory.length===1?'entry':'entries'}`:'Start with an empty inventory'}</h2><p>${legal?'A legal 3-on-3 deck is available from the parts entered below.':'Add complete sets or loose parts until three legal Beys can be assembled.'}</p><div class="collection-actions">${legal?'<a class="button deck-primary" href="#/deck">View recommended deck →</a>':''}<button class="button ${legal?'secondary':''}" data-action="open-catalog">Add known set</button><button class="button secondary" data-action="open-loose">Add loose part</button></div></div></section>
+<div class="collection-layout">
+<details class="card collection-section" ${inventory.length?'':'open'}><summary><span>Owned inventory<small>Every row represents one physical copy.</small></span><strong>${inventory.length}</strong></summary><div class="collection-section-body">${inventory.length?`<div class="inventory-summary-grid"><div class="inventory-summary-item"><small>Entries</small><strong>${inventory.length}</strong></div><div class="inventory-summary-item"><small>Sets</small><strong>${setCount}</strong></div><div class="inventory-summary-item"><small>Loose</small><strong>${looseCount}</strong></div></div><div class="inventory-list">${inventory.map(e=>`<article class="inventory-item"><div class="inventory-item-main"><strong>${esc(e.code)} · ${esc(e.name)}</strong><small>${e.parts.length} parts · ${esc(e.type||e.kind)}</small><div class="part-pills">${e.parts.slice(0,7).map(p=>`<span class="pill">${esc(p.name)}</span>`).join('')}</div></div><button class="mini" data-remove-entry="${esc(e.id)}" aria-label="Remove ${esc(e.name)}">×</button></article>`).join('')}</div>`:`<div class="collection-empty-guide"><div class="collection-empty-step"><b>1</b><span><strong>Add a known set</strong><small>Search the Bey-containing product catalog.</small></span></div><div class="collection-empty-step"><b>2</b><span><strong>Add loose parts when needed</strong><small>Use this for separately acquired Blades, Ratchets, Bits, or CX components.</small></span></div><div class="collection-empty-step"><b>3</b><span><strong>Open Deck</strong><small>The coach activates automatically after a legal 3-on-3 allocation exists.</small></span></div></div>`}</div></details>
+<details class="card collection-section" id="catalogBrowser" ${catalogOpen?'open':''}><summary><span>Known sets with Beys<small>${CATALOG.length} selectable entries · nothing is owned until added.</small></span><strong>Add</strong></summary><div class="collection-section-body"><label class="catalog-search-label" for="catalogSearch">Search by product code or Bey name</label><div class="catalog-tools"><input class="field" id="catalogSearch" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search known sets" placeholder="Example: UX-08 or SilverWolf" value="${esc(query)}"><button class="button secondary" data-action="open-loose">Add loose part</button></div><div class="filter-row">${['all','BX','UX','CX','random','limited'].map(f=>`<button class="filter ${filter===f?'active':''}" data-filter="${f}">${f==='all'?'All':f==='random'?'Random':f==='limited'?'Limited':f}</button>`).join('')}</div><p class="catalog-count">${results.length} matching entries shown</p><div class="catalog-list" data-catalog-list>${catalogListHtml(results)}</div></div></details>
+</div>
 <dialog id="looseDialog" class="dialog"><form method="dialog"><div class="dialog-head"><h2>Add loose part</h2><button class="icon-button" value="cancel">×</button></div><label>Part category<select class="field" id="looseCategory"><option value="blade">Blade</option><option value="ratchet">Ratchet</option><option value="bit">Bit</option><option value="lock">CX Lock</option><option value="main">CX Main Blade</option><option value="assist">CX Assist Blade</option><option value="over">CX Over Blade</option><option value="metal">CX Metal Blade</option><option value="fused">Integrated Bit</option></select></label><label>Part name<input class="field" id="looseName" placeholder="Example: 9-60"></label><label>Role estimate<select class="field" id="looseRole"><option>balance</option><option>attack</option><option>stamina</option><option>defense</option></select></label><div class="button-row" style="margin-top:16px"><button type="button" class="button" data-action="save-loose">Add part</button></div></form></dialog>`}
 function setCatalogQuery(v){query=v.toLowerCase()}function setCatalogFilter(v){filter=v}
 
@@ -353,12 +426,12 @@ if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then
 
 const app=document.querySelector('#app'),toastNode=document.querySelector('#toast');let analysisTimer=null,toastTimer=null,lastRenderedRoute=null;
 function toast(text){toastNode.textContent=text;toastNode.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastNode.classList.remove('show'),2400)}
-function routeRenderer(route=currentRoute()){const routeChanged=route!==lastRenderedRoute;document.querySelectorAll('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route));const s=getState();app.innerHTML=route==='collection'?renderCollection(s):route==='deck'?renderDeck(s):route==='test'?renderTest(s):renderMatch(s);document.querySelector('#headerStatus').textContent=s.analysisPending?'Coach analyzing…':s.analysis?.ready?`${s.analysis.readiness.state} · ${Math.round(s.analysis.confidence*100)}% confidence`:s.inventory.length?`${s.inventory.length} entries · collection incomplete`:'Inventory empty';if(route==='test'&&s.analysis?.ready&&!s.testSession)prepareTest();if(routeChanged){lastRenderedRoute=route;requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));}}
+function routeRenderer(route=currentRoute()){const routeChanged=route!==lastRenderedRoute;document.querySelectorAll('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route));const s=getState();app.innerHTML=route==='collection'?renderCollection(s):route==='deck'?renderDeck(s):route==='test'?renderTest(s):renderMatch(s);const headerStatus=document.querySelector('#headerStatus');if(route==='collection')headerStatus.textContent=s.inventory.length?`${s.inventory.length} owned entries`:'Inventory empty';else if(route==='deck')headerStatus.textContent=s.analysisPending?'Coach analyzing…':s.analysis?.ready?`${s.analysis.readiness.state} · ${Math.round(s.analysis.confidence*100)}% confidence`:'Deck unavailable';else if(route==='test')headerStatus.textContent=s.analysis?.ready?'Next evidence task':'Test unavailable';else headerStatus.textContent='First to 4 points';if(route==='test'&&s.analysis?.ready&&!s.testSession)prepareTest();if(routeChanged){lastRenderedRoute=route;requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));}}
 function currentDeckSnapshot(s){const deck=s.analysis?.decks?.find(d=>d.id===s.selectedDeckId)||s.analysis?.decks?.[0];return deck?.combos?.map(c=>({signature:c.signature,name:c.name}))||s.previousDeckSnapshot||[]}
 function scheduleAnalysis(){clearTimeout(analysisTimer);const s=getState(),previous=currentDeckSnapshot(s);setState({analysisPending:true,analysis:null,selectedDeckId:null,testSession:null,testResults:[],previousDeckSnapshot:previous},{save:false});analysisTimer=setTimeout(()=>{const now=getState(),result=analyze(now.inventory,now.evidence,now.locks,now.previousDeckSnapshot||[]);setState({analysis:result,analysisPending:false,selectedDeckId:result.decks[0]?.id||null,testSession:null,testResults:[],deckChange:result.change},{save:false});},45)}
 function prepareTest(){const s=getState(),test=chooseTest(s.analysis,s.evidence);setState({testSession:test,testResults:[],testSetup:{launch:'recommended',position:test?.position||'center',meaningfulContact:true,lossContext:'none'}},{save:false})}
-let deferredRender=false;function searchHasFocus(){const a=document.activeElement;return !!(a&&a.id==='catalogSearch')}function subscribedRender(){if(searchHasFocus()){deferredRender=true;return}routeRenderer()}subscribe(subscribedRender);startRouter(routeRenderer);
-addEventListener('click',e=>{const el=e.target.closest('button,[data-add-product],[data-remove-entry]');if(!el)return;if(el.dataset.addProduct){const p=CATALOG.find(x=>x.id===el.dataset.addProduct);if(!p)return;mutate(s=>s.inventory.push(productToEntry(p)));toast(`${p.code} added`);scheduleAnalysis();return}if(el.dataset.removeEntry){mutate(s=>{s.inventory=s.inventory.filter(x=>x.id!==el.dataset.removeEntry);s.locks=[]});scheduleAnalysis();return}if(el.dataset.filter){setCatalogFilter(el.dataset.filter);routeRenderer();return}if(el.dataset.action==='open-loose'){document.querySelector('#looseDialog')?.showModal();return}if(el.dataset.action==='save-loose'){const name=document.querySelector('#looseName').value.trim();if(!name)return toast('Enter a part name.');const entry=customLoosePart(document.querySelector('#looseCategory').value,name,document.querySelector('#looseRole').value);mutate(s=>s.inventory.push(entry));document.querySelector('#looseDialog').close();scheduleAnalysis();toast('Loose part added');return}if(el.dataset.lockCombo){mutate(s=>{const sig=el.dataset.lockCombo;s.locks=s.locks.includes(sig)?s.locks.filter(x=>x!==sig):s.locks.length<2?[...s.locks,sig]:[s.locks[1],sig]});scheduleAnalysis();return}if(el.dataset.selectDeck){setState({selectedDeckId:el.dataset.selectDeck,testSession:null,testResults:[]});return}if(el.dataset.testWinner){const setup={launch:document.querySelector('#testLaunch')?.value||'recommended',position:document.querySelector('#testPosition')?.value||'center',meaningfulContact:Boolean(document.querySelector('#testContact')?.checked),lossContext:document.querySelector('#testLossContext')?.value||'none'},selfKO=setup.lossContext==='self-ko',launchError=setup.lossContext==='launch-error',result={winner:el.dataset.testWinner,finish:el.dataset.testFinish,points:Number(el.dataset.testPoints),selfKO,launchError,launch:setup.launch,position:setup.position,meaningfulContact:setup.meaningfulContact},results=[...(getState().testResults||[]),result].slice(0,3);if(results.length<3){setState({testResults:results,testSetup:setup},{save:false});return}const session=getState().testSession;mutate(s=>s.evidence.push(recordEvidence(session,results)));toast('Three-battle evidence batch saved');scheduleAnalysis();go('deck');return}if(el.dataset.action==='undo-test-result'){setState({testResults:(getState().testResults||[]).slice(0,-1)},{save:false});return}if(el.dataset.scoreSide){mutate(s=>{const side=el.dataset.scoreSide,points=Number(el.dataset.points);s.match[side]=Math.min(7,s.match[side]+points);s.match.battles.push({side,points,finish:el.dataset.finish})});return}if(el.dataset.action==='reset-match'){setState({match:{me:0,opponent:0,battles:[]}});return}if(el.dataset.action==='open-settings'){document.querySelector('#settingsDialog').showModal();return}if(el.dataset.action==='reset-app'){if(confirm('Delete all inventory and evidence?')){reset();document.querySelector('#settingsDialog').close();go('collection')}return}if(el.dataset.action==='export-data'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([exportState()],{type:'application/json'}));a.download='x-tournament-director-v3-backup.json';a.click();URL.revokeObjectURL(a.href);return}});
+history.scrollRestoration='manual';addEventListener('pageshow',()=>requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'})));let deferredRender=false;function searchHasFocus(){const a=document.activeElement;return !!(a&&a.id==='catalogSearch')}function subscribedRender(){if(searchHasFocus()){deferredRender=true;return}routeRenderer()}subscribe(subscribedRender);startRouter(routeRenderer);
+addEventListener('click',e=>{const el=e.target.closest('button,[data-add-product],[data-remove-entry]');if(!el)return;if(el.dataset.action==='open-catalog'){const panel=document.querySelector('#catalogBrowser');if(panel){panel.open=true;requestAnimationFrame(()=>{panel.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.querySelector('#catalogSearch')?.focus({preventScroll:true}),320)})}return}if(el.dataset.addProduct){const p=CATALOG.find(x=>x.id===el.dataset.addProduct);if(!p)return;mutate(s=>s.inventory.push(productToEntry(p)));toast(`${p.code} added`);scheduleAnalysis();return}if(el.dataset.removeEntry){mutate(s=>{s.inventory=s.inventory.filter(x=>x.id!==el.dataset.removeEntry);s.locks=[]});scheduleAnalysis();return}if(el.dataset.filter){setCatalogFilter(el.dataset.filter);routeRenderer();return}if(el.dataset.action==='open-loose'){document.querySelector('#looseDialog')?.showModal();return}if(el.dataset.action==='save-loose'){const name=document.querySelector('#looseName').value.trim();if(!name)return toast('Enter a part name.');const entry=customLoosePart(document.querySelector('#looseCategory').value,name,document.querySelector('#looseRole').value);mutate(s=>s.inventory.push(entry));document.querySelector('#looseDialog').close();scheduleAnalysis();toast('Loose part added');return}if(el.dataset.lockCombo){mutate(s=>{const sig=el.dataset.lockCombo;s.locks=s.locks.includes(sig)?s.locks.filter(x=>x!==sig):s.locks.length<2?[...s.locks,sig]:[s.locks[1],sig]});scheduleAnalysis();return}if(el.dataset.selectDeck){setState({selectedDeckId:el.dataset.selectDeck,testSession:null,testResults:[]});return}if(el.dataset.testWinner){const setup={launch:document.querySelector('#testLaunch')?.value||'recommended',position:document.querySelector('#testPosition')?.value||'center',meaningfulContact:Boolean(document.querySelector('#testContact')?.checked),lossContext:document.querySelector('#testLossContext')?.value||'none'},selfKO=setup.lossContext==='self-ko',launchError=setup.lossContext==='launch-error',result={winner:el.dataset.testWinner,finish:el.dataset.testFinish,points:Number(el.dataset.testPoints),selfKO,launchError,launch:setup.launch,position:setup.position,meaningfulContact:setup.meaningfulContact},results=[...(getState().testResults||[]),result].slice(0,3);if(results.length<3){setState({testResults:results,testSetup:setup},{save:false});return}const session=getState().testSession;mutate(s=>s.evidence.push(recordEvidence(session,results)));toast('Three-battle evidence batch saved');scheduleAnalysis();go('deck');return}if(el.dataset.action==='undo-test-result'){setState({testResults:(getState().testResults||[]).slice(0,-1)},{save:false});return}if(el.dataset.scoreSide){mutate(s=>{const side=el.dataset.scoreSide,points=Number(el.dataset.points);s.match[side]=Math.min(7,s.match[side]+points);s.match.battles.push({side,points,finish:el.dataset.finish})});return}if(el.dataset.action==='reset-match'){setState({match:{me:0,opponent:0,battles:[]}});return}if(el.dataset.action==='open-settings'){document.querySelector('#settingsDialog').showModal();return}if(el.dataset.action==='reset-app'){if(confirm('Delete all inventory and evidence?')){reset();document.querySelector('#settingsDialog').close();go('collection')}return}if(el.dataset.action==='export-data'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([exportState()],{type:'application/json'}));a.download='x-tournament-director-v3-backup.json';a.click();URL.revokeObjectURL(a.href);return}});
 addEventListener('input',e=>{if(e.target.id==='catalogSearch'){setCatalogQuery(e.target.value);updateCatalogList()}});addEventListener('focusout',e=>{if(e.target.id==='catalogSearch'&&deferredRender){deferredRender=false;requestAnimationFrame(()=>routeRenderer())}});
 addEventListener('change',async e=>{if(['testLaunch','testPosition','testContact','testLossContext'].includes(e.target.id)){setState({testSetup:{launch:document.querySelector('#testLaunch')?.value||'recommended',position:document.querySelector('#testPosition')?.value||'center',meaningfulContact:Boolean(document.querySelector('#testContact')?.checked),lossContext:document.querySelector('#testLossContext')?.value||'none'}},{save:false});return}if(e.target.dataset.action==='import-data'){try{importState(await e.target.files[0].text());scheduleAnalysis();document.querySelector('#settingsDialog').close();toast('Backup restored')}catch(err){toast(err.message)}}});
 if(getState().inventory.length)scheduleAnalysis();

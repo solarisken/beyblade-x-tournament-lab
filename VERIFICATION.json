@@ -1,21 +1,43 @@
 {
-  "build": "Evidence Coach 3.2",
+  "build": "Evidence Coach 3.4 Field Final",
   "singleFileApplication": true,
   "allPackageFilesAtRoot": true,
   "javascriptSyntax": "passed",
-  "storageNamespaceChanged": false,
   "coachEngineChanged": false,
-  "deckInformationOrder": [
-    "recommended deck",
-    "exact next test",
-    "unknown-opponent launch order",
-    "practical Bey instructions",
-    "collapsed technical details"
-  ],
-  "readinessCollapsedByDefault": true,
-  "allScoutOrdersCollapsedByDefault": true,
-  "modelMetricsCollapsedByDefault": true,
-  "alternativesCollapsedByDefault": true,
-  "mobileHeaderReduced": true,
-  "mobileBottomNavigationReduced": true
+  "storageNamespaceChanged": false,
+  "mobileBrowserVerification": {
+    "initialCollection": {
+      "viewportWidth": 390,
+      "viewportHeight": 844,
+      "horizontalOverflowPx": 0,
+      "scrollY": 0,
+      "headerStatus": "9 owned entries",
+      "collectionTitle": "9 owned entries",
+      "statusTop": 68,
+      "statusBottom": 296,
+      "statusHeight": 228,
+      "inventoryOpen": false,
+      "catalogOpen": false,
+      "navTop": 778,
+      "primaryAction": "View recommended deck \u2192"
+    },
+    "openedCatalog": {
+      "horizontalOverflowPx": 0,
+      "catalogOpen": true,
+      "filterRows": 2,
+      "filterRightMax": 364,
+      "viewportWidth": 390,
+      "addButtonWidths": [
+        310,
+        310,
+        310
+      ],
+      "searchFocused": true
+    },
+    "typing": {
+      "focusAfterTyping": "catalogSearch",
+      "matchingCatalogItems": 2
+    },
+    "pageErrors": []
+  }
 }
