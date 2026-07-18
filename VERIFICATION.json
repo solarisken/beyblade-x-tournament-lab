@@ -1,13 +1,17 @@
 {
-  "singleFileApplication": true,
-  "mobileBuildMarker": true,
-  "viewportKeyboardResize": true,
-  "searchDoesNotCallRouteRenderer": true,
-  "searchInputNodePreserved": true,
-  "backgroundRerenderDeferredDuringSearch": true,
-  "iosInputFontAtLeast16": true,
-  "mobileNestedCatalogScrollRemoved": true,
-  "bottomThumbNavigation": true,
-  "safeAreaBottomUsed": true,
-  "noExternalAssets": true
+  "build": "Mobile 2.3",
+  "singleFileApp": true,
+  "allFilesAtRoot": true,
+  "javascriptSyntax": "passed",
+  "attackBitMirrorPolicy": {
+    "attackMirrorExcluded": true,
+    "nonAttackOpponentsRetained": true,
+    "symmetricRule": true
+  },
+  "behavior": {
+    "attackSubjectVsAttackOpponent": "excluded",
+    "attackSubjectVsNonAttackOpponent": "allowed",
+    "nonAttackSubjectVsAttackOpponent": "allowed",
+    "noValidOwnedOpponent": "show unavailable message; do not fall back"
+  }
 }

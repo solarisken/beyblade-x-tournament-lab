@@ -1,5 +1,15 @@
-# X Tournament Director — Mobile build 2.2
+# X Tournament Director — Mobile 2.3
 
-Single-file GitHub Pages build optimized for phones. The catalog search no longer rerenders the page while typing, so the on-screen keyboard remains open.
+Single-file, root-only GitHub Pages build.
 
-Upload every file in this package directly to the repository root.
+## New testing rule
+
+The coach does not schedule Attack-category Bit versus Attack-category Bit tests.
+
+- If the selected Bey uses an Attack Bit, the opponent must use a Balance,
+  Defense, or Stamina Bit.
+- The coach may select another recommended Bey when needed.
+- When the owned inventory cannot produce a valid matchup, the app reports that
+  no test is available instead of falling back to an Attack-bit mirror.
+
+The inventory still starts empty.
