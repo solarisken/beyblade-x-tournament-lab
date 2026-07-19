@@ -1,8 +1,8 @@
 {
   "name": "x-deck-lab",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "private": true,
-  "description": "Root-only GitHub Pages PWA for physics-informed Beyblade X deck optimization, owned-opponent adaptive testing, meta planning, and empirical tournament readiness.",
+  "description": "Root-only mobile Beyblade X deck builder with guided kid-friendly steps, owned-opponent testing, one ordinary Self-KO Yes/No answer, physics-informed deck ranking, and tournament-readiness analysis.",
   "scripts": {
     "test": "node --test test.mjs",
     "check": "node --check data.js && node --check core.js && node --check app.js && node --check service-worker.js && node --test test.mjs"

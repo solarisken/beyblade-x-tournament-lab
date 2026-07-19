@@ -22,7 +22,8 @@ from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parent
 RESULT_PATH = ROOT / "browser-audit-result.json"
-SCREENSHOT_PATH = ROOT / "mobile-v2.1-engineering-final.png"
+SCREENSHOT_PATH = ROOT / "mobile-v2.3-guided-final.png"
+HOME_SCREENSHOT_PATH = ROOT / "mobile-v2.3-guided-home.png"
 VIEWPORT = {"width": 390, "height": 844}
 DEVICE_SCALE_FACTOR = 3
 
@@ -157,6 +158,18 @@ def run() -> dict[str, Any]:
         audit.record("Initial visible controls have accessible names", len(unlabeled) == 0, ", ".join(unlabeled))
         duplicate_ids = page.evaluate("""() => { const ids = Array.from(document.querySelectorAll('[id]')).map((el) => el.id); return ids.filter((id, index) => ids.indexOf(id) !== index); }""")
         audit.record("Document IDs are unique", len(duplicate_ids) == 0, ", ".join(sorted(set(duplicate_ids))))
+        audit.record("Four-step home guide is visible", page.locator("#quickGuide").is_visible() and page.locator("#guideSteps .guide-step").count() == 4)
+        page.locator("#guideButton").click()
+        page.locator("#guideDialog").wait_for(state="visible")
+        guide_text = page.locator("#guideDialog").inner_text()
+        audit.record("Full player guide has four clear steps", page.locator("#guideDialog .guide-list li").count() == 4 and "Parts" in guide_text and "Decks" in guide_text and "Analysis" in guide_text)
+        audit.record("Kid guide explains ordinary Self-KO", "Just answer Yes or No" in guide_text and "ask an adult" in guide_text.lower(), guide_text[:500])
+        page.locator('#guideDialog [data-close-dialog]').click()
+        page.locator("#guideDialog").wait_for(state="hidden")
+
+        page.set_viewport_size({"width": 320, "height": 700})
+        audit.record("Small-phone layout has no horizontal overflow", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), page.evaluate("`${document.documentElement.scrollWidth}px / ${window.innerWidth}px`"))
+        page.set_viewport_size(VIEWPORT)
 
         view_accessibility_issues = []
         for view in ("dashboard", "inventory", "deck", "test", "results", "more"):
@@ -225,7 +238,8 @@ def run() -> dict[str, Any]:
         audit.record("Deck library deletes selected version safely", len(state["decks"]) == 1 and state["decks"][0]["name"] == "Certified Tournament Deck")
 
         nav(page, "test")
-        audit.record("Adaptive test plan renders exact owned opponents", page.locator("#testPlanList .test-task").count() >= 1 and "Owned opponent" in page.locator("#view-test").inner_text())
+        audit.record("Adaptive test plan renders exact owned opponents", page.locator("#testPlanList .test-task").count() >= 1 and "you own all needed parts" in page.locator("#view-test").inner_text().lower())
+        audit.record("Adaptive plan prioritizes simple self-KO checks", "SELF-KO CHECK" in page.locator("#testPlanList").inner_text() and "self-KO question" in page.locator("#testPlanList").inner_text())
         audit.record("Battle form offers an owned opponent build", page.locator("#battleOpponent option").count() >= 1 and page.locator("#battleOpponent").input_value() != "")
         pair_policy = page.evaluate("""() => {
           const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
@@ -244,27 +258,46 @@ def run() -> dict[str, Any]:
         }""")
         audit.record("Selected opponent is simultaneously constructible from owned quantities", pair_policy["found"] and pair_policy["capacity"], json.dumps(pair_policy))
         audit.record("Attack-bit mirror exclusion is enforced", not pair_policy["attackMirror"], json.dumps(pair_policy))
-        audit.record("Opponent engineering preview renders", "Owned capacity verified" in page.locator("#opponentEngineering").inner_text())
+        audit.record("Opponent engineering preview renders", "Owned capacity verified" in (page.locator("#opponentEngineering").text_content() or ""))
         page.locator('#battleForm select[name="result"]').select_option("win")
         page.locator('#battleForm select[name="finish"]').select_option("xtreme")
-        page.locator('#battleForm textarea[name="notes"]').fill("Controlled launch")
+        page.locator('#battleForm input[name="selfKo"][value="no"]').check()
         page.locator("#battleForm").evaluate("form => form.requestSubmit()")
         history_text = page.locator("#battleHistory").inner_text()
         state = state_snapshot(page)
-        audit.record("Battle logging persists exact owned opponent and finish", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme" and bool(state["battles"][0].get("opponentBey")) and bool(state["battles"][0].get("opponentSignature")))
+        audit.record("Battle logging persists exact opponent, finish, and simple No answer", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme" and state["battles"][0]["selfKo"] is False and state["battles"][0]["selfKoKnown"] is True and bool(state["battles"][0].get("opponentBey")) and bool(state["battles"][0].get("opponentSignature")))
         audit.record("Xtreme Finish receives three points", "3 points" in history_text, history_text[:400])
+
+        page.locator('#battleForm select[name="result"]').select_option("win")
+        page.locator('#battleForm select[name="finish"]').select_option("spin")
+        page.locator('#battleForm input[name="selfKo"][value="yes"]').check()
+        page.locator("#battleForm").evaluate("form => form.requestSubmit()")
+        audit.record("Impossible Self-KO Yes answer is blocked", len(state_snapshot(page)["battles"]) == 1 and "only when your Bey lost" in page.locator("#toast").inner_text())
 
         page.locator('#battleForm select[name="result"]').select_option("loss")
         page.locator('#battleForm select[name="finish"]').select_option("over")
+        page.locator('#battleForm input[name="selfKo"][value="yes"]').check()
+        page.locator("#battleForm").evaluate("form => form.requestSubmit()")
+        state = state_snapshot(page)
+        audit.record("Ordinary Self-KO Yes is retained as valid decided evidence", len(state["battles"]) == 2 and state["battles"][1]["selfKo"] is True and state["battles"][1]["selfKoKnown"] is True and state["battles"][1]["contaminated"] is False)
+        audit.record("Battle history shows only the simple Self-KO label", "SELF-KO" in page.locator("#battleHistory").inner_text() and "rail overshoot" not in page.locator("#battleHistory").inner_text().lower())
+
+        page.locator('#battleForm select[name="result"]').select_option("loss")
+        page.locator('#battleForm select[name="finish"]').select_option("spin")
+        page.locator('#battleForm input[name="selfKo"][value="no"]').check()
+        page.locator("#optionalTestDetails").evaluate("details => details.open = true")
         page.locator('#battleForm input[name="contaminated"]').check()
         page.locator("#battleForm").evaluate("form => form.requestSubmit()")
         state = state_snapshot(page)
-        audit.record("Contaminated battle is retained but marked for exclusion", len(state["battles"]) == 2 and state["battles"][1]["contaminated"] is True)
+        audit.record("Contaminated battle is retained but marked for exclusion", len(state["battles"]) == 3 and state["battles"][2]["contaminated"] is True)
 
         nav(page, "results")
-        audit.record("Analysis reports decided evidence", "1 decided battles" in page.locator("#analysisHero").inner_text())
+        audit.record("Analysis reports decided evidence", "2 decided battles" in page.locator("#analysisHero").inner_text())
         audit.record("Coverage matrix renders", page.locator("#coverageMatrix table").count() == 1)
         audit.record("Engineering deck analysis renders", "Deck engineering score" in page.locator("#engineeringAnalysis").inner_text() and page.locator("#engineeringAnalysis .engineering-card").count() == 3)
+        selfko_text = page.locator("#selfKoAnalysis").inner_text()
+        audit.record("Simple Self-KO analysis renders Yes-or-No totals", "Total self-KOs" in selfko_text and "Yes or No" in selfko_text and "No special cause is needed" in selfko_text, selfko_text[:600])
+        audit.record("Detailed Self-KO causes are not shown", "Wilson 95%" not in selfko_text and "rail overshoot" not in selfko_text.lower() and "Over / Xtreme" not in selfko_text, selfko_text[:600])
         audit.record("Order analysis renders without failure", bool(page.locator("#orderAnalysis").inner_text().strip()))
         page.locator("#runForecastButton").click()
         page.wait_for_function("document.querySelector('#runForecastButton').disabled === false && document.querySelector('#runForecastButton').textContent === 'Run forecast'", timeout=30000)
@@ -303,9 +336,21 @@ def run() -> dict[str, Any]:
         settings.locator('input[name="targetPerOpponent"]').fill("4")
         settings.locator('input[name="opponentPoolSize"]').fill("80")
         settings.locator('input[name="candidatePool"]').fill("52")
+        settings.locator('input[name="minimumSelfKoTestsPerBey"]').fill("6")
+        settings.locator('input[name="maxObservedSelfKoRate"]').fill("0.12")
+        settings.locator('input[name="showGuide"]').uncheck()
         settings.evaluate("form => form.requestSubmit()")
         state = state_snapshot(page)
-        audit.record("Readiness and engineering-search policy persists", state["settings"]["minimumBattles"] == 42 and state["settings"]["targetPerCell"] == 6 and state["settings"]["targetPerOpponent"] == 4 and state["settings"]["opponentPoolSize"] == 80 and state["settings"]["candidatePool"] == 52)
+        audit.record("Readiness and engineering-search policy persists", state["settings"]["minimumBattles"] == 42 and state["settings"]["targetPerCell"] == 6 and state["settings"]["targetPerOpponent"] == 4 and state["settings"]["opponentPoolSize"] == 80 and state["settings"]["candidatePool"] == 52 and state["settings"]["minimumSelfKoTestsPerBey"] == 6 and state["settings"]["maxObservedSelfKoRate"] == 0.12)
+        nav(page, "dashboard")
+        audit.record("Guide cards can be hidden", not page.locator("#quickGuide").is_visible())
+        nav(page, "more")
+        settings = page.locator("#settingsForm")
+        settings.locator('input[name="showGuide"]').check()
+        settings.evaluate("form => form.requestSubmit()")
+        nav(page, "dashboard")
+        audit.record("Guide cards can be restored", page.locator("#quickGuide").is_visible() and page.locator("#guideSteps .guide-step").count() == 4)
+        nav(page, "more")
 
         page.locator("#runAuditButton").click()
         diagnostics = page.locator("#diagnostics").inner_text()
@@ -316,7 +361,7 @@ def run() -> dict[str, Any]:
         backup = json.loads(backup_text)
         checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
         audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 4 and backup["appVersion"] == "2.1.0")
+        audit.record("Backup export uses current schema", backup["schemaVersion"] == 6 and backup["appVersion"] == "2.3.0")
 
         normal_error_count = len(audit.normal_console_errors)
         audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
@@ -373,8 +418,21 @@ def run() -> dict[str, Any]:
         audit.record("Visible button targets meet 44 px minimum", len(undersized) == 0, json.dumps(undersized))
         audit.record("Final workflow has no horizontal overflow", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
+        nav(page, "dashboard")
+        page.evaluate("""() => { window.scrollTo(0, 0); const toast = document.querySelector('#toast'); if (toast) { toast.classList.remove('show'); toast.style.display = 'none'; } }""")
+        page.screenshot(path=str(HOME_SCREENSHOT_PATH), full_page=False)
+        audit.record("Guided home-screen screenshot captured", HOME_SCREENSHOT_PATH.exists() and HOME_SCREENSHOT_PATH.stat().st_size > 0)
+
+        nav(page, "results")
+        page.evaluate("""() => {
+          document.activeElement?.blur();
+          const skip = document.querySelector('.skip-link'); if (skip) skip.style.display = 'none';
+          const toast = document.querySelector('#toast'); if (toast) { toast.classList.remove('show'); toast.style.display = 'none'; }
+          const header = document.querySelector('.app-header'); if (header) header.style.position = 'static';
+          const nav = document.querySelector('.bottom-nav'); if (nav) { nav.style.position = 'static'; nav.style.marginTop = '12px'; }
+        }""")
         page.screenshot(path=str(SCREENSHOT_PATH), full_page=True)
-        audit.record("Final mobile screenshot captured", SCREENSHOT_PATH.exists() and SCREENSHOT_PATH.stat().st_size > 0)
+        audit.record("Final guided analysis screenshot captured", SCREENSHOT_PATH.exists() and SCREENSHOT_PATH.stat().st_size > 0)
 
         persisted = storage_snapshot(page)
         second = context.new_page()
@@ -384,7 +442,7 @@ def run() -> dict[str, Any]:
         restored_state = state_snapshot(second)
         audit.record("Fresh application instance restores deck library", restored_state["decks"][0]["name"] == "Restored Certified Deck")
         audit.record("Fresh application instance restores inventory", len(restored_state["inventory"]) >= 14)
-        audit.record("Fresh application instance restores battles", len(restored_state["battles"]) == 2)
+        audit.record("Fresh application instance restores battles", len(restored_state["battles"]) == 3)
         second.close()
 
         browser.close()
@@ -393,7 +451,7 @@ def run() -> dict[str, Any]:
     failed = len(audit.checks) - passed
     result = {
         "application": "X Deck Lab",
-        "version": "2.1.0",
+        "version": "2.3.0",
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
         "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",

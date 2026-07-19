@@ -1,7 +1,7 @@
 {
   "application": "X Deck Lab",
-  "version": "2.1.0",
-  "timestampUtc": "2026-07-19T09:19:40.314995+00:00",
+  "version": "2.3.0",
+  "timestampUtc": "2026-07-19T13:29:45.988680+00:00",
   "viewport": {
     "width": 390,
     "height": 844,
@@ -10,17 +10,17 @@
     "touch": true
   },
   "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 17.779,
+  "durationSeconds": 23.594,
   "summary": {
-    "checks": 57,
-    "passed": 57,
+    "checks": 70,
+    "passed": 70,
     "failed": 0
   },
   "normalConsoleErrors": [],
   "uncaughtPageErrors": [],
   "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected 282ea0ef, calculated 6ebbed6f.\n    at HTMLInputElement.<anonymous> (<anonymous>:881:58)",
-    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:718:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:717:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:891:13)"
+    "Error: Backup checksum mismatch: expected 089c2338, calculated f28b02f8.\n    at HTMLInputElement.<anonymous> (<anonymous>:939:58)",
+    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:769:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:768:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:949:13)"
   ],
   "checks": [
     {
@@ -47,6 +47,26 @@
       "name": "Document IDs are unique",
       "passed": true,
       "detail": ""
+    },
+    {
+      "name": "Four-step home guide is visible",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Full player guide has four clear steps",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Kid guide explains ordinary Self-KO",
+      "passed": true,
+      "detail": "PLAYER GUIDE\n\nHow to use X Deck Lab\n×\n1\nAdd your parts\n\nOpen Parts. Add boxed products or loose parts you really own.\n\n2\nBuild a deck\n\nOpen Decks. Choose three Beys, or let the app suggest legal decks from your parts.\n\n3\nRun the next test\n\nOpen Test. Tap the first card. Build the shown opponent, battle once, and save the result.\n\n4\nCheck readiness\n\nOpen Analysis. Green checks are passed. Open checks explain what to do next.\n\nSelf-KO means: your own Bey jumps or runs out mostly by itself. Just an"
+    },
+    {
+      "name": "Small-phone layout has no horizontal overflow",
+      "passed": true,
+      "detail": "320px / 320px"
     },
     {
       "name": "Dashboard view navigates",
@@ -159,6 +179,11 @@
       "detail": ""
     },
     {
+      "name": "Adaptive plan prioritizes simple self-KO checks",
+      "passed": true,
+      "detail": ""
+    },
+    {
       "name": "Battle form offers an owned opponent build",
       "passed": true,
       "detail": ""
@@ -179,14 +204,29 @@
       "detail": ""
     },
     {
-      "name": "Battle logging persists exact owned opponent and finish",
+      "name": "Battle logging persists exact opponent, finish, and simple No answer",
       "passed": true,
       "detail": ""
     },
     {
       "name": "Xtreme Finish receives three points",
       "passed": true,
-      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 9:19 AM · Controlled launch"
+      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 1:29 PM"
+    },
+    {
+      "name": "Impossible Self-KO Yes answer is blocked",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Ordinary Self-KO Yes is retained as valid decided evidence",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Battle history shows only the simple Self-KO label",
+      "passed": true,
+      "detail": ""
     },
     {
       "name": "Contaminated battle is retained but marked for exclusion",
@@ -209,6 +249,16 @@
       "detail": ""
     },
     {
+      "name": "Simple Self-KO analysis renders Yes-or-No totals",
+      "passed": true,
+      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. SilverWolf 9-60 Disk Ball\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n1.7%\nengineering estimate\n\n2. WizardRod 1-60 Low Rush\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n9.6%\nengineering estimate\n\n3. PhoenixWing 4-50 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n3.0%\nengineering estimate\n\n"
+    },
+    {
+      "name": "Detailed Self-KO causes are not shown",
+      "passed": true,
+      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. SilverWolf 9-60 Disk Ball\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n1.7%\nengineering estimate\n\n2. WizardRod 1-60 Low Rush\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n9.6%\nengineering estimate\n\n3. PhoenixWing 4-50 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n3.0%\nengineering estimate\n\n"
+    },
+    {
       "name": "Order analysis renders without failure",
       "passed": true,
       "detail": ""
@@ -216,7 +266,7 @@
     {
       "name": "Forecast action completes",
       "passed": true,
-      "detail": "Estimated match win rate\n41.2%\n95% simulation interval 39.9%–42.4%\nAverage score\n2.35–2.91\n6,000 simulated matches\nEmpirical evidence\n1\nrelevant decided battles\nModel status\nPrior-heavy\nnot a physics simulation\n\nForecast is prior-heavy because fewer than 30 relevant decided battles are available."
+      "detail": "Estimated match win rate\n33.2%\nrange 32.1%–34.4%\nAverage score\n2.11–3.12\n6,000 model runs\nBattle evidence\n2\nrelevant decided battles\nEstimated self-KO chance\n9.1%\nuses recorded Yes/No answers\nModel status\nNeeds more tests\nguide only, not a guarantee\n\nForecast is prior-heavy because battle count or self-KO answers are limited; sparse cells use the engineering-informed self-KO estimate."
     },
     {
       "name": "Meta-profile management saves weighted lineup",
@@ -230,6 +280,16 @@
     },
     {
       "name": "Readiness and engineering-search policy persists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Guide cards can be hidden",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Guide cards can be restored",
       "passed": true,
       "detail": ""
     },
@@ -289,7 +349,12 @@
       "detail": ""
     },
     {
-      "name": "Final mobile screenshot captured",
+      "name": "Guided home-screen screenshot captured",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Final guided analysis screenshot captured",
       "passed": true,
       "detail": ""
     },

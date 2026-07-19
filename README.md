@@ -1,98 +1,92 @@
-# X Deck Lab 2.1.0
+# X Deck Lab 2.3.0
 
-X Deck Lab is a root-only, mobile-first GitHub Pages PWA for Beyblade X inventory management, legal three-Bey deck construction, physics-informed candidate ranking, controlled battle testing, opponent-meta planning, and empirical tournament-readiness analysis.
+X Deck Lab is a root-only, mobile-first GitHub Pages PWA for Beyblade X inventory, three-Bey deck building, owned-parts battle testing, physics-informed recommendations, and tournament-readiness analysis.
 
-The application runs entirely in the browser. It has no build step, server, account requirement, or external runtime dependency.
+Version 2.3.0 simplifies the normal player experience so children and first-time users can follow it without understanding the advanced analytics. The app still runs entirely in the browser, with no build step, server, account, telemetry, or external runtime dependency.
 
-## What changed in 2.1.0
+## The four-step player path
 
-### Owned-opponent testing
+1. **Parts** — Add boxed products or loose parts that you actually own.
+2. **Decks** — Build three Beys manually or apply a legal suggested deck made from owned parts.
+3. **Test** — Tap the first test card, assemble the two shown Beys, battle once, and save the result.
+4. **Analysis** — Check the green readiness items and follow the remaining instructions.
 
-Generated test opponents are now complete Bey combinations assembled from the recorded inventory. Before an opponent is offered, the engine reserves both the selected test Bey and the opponent and verifies that their combined part quantities can exist simultaneously.
+The home screen shows these four steps and marks completed steps. A **How to use** button opens the full guide at any time.
 
-The test record stores the exact opponent combination and signature, not only a broad archetype label. Evidence can therefore be analyzed by:
+For younger players, the normal path is **Parts → Decks → Test → Analysis**. The **More** screen contains advanced rules, thresholds, backups, and catalog tools and can be handled by an adult or experienced player.
 
-- your Bey;
-- opponent archetype;
-- exact opponent combination;
-- finish route;
-- launch technique and position;
-- contamination or launch-error status.
+## Ordinary Self-KO recording
 
-### Attack-bit mirror exclusion
+The battle form asks one question only:
 
-When **Exclude attack-bit vs attack-bit from generated tests** is enabled, the restriction is hard-enforced in:
+> Did your Bey go out by itself? — **Yes** or **No**
 
-- adaptive test-plan generation;
-- opponent selector population;
-- battle submission validation.
+Choose **Yes** when your own Bey jumps or runs out mostly by itself. No cause, subtype, or technical classification is required.
 
-The setting is enabled by default but may be disabled for deliberate mirror research.
+The app prevents contradictory answers: Self-KO = Yes is accepted only for an Over or Xtreme loss. A self-KO remains a valid competitive loss. Exclude a battle only when the test itself was not fair, such as an accidental touch, wrong setup, or unusable launch.
 
-### Physics-informed deck optimizer
+Older records containing detailed self-KO causes remain readable and are safely normalized into the ordinary flag when the prior record is unambiguous. Unknown legacy KOs are not guessed.
 
-Owned-part candidates are ranked through a transparent dimensionless engineering model. It considers qualitative proxies for:
+## Guided battle form
 
-- contact aggression and impact potential;
-- radial mass distribution and rotational inertia;
-- spin retention;
-- stability and control;
-- KO and burst resistance;
-- X-Dash potential;
-- recoil and self-KO risk;
-- ratchet nominal height and inferred center-of-mass effect;
-- mechanical and bit-role diversity;
-- modeled coverage against attack, stamina, defense, balance, and left-spin opponents.
+The five required choices are numbered:
 
-A diversity-preserving bounded search prevents one mechanically similar family from crowding the candidate pool. Final recommendations must still pass tournament construction rules and owned-inventory capacity checks.
+1. Your Bey
+2. Owned opponent
+3. Winner
+4. Finish
+5. Self-KO — Yes or No
 
-This is not a rigid-body or finite-element simulator. The catalog does not contain measured mass distribution, launch RPM, coefficients of friction, deformation, wear, mold variation, or stadium-condition data. The model ranks hypotheses; controlled battle evidence determines readiness.
+Engineering explanations and optional stadium, position, launch-style, exclusion, and notes fields are collapsed by default. They remain available in expandable sections without blocking the simple workflow.
 
-## Main workflow
+## Testing and deck optimization
 
-1. **Inventory** — Add known products and loose parts, including quantities and condition.
-2. **Deck** — Build manually or generate engineering-ranked legal decks from owned parts.
-3. **Test** — Follow the adaptive plan and select an exact inventory-valid opponent.
-4. **Record** — Log result, finish route, stadium, launch position, technique, contamination, and notes.
-5. **Results** — Review Wilson confidence intervals, evidence coverage, engineering proxies, order analysis, and empirical forecasts.
-6. **More** — Maintain meta profiles, custom tournament rules, readiness thresholds, catalog patches, and backups.
+- Every generated opponent is a complete Bey made from recorded owned parts.
+- The selected Bey and opponent must be buildable at the same time from available quantities.
+- Attack-bit versus attack-bit tests are excluded by default.
+- Test plans prioritize missing matchup evidence and straightforward self-KO checks.
+- Suggested decks must pass legality and owned-inventory capacity checks.
+- Recommendations combine saved battle evidence with qualitative engineering proxies for movement, impact, rotational inertia, spin retention, stability, control, recoil, self-KO risk, ratchet height, and matchup coverage.
 
-## Readiness policy
+The engineering model is a ranking aid, not a rigid-body or measured-RPM simulator. Exact mass distribution, launch speed, friction, impact restitution, mold variation, wear, stadium condition, and player execution are not available. Controlled battle results remain the tournament-readiness authority.
 
-A deck cannot receive tournament-ready status solely from its engineering score. The readiness engine separately evaluates:
+## Other platform capabilities
 
-- construction legality;
-- owned-part capacity;
-- total decided-battle evidence;
-- evidence per Bey and archetype;
-- Bey × archetype coverage;
-- lower 95% Wilson win-rate bound;
-- contamination rate;
-- multi-point finish evidence, when required.
-
-Contaminated trials and relaunches remain in history but do not count as decided evidence.
+- Basic, Unique, Custom Line, expanded Custom Line, ratchet-integrated blade, and ratchet-integrated bit architectures
+- Versioned deck library with rename, clone, and delete controls
+- Takara Tomy and WBO-oriented legality profiles plus custom event profiles
+- Exact-opponent and archetype matchup coverage
+- Wilson win-rate intervals
+- Multi-point finish checks
+- Deck-order optimization
+- Empirical match forecasting
+- Meta-lineup management
+- Checksum-protected backups
+- Catalog patches with duplicate-reference validation
+- Offline PWA operation
+- Migration from earlier state schemas
 
 ## Deploy on GitHub Pages
 
 1. Create or open a GitHub repository.
-2. Upload every release file directly to the repository root.
-3. Do not place the files in `src`, `public`, `dist`, or another wrapper folder.
+2. Upload every file from the release ZIP directly to the repository root.
+3. Do not place the files in `src`, `public`, `dist`, or another wrapper directory.
 4. In **Settings → Pages**, deploy from the branch root.
-5. Open the published URL once online so the service worker can cache the application shell.
+5. Open the published page online once so the service worker can cache the application shell.
 
-## Local verification
+## Verification
 
-Node.js is required only for the release tests, not to run the app.
+Node.js is required only for release testing.
 
 ```bash
 npm run check
 ```
 
-Current certified result:
+Certified result:
 
 ```text
-24 tests
-24 passed
+34 tests
+34 passed
 0 failed
 ```
 
@@ -102,13 +96,15 @@ Run the Chromium mobile workflow audit with:
 python browser-audit.py
 ```
 
-Current certified result:
+Certified result:
 
 ```text
-57 checks
-57 passed
+70 checks
+70 passed
 0 failed
 ```
+
+The audit covers 390 × 844 mobile use and an additional 320-pixel small-phone overflow check.
 
 ## Data maintenance
 
@@ -116,9 +112,7 @@ Current certified result:
 - Announced parts remain blocked unless theorycrafting is enabled.
 - Catalog patches can add parts and products without rebuilding the application.
 - Imported backups are checksum-verified before state replacement.
-- Schema migration preserves existing v2 deck libraries while upgrading to schema 4.
-
-The bundled catalog was verified through **2026-07-19**. Recheck official rules and product status before events held after that date.
+- The bundled catalog was verified through **2026-07-19**. Recheck rules and product status for later events.
 
 ## Root files
 
@@ -146,12 +140,10 @@ Verification and documentation:
 - `package.json`
 - `LICENSE`
 
-External audit artifact (not required for deployment and distributed separately):
-
-- `mobile-v2.1-engineering-final.png`
+Audit screenshots are distributed separately and are not required for deployment.
 
 ## Privacy, license, and trademarks
 
-Inventory, decks, settings, meta profiles, and battle records remain in browser local storage. Export a backup before clearing browser data or changing devices.
+Inventory, decks, settings, meta profiles, and battle records remain in local browser storage. Export a backup before clearing browser data or changing devices.
 
 Application code is provided under the MIT License. Beyblade and Beyblade X are trademarks of their respective owners. X Deck Lab is independent and unofficial and contains no copyrighted product imagery.

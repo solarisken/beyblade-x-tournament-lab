@@ -245,3 +245,63 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(4px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+
+.breakdown-grid { display: grid; gap: .75rem; margin-top: 1rem; }
+.breakdown-card { border: 1px solid var(--line); border-radius: 14px; padding: .85rem; background: var(--panel-2); }
+.breakdown-card h4 { margin: 0 0 .55rem; }
+.breakdown-row { display: flex; justify-content: space-between; gap: .75rem; padding: .45rem 0; border-top: 1px solid var(--line); font-size: .86rem; }
+.breakdown-row:first-of-type { border-top: 0; }
+.breakdown-row span { color: var(--muted); }
+@media (min-width: 760px) { .breakdown-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+
+/* Guided player flow */
+.guide-panel { border-color: rgba(91,226,255,.42); background: linear-gradient(145deg, rgba(91,226,255,.09), rgba(141,240,139,.035)), var(--panel); }
+.guide-steps { display: grid; grid-template-columns: 1fr; gap: 9px; }
+.guide-step { display: grid; grid-template-columns: auto 1fr; gap: 11px; align-items: center; width: 100%; min-height: 70px; padding: 11px; border: 1px solid var(--line); border-radius: 13px; color: var(--text); background: var(--panel-2); text-align: left; }
+.guide-step.done { border-color: rgba(113,229,163,.42); }
+.guide-step-number, .step-dot { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; color: #07151a; background: var(--accent); font-weight: 900; }
+.guide-step.done .guide-step-number { color: #07150e; background: var(--success); }
+.guide-step strong, .guide-step small, .guide-step em { display: block; }
+.guide-step small { margin-top: 3px; }
+.guide-step em { margin-top: 5px; color: var(--accent); font-size: .76rem; font-style: normal; font-weight: 800; }
+.guide-strip { display: flex; align-items: center; gap: 11px; margin: -2px 0 14px; padding: 12px; border: 1px solid rgba(91,226,255,.3); border-radius: 13px; background: rgba(91,226,255,.055); }
+.guide-strip strong, .guide-strip small { display: block; }
+.guide-strip small { margin-top: 2px; }
+.choice-field { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 13px; }
+.choice-field legend { padding: 0 5px; color: var(--text); font-size: .86rem; font-weight: 850; }
+.choice-field legend span { color: var(--accent); }
+.choice-grid { display: grid; grid-template-columns: 1fr; gap: 9px; }
+.choice-card { display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 12px; background: #0e1520; cursor: pointer; }
+.choice-card:has(input:checked) { border-color: var(--accent); background: rgba(91,226,255,.08); }
+.choice-card input { width: 22px; height: 22px; flex: 0 0 auto; }
+.choice-card strong, .choice-card small { display: block; }
+.choice-card small { margin-top: 2px; }
+.guide-dialog { max-height: min(760px, calc(100vh - 28px)); overflow-y: auto; }
+.guide-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.guide-list li { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.guide-list li > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #07151a; background: var(--accent); font-weight: 900; }
+.guide-list p, .glossary p { margin: 4px 0 0; color: var(--muted); font-size: .86rem; }
+.kid-note, .glossary { padding: 11px; border-radius: 12px; background: rgba(255,203,102,.08); border: 1px solid rgba(255,203,102,.28); }
+.glossary { background: var(--panel-2); border-color: var(--line); }
+.glossary h3 { margin-bottom: 4px; }
+
+@media (min-width: 680px) {
+  .guide-steps { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .choice-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 359px) {
+  .app-header { gap: 8px; padding-inline: 10px; }
+  .status-pill { display: none; }
+  .header-actions { gap: 5px; }
+  #guideButton { padding-inline: 8px; }
+}
+
+
+/* Progressive disclosure for younger and first-time players */
+.advanced-details { border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); overflow: hidden; }
+.advanced-details > summary { min-height: 48px; padding: 13px 14px; display: flex; align-items: center; cursor: pointer; font-weight: 750; color: var(--text); list-style-position: inside; }
+.advanced-details[open] > summary { border-bottom: 1px solid var(--line); }
+.advanced-details-body { padding: 14px; }
+.required-complete { margin: 0; padding: 10px 12px; border-radius: 12px; background: rgba(79, 227, 164, .09); color: var(--text); font-weight: 700; text-align: center; }

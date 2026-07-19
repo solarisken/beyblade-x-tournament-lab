@@ -17,12 +17,12 @@
   const data = {
     meta: {
       appName: 'X Deck Lab',
-      version: '2.1.0',
+      version: '2.3.0',
       verifiedThrough: '2026-07-19',
-      schemaVersion: 4,
+      schemaVersion: 6,
       rulesVersion: 'Takara Tomy Regulation v12 / WBO rules checked 2026-07-19',
       catalogPolicy: 'Released parts are enabled by default. Announced parts remain opt-in until their release date is reached and the catalog is reverified.',
-      disclaimer: 'Independent tournament-preparation tool. Engineering scores are qualitative proxies derived from part type, geometry descriptors, ratchet height, and bit behavior; they are not measured mass/RPM simulations and cannot guarantee outcomes.'
+      disclaimer: 'Independent tournament-preparation tool. Engineering scores are qualitative proxies. A self-KO is recorded with one simple yes/no answer. Controlled battle results—not the model—remain the final evidence.'
     },
 
     categories: [
@@ -119,17 +119,35 @@
       avoidAttackMirrors: true,
       candidatePool: 48,
       targetPerOpponent: 3,
-      opponentPoolSize: 90
+      opponentPoolSize: 90,
+      minimumSelfKoTestsPerBey: 8,
+      maxObservedSelfKoRate: 0.15,
+      showGuide: true
     },
 
     engineeringModel: {
-      version: 1,
+      version: 2,
       method: 'Dimensionless physics-informed proxy model',
       metrics: ['impactPotential','rotationalInertia','spinRetention','stability','koResistance','burstResistance','xDashPotential','control','recoilRisk','selfKoRisk'],
       measuredInputs: [],
       proxyInputs: ['official type classification','catalog geometry descriptors','ratchet nominal height','bit contact-profile descriptors','spin direction'],
       limitations: ['No measured part mass or mass distribution','No launch RPM','No material friction coefficient','No mold, wear, stadium, or launcher calibration']
     },
+
+
+    finishCauses: [
+      { id: 'forced-contact', name: 'Opponent-forced contact / clean KO' },
+      { id: 'own-no-contact-self-ko', name: 'Own no-contact self-KO' },
+      { id: 'own-glancing-self-ko', name: 'Own glancing-contact self-KO' },
+      { id: 'own-rail-overshoot', name: 'Own rail overshoot' },
+      { id: 'own-rebound-self-ko', name: 'Own rebound self-KO' },
+      { id: 'own-launch-destabilization', name: 'Own launch-angle destabilization' },
+      { id: 'opponent-self-ko', name: 'Opponent self-KO' },
+      { id: 'spin-exhaustion', name: 'Spin exhaustion' },
+      { id: 'burst-impact', name: 'Burst from contact' },
+      { id: 'draw-invalid', name: 'Draw / relaunch / invalid' },
+      { id: 'unknown-contact-cause', name: 'Unknown contact cause (legacy)' }
+    ],
 
     launchPositions: ['Left position', 'Right position', 'Center position', 'Not recorded'],
     launchTechniques: ['Flat launch', 'Banked launch', 'Tilt launch', 'Weak launch', 'Hard launch', 'Controlled launch', 'Other / not recorded'],

@@ -73,12 +73,17 @@
     state.decks.forEach((deck) => { while (deck.beys.length < 3) deck.beys.push(blankBey()); });
     if (!state.decks.length) state.decks = [defaultDeck()];
     if (!state.decks.some((deck) => deck.id === source.activeDeckId)) state.activeDeckId = state.decks[0].id;
-    state.battles = Array.isArray(source.battles) ? source.battles.filter((battle) => battle?.id) : [];
+    state.battles = Array.isArray(source.battles) ? source.battles.filter((battle) => battle?.id).map((battle) => Core.normalizeBattle(battle, DATA.scoring)) : [];
     state.metaProfiles = Array.isArray(source.metaProfiles) && source.metaProfiles.length
       ? source.metaProfiles.filter((profile) => profile?.id && profile?.name && Array.isArray(profile.lineup))
       : base.metaProfiles;
     state.customProfiles = Array.isArray(source.customProfiles) ? source.customProfiles.filter((profile) => profile?.id && profile?.name) : [];
-    state.settings = { ...DATA.testDefaults, ...(source.settings || {}) };
+    const importedSettings = { ...(source.settings || {}) };
+    if (importedSettings.minimumSelfKoTestsPerBey == null && importedSettings.minimumStabilityPerBey != null) importedSettings.minimumSelfKoTestsPerBey = importedSettings.minimumStabilityPerBey;
+    delete importedSettings.minimumFinishCauseCoverage;
+    delete importedSettings.minimumStabilityPerBey;
+    delete importedSettings.maxSelfKoUpperBound;
+    state.settings = { ...DATA.testDefaults, ...importedSettings };
     return state;
   }
 
@@ -175,6 +180,28 @@
     return `<div class="engineering-bars">${keys.map((key) => `<div class="engineering-row"><span>${escapeHtml(metricLabel(key))}</span><div class="engineering-track"><i style="width:${Math.max(0, Math.min(100, Number(profile.metrics[key]) || 0))}%"></i></div><strong>${escapeHtml(profile.metrics[key])}</strong></div>`).join('')}</div>`;
   }
 
+
+  function guideProgress() {
+    const deck = activeDeck();
+    const assessment = currentAssessment();
+    const ownedUnits = Object.keys(state.inventory).reduce((total, id) => total + Core.inventoryQuantity(state.inventory, id), 0);
+    const relevantBattles = assessment.analytics.overall.total;
+    return [
+      { step: 1, title: 'Add your parts', note: ownedUnits ? `${ownedUnits} owned part${ownedUnits === 1 ? '' : 's'} recorded` : 'Add a boxed product or loose part', done: ownedUnits > 0, view: 'inventory', action: ownedUnits ? 'View parts' : 'Add parts' },
+      { step: 2, title: 'Build three Beys', note: assessment.legality.legal && assessment.capacity.valid ? 'Legal and buildable from owned parts' : 'Complete a legal owned deck', done: assessment.legality.legal && assessment.capacity.valid, view: 'deck', action: 'Open decks' },
+      { step: 3, title: 'Run guided tests', note: relevantBattles ? `${relevantBattles} battle${relevantBattles === 1 ? '' : 's'} saved` : 'Tap the first test card and battle once', done: relevantBattles > 0, view: 'test', action: 'Open tests' },
+      { step: 4, title: 'Check readiness', note: assessment.tournamentReady ? 'Tournament-readiness checks pass' : `${assessment.blockers.length} check${assessment.blockers.length === 1 ? '' : 's'} still open`, done: assessment.tournamentReady, view: 'results', action: 'View analysis' }
+    ];
+  }
+
+  function renderGuidePanels() {
+    const show = state.settings.showGuide !== false;
+    $$('[data-guide-panel]').forEach((element) => { element.hidden = !show; });
+    const container = $('#guideSteps');
+    if (!container) return;
+    container.innerHTML = guideProgress().map((item) => `<button class="guide-step ${item.done ? 'done' : ''}" type="button" data-nav-target="${item.view}"><span class="guide-step-number">${item.done ? '✓' : item.step}</span><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.note)}</small><em>${escapeHtml(item.action)} →</em></span></button>`).join('');
+  }
+
   function renderDashboard() {
     const deck = activeDeck();
     const assessment = currentAssessment();
@@ -188,15 +215,18 @@
       </div>
       <div class="hero-footer">${assessment.legality.legal ? badge('Legal', 'pass') : badge('Illegal', 'fail')}${assessment.capacity.valid ? badge('Owned', 'pass') : badge('Part shortage', 'fail')}${badge(`${assessment.analytics.overall.effective} decided battles`, 'info')}</div>`;
 
+    renderGuidePanels();
     $('#dashboardMetrics').innerHTML = [
-      ['Win rate', fmtPct(assessment.analytics.overall.winRate, 1), `95% floor ${fmtPct(assessment.analytics.overall.interval.low, 1)}`],
-      ['Point differential', assessment.analytics.overall.pointDifferential > 0 ? `+${assessment.analytics.overall.pointDifferential}` : String(assessment.analytics.overall.pointDifferential), `${assessment.analytics.overall.pointsFor} for / ${assessment.analytics.overall.pointsAgainst} against`],
-      ['Role spread', `${assessment.diversity.unique}/3`, assessment.diversity.roles.join(' · ') || 'Complete the deck'],
-      ['Data quality', fmtPct(1 - assessment.analytics.overall.contaminationRate, 0), `${assessment.analytics.overall.contaminated} excluded records`]
+      ['Win rate', fmtPct(assessment.analytics.overall.winRate, 1), `${assessment.analytics.overall.wins} wins in ${assessment.analytics.overall.effective} decided battles`],
+      ['Points', assessment.analytics.overall.pointDifferential > 0 ? `+${assessment.analytics.overall.pointDifferential}` : String(assessment.analytics.overall.pointDifferential), `${assessment.analytics.overall.pointsFor} scored / ${assessment.analytics.overall.pointsAgainst} allowed`],
+      ['Deck roles', `${assessment.diversity.unique}/3`, assessment.diversity.roles.join(' · ') || 'Complete the deck'],
+      ['Fair tests', fmtPct(1 - assessment.analytics.overall.contaminationRate, 0), `${assessment.analytics.overall.contaminated} excluded test${assessment.analytics.overall.contaminated === 1 ? '' : 's'}`],
+      ['Self-KOs', `${assessment.analytics.overall.ownSelfKos}`, `${assessment.analytics.overall.selfKoEvidence} answered tests · ${fmtPct(assessment.analytics.overall.selfKoRate, 1)}`],
+      ['Next action', assessment.tournamentReady ? 'Ready' : `${assessment.blockers.length} open`, assessment.tournamentReady ? 'Keep monitoring new matchups' : 'Follow the first test card']
     ].map(([label, value, note]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><span>${escapeHtml(note)}</span></div>`).join('');
 
     $('#dashboardPlan').innerHTML = plan.length ? plan.map((task, index) => `
-      <div class="list-card compact"><div class="list-card-header"><div><strong>${index + 1}. ${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><p>Owned ${escapeHtml(labelForArchetype(task.opponentArchetype))} benchmark · ${escapeHtml(task.opponentBitRole)} bit · ${escapeHtml(task.completed)}/${escapeHtml(task.target)} exact-opponent results. ${escapeHtml(task.rationale)}</p></div>${badge(`${task.deficit} needed`, 'warn')}</div></div>`).join('') : emptyState('No inventory-valid opponent test is available. Add owned parts, complete the deck, or relax the attack-bit mirror exclusion.');
+      <div class="list-card compact"><div class="list-card-header"><div><strong>${index + 1}. ${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><p>${escapeHtml(task.testType === 'stability' ? 'Self-KO check' : 'Matchup test')} · use the shown owned ${escapeHtml(labelForArchetype(task.opponentArchetype))} opponent · ${escapeHtml(task.completed)}/${escapeHtml(task.target)} saved results. ${escapeHtml(task.rationale)}</p></div>${badge(`${task.deficit} needed`, 'warn')}</div></div>`).join('') : emptyState('No inventory-valid opponent test is available. Add owned parts, complete the deck, or relax the attack-bit mirror exclusion.');
 
     $('#dashboardBlockers').innerHTML = assessment.blockers.length ? assessment.blockers.slice(0, 6).map((gate) => `
       <div class="list-card compact"><div class="list-card-header"><div><strong>${escapeHtml(gate.label)}</strong><p>${escapeHtml(gate.detail)}</p></div>${badge('Open', 'fail')}</div></div>`).join('') : `<div class="list-card compact"><div class="list-card-header"><div><strong>All gates pass</strong><p>Continue monitoring new matchups, wear, and event-rule changes.</p></div>${badge('Pass', 'pass')}</div></div>`;
@@ -286,7 +316,6 @@
 
   function categoryLabel(categoryId) { return DATA.categories.find((category) => category.id === categoryId)?.label || categoryId; }
   function labelForArchetype(id) { return DATA.archetypes.find((entry) => entry.id === id)?.name || id; }
-
   function renderDeckView() {
     renderDeckToolbar();
     renderDeckEditor();
@@ -389,7 +418,7 @@
         toast('Optimizer failed. Run diagnostics and verify catalog data.');
       } finally {
         $('#smartBuildButton').disabled = false;
-        $('#smartBuildButton').textContent = 'Generate engineering decks';
+        $('#smartBuildButton').textContent = 'Build suggested decks';
       }
     }, 20);
   }
@@ -406,7 +435,7 @@
     const assessment = currentAssessment();
     $('#planProgress').textContent = `${assessment.analytics.overall.effective} decided battles`;
     $('#testPlanList').innerHTML = plan.length ? plan.map((task, index) => `
-      <button class="test-task" type="button" data-plan-bey="${task.beyIndex}" data-plan-opponent="${escapeHtml(task.opponentSignature)}"><div><strong>${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><small>${escapeHtml(labelForArchetype(task.opponentArchetype))} · ${escapeHtml(task.opponentBitRole)} bit · owned and concurrently constructible</small><small>${escapeHtml(task.rationale)}</small><progress max="${task.target}" value="${task.completed}"></progress><small>${task.completed}/${task.target} exact-opponent results · archetype ${task.archetypeCompleted}/${task.archetypeTarget}</small></div><span class="task-rank">${index + 1}</span></button>`).join('') : emptyState('No owned, concurrently constructible opponent remains under the current policy. Add inventory or disable attack-bit mirror exclusion only when that matchup is specifically needed.');
+      <button class="test-task" type="button" data-plan-bey="${task.beyIndex}" data-plan-opponent="${escapeHtml(task.opponentSignature)}"><div><strong>${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><small>${escapeHtml(task.testType === 'stability' ? 'SELF-KO CHECK' : 'MATCHUP TEST')} · ${escapeHtml(labelForArchetype(task.opponentArchetype))} · you own all needed parts</small><small>${escapeHtml(task.rationale)}</small><small>${escapeHtml(task.launchProtocol || '')}</small><progress max="${task.target}" value="${task.completed}"></progress><small>${task.completed}/${task.target} results against this Bey · ${task.archetypeCompleted}/${task.archetypeTarget} against this type</small></div><span class="task-rank">${index + 1}</span></button>`).join('') : emptyState('No owned, concurrently constructible opponent remains under the current policy. Add inventory or disable attack-bit mirror exclusion only when that matchup is specifically needed.');
   }
 
   function renderBattleFormOptions() {
@@ -460,7 +489,7 @@
     const battles = state.battles.filter((battle) => battle.deckId === deck.id).sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp))).slice(0, 40);
     $('#battleHistory').innerHTML = battles.length ? battles.map((battle) => {
       const normalized = Core.normalizeBattle(battle, DATA.scoring);
-      return `<div class="history-item ${escapeHtml(normalized.result)} ${normalized.contaminated ? 'contaminated' : ''}"><div class="history-top"><div><strong>${escapeHtml(battle.ownName || 'Deck Bey')} · ${escapeHtml(normalized.result.toUpperCase())}</strong><p>${battle.opponentName ? escapeHtml(battle.opponentName) : escapeHtml(labelForArchetype(battle.opponentArchetype))}${battle.opponentBitRole ? ` · ${escapeHtml(battle.opponentBitRole)} bit` : ''} · ${escapeHtml(normalized.finish)} finish · ${normalized.points} point${normalized.points === 1 ? '' : 's'}</p></div><button class="icon-button" type="button" data-delete-battle="${escapeHtml(battle.id)}" aria-label="Delete battle">×</button></div><p>${escapeHtml(fmtDate(battle.timestamp))}${normalized.contaminated ? ' · excluded from decided evidence' : ''}${battle.notes ? ` · ${escapeHtml(battle.notes)}` : ''}</p></div>`;
+      return `<div class="history-item ${escapeHtml(normalized.result)} ${normalized.contaminated ? 'contaminated' : ''}"><div class="history-top"><div><strong>${escapeHtml(battle.ownName || 'Deck Bey')} · ${escapeHtml(normalized.result.toUpperCase())}${normalized.selfKo ? ' · SELF-KO' : ''}</strong><p>${battle.opponentName ? escapeHtml(battle.opponentName) : escapeHtml(labelForArchetype(battle.opponentArchetype))}${battle.opponentBitRole ? ` · ${escapeHtml(battle.opponentBitRole)} bit` : ''} · ${escapeHtml(normalized.finish)} finish · ${normalized.points} point${normalized.points === 1 ? '' : 's'}</p></div><button class="icon-button" type="button" data-delete-battle="${escapeHtml(battle.id)}" aria-label="Delete battle">×</button></div><p>${escapeHtml(fmtDate(battle.timestamp))}${normalized.contaminated ? ' · excluded because the test was not fair' : ''}${battle.notes ? ` · ${escapeHtml(battle.notes)}` : ''}</p></div>`;
     }).join('') : emptyState('No battles are logged for the active deck.');
   }
 
@@ -480,6 +509,8 @@
     let finish = String(data.get('finish'));
     if (result === 'draw') finish = 'draw';
     if (result === 'relaunch') finish = 'relaunch';
+    const selfKo = String(data.get('selfKo') || 'no') === 'yes';
+    if (selfKo && (result !== 'loss' || !['over','xtreme'].includes(finish))) return toast('Choose Self-KO = Yes only when your Bey lost by leaving the stadium by itself.');
     const battle = {
       id: uid('battle'),
       deckId: deck.id,
@@ -495,6 +526,10 @@
       opponentEngineeringVersion: Core.ENGINEERING_MODEL_VERSION,
       result,
       finish,
+      selfKo,
+      selfKoKnown: true,
+      finishCause: Core.defaultFinishCause(result, finish),
+      selfKoSide: selfKo ? 'own' : '',
       stadium: String(data.get('stadium') || ''),
       launchPosition: String(data.get('launchPosition') || ''),
       technique: String(data.get('technique') || ''),
@@ -507,7 +542,7 @@
     form.reset();
     renderTestView();
     renderDashboard();
-    toast('Battle recorded. Readiness evidence recalculated.');
+    toast(selfKo ? 'Battle saved with Self-KO = Yes.' : 'Battle saved.');
   }
 
   function renderAnalysisView() {
@@ -519,6 +554,7 @@
     $('#analysisComponents').innerHTML = Object.entries(assessment.components).map(([name, value]) => `<div class="metric"><span>${escapeHtml(name)}</span><strong>${escapeHtml(value)}</strong><span>component points</span></div>`).join('');
     renderEngineeringAnalysis();
     $('#readinessGates').innerHTML = assessment.gates.map((gate) => `<div class="gate-row"><span class="gate-icon ${gate.pass ? 'pass' : 'fail'}">${gate.pass ? '✓' : '!'}</span><div><strong>${escapeHtml(gate.label)}</strong><small>${escapeHtml(gate.detail)}</small></div></div>`).join('');
+    renderSelfKoAnalysis(assessment);
     renderCoverageMatrix(assessment);
     renderOrderAnalysis();
     renderForecast();
@@ -531,6 +567,20 @@
     const matchupRows = Core.CORE_ARCHETYPES.map((archetype) => `<div class="engineering-row"><span>vs ${escapeHtml(labelForArchetype(archetype))}</span><div class="engineering-track"><i style="width:${analysis.matchups[archetype]}%"></i></div><strong>${analysis.matchups[archetype]}</strong></div>`).join('');
     const cards = analysis.profiles.map((profile) => `<article class="engineering-card"><div class="engineering-card-head"><div><strong>${profile.deckIndex + 1}. ${escapeHtml(Core.nameForBey(profile.bey, partMap()))}</strong><small>${escapeHtml(profile.inferredRole)} · ${escapeHtml(profile.bitRole)} bit · ${profile.ratchetHeight} height proxy · confidence ${fmtPct(profile.confidence, 0)}</small></div>${badge(`fit ${profile.roleFit}`, 'info')}</div>${engineeringBars(profile)}</article>`).join('');
     $('#engineeringAnalysis').innerHTML = `<div class="engineering-summary"><div class="metric"><span>Deck engineering score</span><strong>${analysis.score}</strong><span>physics-informed proxy</span></div><div class="metric"><span>Weakest modeled matchup</span><strong>${escapeHtml(labelForArchetype(analysis.weakestMatchup))}</strong><span>${analysis.weakestRating}/100 coverage</span></div><div class="metric"><span>Average self-KO risk</span><strong>${analysis.averageSelfKoRisk}</strong><span>lower is better</span></div><div class="metric"><span>Mechanical diversity</span><strong>${analysis.roleSpread}/${analysis.bitRoleSpread}</strong><span>roles / bit roles</span></div></div><div class="engineering-deck-matchups"><h4>Modeled deck coverage</h4>${matchupRows}</div><div class="engineering-grid">${cards}</div><p class="model-warning">This model is for candidate ranking and test design. It does not know measured mass, exact radial mass distribution, launch RPM, friction coefficients, mold variation, wear, or stadium condition. Controlled battle evidence remains the readiness authority.</p>`;
+  }
+
+  function renderSelfKoAnalysis(assessment) {
+    const deck = activeDeck();
+    const rows = deck.beys.map((bey, index) => {
+      const signature = Core.beySignature(bey);
+      const summary = assessment.analytics.byBey[signature] || Core.summarizeBattles([], DATA.scoring);
+      const modeled = Core.modeledSelfKoProbability(bey, partMap());
+      const enough = summary.selfKoEvidence >= Number(state.settings.minimumSelfKoTestsPerBey || 8);
+      const controlled = enough && summary.selfKoRate <= Number(state.settings.maxObservedSelfKoRate ?? .15);
+      const status = controlled ? 'Looks controlled' : enough ? 'Try a safer launch or setup' : 'Run more tests';
+      return `<tr><td><strong>${index + 1}. ${escapeHtml(Core.nameForBey(bey, partMap()))}</strong><small>${escapeHtml(status)}</small></td><td><strong>${summary.selfKoEvidence}</strong><small>answered tests</small></td><td><strong>${summary.ownSelfKos}</strong><small>self-KOs</small></td><td><strong>${fmtPct(summary.selfKoRate, 1)}</strong><small>observed rate</small></td><td><strong>${fmtPct(modeled, 1)}</strong><small>engineering estimate</small></td></tr>`;
+    }).join('');
+    $('#selfKoAnalysis').innerHTML = `<div class="metric-grid"><div class="metric"><span>Total self-KOs</span><strong>${assessment.analytics.overall.ownSelfKos}</strong><span>in ${assessment.analytics.overall.selfKoEvidence} answered tests</span></div><div class="metric"><span>Observed rate</span><strong>${fmtPct(assessment.analytics.overall.selfKoRate, 1)}</strong><span>lower is better</span></div><div class="metric"><span>Simple rule</span><strong>Yes or No</strong><span>No special cause is needed</span></div><div class="metric"><span>What counts?</span><strong>Goes out alone</strong><span>Your Bey jumps or runs out mostly by itself</span></div></div><div class="table-scroll"><table><thead><tr><th>Bey</th><th>Tests</th><th>Self-KOs</th><th>Rate</th><th>Model estimate</th></tr></thead><tbody>${rows}</tbody></table></div><p class="model-warning">A self-KO is a real loss. Save the battle normally and answer Yes. Exclude a test only when the test itself was not fair.</p>`;
   }
 
   function renderCoverageMatrix(assessment) {
@@ -575,7 +625,7 @@
   function renderForecast() {
     if (!lastForecast) return $('#forecastResults').innerHTML = emptyState('Run the forecast after logging representative matchup evidence.');
     if (!lastForecast.available) return $('#forecastResults').innerHTML = emptyState(lastForecast.reason);
-    $('#forecastResults').innerHTML = `<div class="metric-grid"><div class="metric"><span>Estimated match win rate</span><strong>${fmtPct(lastForecast.winRate, 1)}</strong><span>95% simulation interval ${fmtPct(lastForecast.interval.low, 1)}–${fmtPct(lastForecast.interval.high, 1)}</span></div><div class="metric"><span>Average score</span><strong>${lastForecast.averagePointsFor.toFixed(2)}–${lastForecast.averagePointsAgainst.toFixed(2)}</strong><span>${lastForecast.simulations.toLocaleString()} simulated matches</span></div><div class="metric"><span>Empirical evidence</span><strong>${lastForecast.evidenceBattles}</strong><span>relevant decided battles</span></div><div class="metric"><span>Model status</span><strong>${lastForecast.lowEvidence ? 'Prior-heavy' : 'Evidence-led'}</strong><span>not a physics simulation</span></div></div><p class="muted">${escapeHtml(lastForecast.reason)}</p>`;
+    $('#forecastResults').innerHTML = `<div class="metric-grid"><div class="metric"><span>Estimated match win rate</span><strong>${fmtPct(lastForecast.winRate, 1)}</strong><span>range ${fmtPct(lastForecast.interval.low, 1)}–${fmtPct(lastForecast.interval.high, 1)}</span></div><div class="metric"><span>Average score</span><strong>${lastForecast.averagePointsFor.toFixed(2)}–${lastForecast.averagePointsAgainst.toFixed(2)}</strong><span>${lastForecast.simulations.toLocaleString()} model runs</span></div><div class="metric"><span>Battle evidence</span><strong>${lastForecast.evidenceBattles}</strong><span>relevant decided battles</span></div><div class="metric"><span>Estimated self-KO chance</span><strong>${fmtPct(lastForecast.simulatedSelfKoRate, 1)}</strong><span>uses recorded Yes/No answers</span></div><div class="metric"><span>Model status</span><strong>${lastForecast.lowEvidence ? 'Needs more tests' : 'Evidence-led'}</strong><span>guide only, not a guarantee</span></div></div><p class="muted">${escapeHtml(lastForecast.reason)}</p>`;
   }
 
   function renderMoreView() {
@@ -598,6 +648,7 @@
 
   function renderSettings() {
     const form = $('#settingsForm');
+    renderGuidePanels();
     Object.entries(state.settings).forEach(([name, value]) => {
       const input = form.elements.namedItem(name);
       if (!input) return;
@@ -791,6 +842,12 @@
       }
     });
 
+    $('#guideButton').addEventListener('click', () => $('#guideDialog').showModal());
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('[data-open-guide]')) $('#guideDialog').showModal();
+      if (event.target.closest('[data-guide-start]')) { $('#guideDialog').close(); navigate('inventory'); }
+    });
+
     $('#inventorySearch').addEventListener('input', renderInventoryList);
     $('#inventoryCategory').addEventListener('change', renderInventoryList);
     $('#productSearch').addEventListener('input', renderProductList);
@@ -864,11 +921,12 @@
     });
     $('#settingsForm').addEventListener('submit', (event) => {
       event.preventDefault(); const data = new FormData(event.currentTarget);
-      ['minimumBattles','minimumPerBey','minimumPerArchetype','targetPerCell','targetPerOpponent','opponentPoolSize','candidatePool'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
-      ['lowerBoundTarget','maxContaminationRate'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
+      ['minimumBattles','minimumPerBey','minimumPerArchetype','targetPerCell','targetPerOpponent','opponentPoolSize','candidatePool','minimumSelfKoTestsPerBey'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
+      ['lowerBoundTarget','maxContaminationRate','maxObservedSelfKoRate'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
       state.settings.requireMultiPointFinish = data.get('requireMultiPointFinish') === 'on';
       state.settings.avoidAttackMirrors = data.get('avoidAttackMirrors') === 'on';
-      saveState(); renderMoreView(); toast('Readiness policy saved.');
+      state.settings.showGuide = data.get('showGuide') === 'on';
+      saveState(); renderAll(); toast('Settings saved.');
     });
     $('#exportBackupButton').addEventListener('click', exportBackup);
     $('#importBackupInput').addEventListener('change', async (event) => {
@@ -918,6 +976,7 @@
     renderTestView();
     renderAnalysisView();
     renderMoreView();
+    renderGuidePanels();
   }
 
   function registerServiceWorker() {

@@ -19,8 +19,14 @@ const validDeck = [
 const inventoryFor = (deck) => Object.fromEntries(deck.flatMap(Core.partIdsFromBey).map((id) => [id, { qty: 1, condition: 'good', notes: '' }]));
 const broadInventory = Object.fromEntries(DATA.parts.filter((part) => part.status === 'released' && !part.banned).map((part) => [part.id, { qty: 2, condition: 'good', notes: '' }]));
 
-function battle({ deckId = 'deck-1', bey, archetype, result = 'win', finish = 'spin', contaminated = false, index = 0 }) {
-  return { id: `battle-${archetype}-${index}-${result}-${finish}`, deckId, ownSignature: Core.beySignature(bey), opponentArchetype: archetype, result, finish, contaminated, timestamp: new Date(2026, 6, 1, 0, index).toISOString() };
+function battle({ deckId = 'deck-1', bey, archetype, result = 'win', finish = 'spin', finishCause, selfKo, selfKoKnown, opponentBitRole = archetype === 'attack' ? 'attack' : archetype, stadium = 'Xtreme Stadium', launchPosition = 'Center position', technique = 'Controlled launch', contaminated = false, index = 0 }) {
+  const inferredCause = finishCause || (finish === 'spin' ? 'spin-exhaustion' : finish === 'burst' ? 'burst-impact' : ['draw','relaunch'].includes(finish) ? 'draw-invalid' : 'forced-contact');
+  return {
+    id: `battle-${archetype}-${index}-${result}-${finish}`, deckId, ownSignature: Core.beySignature(bey),
+    opponentArchetype: archetype, opponentBitRole, result, finish, finishCause: inferredCause,
+    ...(typeof selfKo === 'boolean' ? { selfKo, selfKoKnown: selfKoKnown ?? true } : {}),
+    stadium, launchPosition, technique, contaminated, timestamp: new Date(2026, 6, 1, 0, index).toISOString()
+  };
 }
 
 test('official finish scoring is preserved', () => {
@@ -233,9 +239,10 @@ test('root HTML references only root runtime assets and includes all six primary
 
 test('service worker lifecycle caches every production root asset and clears old versions', async () => {
   const source = fs.readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8');
+  assert.match(source, /x-deck-lab-v2\.3\.0/);
   const listeners = {};
   const cache = { addAll: async (assets) => { cache.assets = assets; }, put: async () => {} };
-  const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.1.0'], delete: async (key) => key === 'old-cache', match: async () => null };
+  const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.2.0'], delete: async (key) => key === 'old-cache', match: async () => null };
   const self = { location: { origin: 'https://example.test' }, clients: { claim: async () => true }, skipWaiting: async () => true, addEventListener: (type, fn) => { listeners[type] = fn; } };
   vm.runInNewContext(source, { self, caches: cachesMock, fetch: async () => ({ status: 200, type: 'basic', clone() { return this; } }), URL, Promise });
   let installPromise; listeners.install({ waitUntil: (promise) => { installPromise = promise; } }); await installPromise;
@@ -274,4 +281,134 @@ test('portable-data imports enforce backup checksums and catalog product uniquen
   assert.match(source, /Backup checksum mismatch/);
   assert.match(source, /incomingProductIds/);
   assert.match(source, /checksum verified/);
+});
+
+
+test('ordinary Yes/No self-KO answers are valid decided evidence', () => {
+  const logs = [
+    battle({ bey: validDeck[0], archetype: 'stamina', result: 'loss', finish: 'over', selfKo: true, index: 501 }),
+    battle({ bey: validDeck[0], archetype: 'defense', result: 'loss', finish: 'xtreme', selfKo: true, index: 502 }),
+    battle({ bey: validDeck[0], archetype: 'stamina', result: 'win', finish: 'spin', selfKo: false, index: 503 })
+  ];
+  const summary = Core.summarizeBattles(logs, DATA.scoring);
+  assert.equal(summary.effective, 3);
+  assert.equal(summary.contaminated, 0);
+  assert.equal(summary.selfKoAnswered, 3);
+  assert.equal(summary.ownSelfKos, 2);
+  assert.equal(summary.selfKoRate, 2 / 3);
+  assert.ok(summary.selfKoInterval.low < summary.selfKoRate && summary.selfKoInterval.high > summary.selfKoRate);
+});
+
+test('ordinary self-KO summaries remain available by technique, position, and stadium', () => {
+  const logs = [
+    battle({ bey: validDeck[0], archetype: 'stamina', result: 'loss', finish: 'xtreme', selfKo: true, technique: 'Hard launch', launchPosition: 'Left position', stadium: 'Xtreme Stadium', index: 511 }),
+    battle({ bey: validDeck[0], archetype: 'stamina', result: 'win', finish: 'spin', selfKo: false, technique: 'Controlled launch', launchPosition: 'Center position', stadium: 'Wide Xtreme Stadium', index: 512 })
+  ];
+  const analytics = Core.battleAnalytics({ battles: logs, deck: validDeck, deckId: 'deck-1', scoring: DATA.scoring });
+  assert.equal(analytics.selfKoByTechnique.find((row) => row.key === 'Hard launch').ownSelfKos, 1);
+  assert.equal(analytics.selfKoByPosition.find((row) => row.key === 'Left position').ownSelfKos, 1);
+  assert.equal(analytics.selfKoByStadium.find((row) => row.key === 'Xtreme Stadium').ownSelfKos, 1);
+});
+
+test('readiness gates and score penalize excessive ordinary self-KO results', () => {
+  const clean = [];
+  const unstable = [];
+  const archetypes = ['attack','stamina','defense','balance'];
+  validDeck.forEach((bey, b) => archetypes.forEach((archetype, a) => {
+    for (let i = 0; i < 6; i += 1) {
+      clean.push(battle({ bey, archetype, result: i < 5 ? 'win' : 'loss', finish: i === 0 ? 'xtreme' : 'spin', selfKo: false, index: 600 + b * 100 + a * 10 + i }));
+      unstable.push(battle({ bey, archetype, result: i < 3 ? 'win' : 'loss', finish: i >= 3 ? (i % 2 ? 'over' : 'xtreme') : 'spin', selfKo: i >= 3, index: 900 + b * 100 + a * 10 + i }));
+    }
+  }));
+  const args = { deck: validDeck, deckId: 'deck-1', profile: DATA.profiles.tt3on3, partMap: map, inventory: inventoryFor(validDeck), includeAnnounced: false, settings: { ...DATA.testDefaults, minimumBattles: 36, minimumPerBey: 10, minimumPerArchetype: 6, minimumSelfKoTestsPerBey: 5 }, scoring: DATA.scoring };
+  const cleanAssessment = Core.readinessAssessment({ ...args, battles: clean });
+  const unstableAssessment = Core.readinessAssessment({ ...args, battles: unstable });
+  assert.equal(unstableAssessment.gates.find((gate) => gate.id === 'selfKoControl').pass, false);
+  assert.ok(unstableAssessment.score <= cleanAssessment.score - 15, `${cleanAssessment.score} vs ${unstableAssessment.score}`);
+});
+
+test('adaptive planner requests easy self-KO checks against owned stamina or defense opponents', () => {
+  const plan = Core.buildTestPlan({ deck: validDeck, deckId: 'deck-1', partMap: map, inventory: broadInventory, battles: [], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings: { ...DATA.testDefaults, minimumSelfKoTestsPerBey: 5, avoidAttackMirrors: true }, limit: 12 });
+  const stability = plan.filter((task) => task.testType === 'stability');
+  assert.equal(new Set(stability.map((task) => task.beyIndex)).size, 3);
+  stability.forEach((task) => {
+    assert.ok(['stamina','defense'].includes(task.opponentArchetype));
+    assert.notEqual(task.opponentBitRole, 'attack');
+    assert.match(task.launchProtocol, /same launcher|self-KO question/i);
+  });
+});
+
+test('modeled and observed self-KO estimates are explicit and bounded', () => {
+  const profile = Core.engineeringProfileForBey(validDeck[0], map);
+  const modeled = Core.modeledSelfKoProbability(profile);
+  const estimate = Core.empiricalSelfKoEstimate({ selfKoEvidence: 10, ownSelfKos: 2 }, modeled);
+  assert.ok(modeled >= 0.01 && modeled <= 0.28);
+  assert.ok(estimate.probability > 0 && estimate.probability < 1);
+  assert.equal(estimate.evidence, 10);
+});
+
+test('forecast returns deterministic self-KO exposure metrics', () => {
+  const meta = [{ id: 'm-selfko', name: 'Field', weight: 1, lineup: ['attack','stamina','defense'] }];
+  const logs = [];
+  validDeck.forEach((bey, index) => {
+    for (let i = 0; i < 6; i += 1) logs.push(battle({ bey, archetype: meta[0].lineup[index], result: i < 4 ? 'win' : 'loss', finish: i === 5 ? 'xtreme' : 'spin', selfKo: i === 5, index: 1300 + index * 20 + i }));
+  });
+  const args = { deck: validDeck, deckId: 'deck-1', partMap: map, battles: logs, scoring: DATA.scoring, metaProfiles: meta, targetPoints: 4, simulations: 400, seed: 99, order: [0,1,2] };
+  const first = Core.forecastTournament(args);
+  const second = Core.forecastTournament(args);
+  assert.equal(first.simulatedSelfKoRate, second.simulatedSelfKoRate);
+  assert.equal(first.averageSelfKosPerMatch, second.averageSelfKosPerMatch);
+  assert.ok(first.simulatedSelfKoRate >= 0 && first.simulatedSelfKoRate <= 1);
+  assert.ok(first.simulatedSelfKoInterval.high >= first.simulatedSelfKoRate);
+});
+
+test('legacy detailed self-KO records migrate to the ordinary flag without guessing unknown KOs', () => {
+  const raw = { schemaVersion: 4, inventory: inventoryFor(validDeck), decks: [{ id: 'd4', name: 'Legacy', beys: validDeck, profileId: 'tt3on3' }], activeDeckId: 'd4', battles: [
+    { id: 'spin-old', deckId: 'd4', ownSignature: Core.beySignature(validDeck[0]), result: 'win', finish: 'spin' },
+    { id: 'selfko-old', deckId: 'd4', ownSignature: Core.beySignature(validDeck[0]), result: 'loss', finish: 'xtreme', finishCause: 'own-rail-overshoot' },
+    { id: 'ko-old', deckId: 'd4', ownSignature: Core.beySignature(validDeck[0]), result: 'loss', finish: 'xtreme' }
+  ], settings: { minimumStabilityPerBey: 6 }, metaProfiles: DATA.defaultMetaProfiles };
+  const migrated = Core.migrateState(raw);
+  assert.equal(migrated.schemaVersion, Core.SCHEMA_VERSION);
+  assert.equal(migrated.battles[0].selfKo, false);
+  assert.equal(migrated.battles[0].selfKoKnown, true);
+  assert.equal(migrated.battles[1].selfKo, true);
+  assert.equal(migrated.battles[1].selfKoKnown, true);
+  assert.equal(migrated.battles[2].selfKoKnown, false);
+  assert.equal(migrated.settings.minimumSelfKoTestsPerBey, 6);
+  assert.equal(migrated.settings.showGuide, true);
+});
+
+test('root HTML uses one ordinary self-KO question and includes kid-friendly guidance', () => {
+  const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  ['selfKoQuestion','selfKoAnalysis','minimumSelfKoTestsPerBey','maxObservedSelfKoRate','guideDialog','guideSteps','guideButton','showGuide'].forEach((id) => assert.match(html, new RegExp(`id="${id}"|name="${id}"`)));
+  assert.match(html, /Did your Bey go out by itself/i);
+  assert.match(html, /Start with Parts/i);
+  assert.match(html, /Add your parts/i);
+  assert.doesNotMatch(html, /id="battleFinishCause"|id="minimumFinishCauseCoverage"|id="minimumStabilityPerBey"|id="maxSelfKoUpperBound"/);
+});
+
+test('opponent self-KO is credited as a win without inflating own self-KO rate', () => {
+  const summary = Core.summarizeBattles([
+    battle({ bey: validDeck[0], archetype: 'attack', result: 'win', finish: 'xtreme', finishCause: 'opponent-self-ko', index: 1701 }),
+    battle({ bey: validDeck[0], archetype: 'attack', result: 'loss', finish: 'over', finishCause: 'forced-contact', index: 1702 })
+  ], DATA.scoring);
+  assert.equal(summary.opponentSelfKos, 1);
+  assert.equal(summary.ownSelfKos, 0);
+  assert.equal(summary.selfKoRate, 0);
+  assert.equal(summary.wins, 1);
+});
+
+test('owned-parts optimizer demotes combinations with repeated observed self-KO', () => {
+  const inventory = inventoryFor(validDeck);
+  const settings = { ...DATA.testDefaults, candidatePool: 30 };
+  const baseline = Core.suggestDecks({ inventory, partMap: map, profile: DATA.profiles.tt3on3, includeAnnounced: false, battles: [], metaProfiles: DATA.defaultMetaProfiles, settings, limit: 50 });
+  assert.ok(baseline.length > 0);
+  const target = baseline[0];
+  const deckKey = (deck) => deck.map(Core.beySignature).sort().join('||');
+  const targetKey = deckKey(target.deck);
+  const unstableLogs = target.deck.flatMap((bey, b) => Array.from({ length: 10 }, (_, i) => battle({ bey, archetype: i % 2 ? 'stamina' : 'defense', result: i < 4 ? 'win' : 'loss', finish: i < 4 ? 'spin' : i % 2 ? 'over' : 'xtreme', selfKo: i >= 4, index: 1800 + b * 20 + i })));
+  const reranked = Core.suggestDecks({ inventory, partMap: map, profile: DATA.profiles.tt3on3, includeAnnounced: false, battles: unstableLogs, metaProfiles: DATA.defaultMetaProfiles, settings, limit: 50 });
+  const same = reranked.find((entry) => deckKey(entry.deck) === targetKey);
+  assert.ok(!same || same.score < target.score - 5, same ? `${target.score} -> ${same.score}` : 'demoted out of shortlist');
 });

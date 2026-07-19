@@ -1,8 +1,8 @@
-# X Deck Lab 2.1.0 — Engineering and Testing Release Audit
+# X Deck Lab 2.3.0 — Guided Player Release Audit
 
-- Release target: **2.1.0**
-- State schema: **4**
-- Engineering model: **1**
+- Release target: **2.3.0**
+- State schema: **6**
+- Engineering model: **2**
 - Catalog verification-through date: **2026-07-19**
 - Audit date: **2026-07-19**
 - Deployment architecture: **static, root-only GitHub Pages PWA**
@@ -11,54 +11,76 @@
 
 **PASS — approved for deployment.**
 
-- Syntax and automated engine suite: **24 passed, 0 failed**.
-- Chromium mobile workflow at 390 × 844: **57 passed, 0 failed**.
+- Syntax and automated engine suite: **34 passed, 0 failed**.
+- Chromium mobile workflow: **70 passed, 0 failed**.
+- Primary viewport: **390 × 844**, mobile and touch enabled.
+- Additional small-phone overflow check: **320 pixels wide**.
 - Normal-workflow console errors: **0**.
 - Uncaught page errors: **0**.
-- Final visible buttons below the 44-pixel target: **0**.
+- Visible button targets below 44 pixels: **0**.
 - Initial and final horizontal overflow: **none**.
 
-## User-requested controls verified
+## Closed usability gap
 
-### 1. Every generated opponent uses owned parts
+Version 2.2 correctly instrumented self-KO evidence but required detailed cause classification and exposed technical controls in the ordinary battle workflow. That was unnecessarily complex for routine use and unsuitable as the default experience for children.
 
-The test planner no longer emits an archetype-only placeholder. Each task contains a complete opponent Bey and functional signature. The same exact combination is offered in the battle form and stored with the record.
+Version 2.3 replaces that workflow with one ordinary required question:
 
-### 2. The two test Beys can be assembled simultaneously
+> Did your Bey go out by itself? — Yes or No
 
-Owned status alone is insufficient. `inventoryCapacityForBattle` combines the selected test Bey and opponent requirements and compares them with recorded quantities. A shared one-copy part therefore cannot appear on both sides of the same test.
+No self-KO subtype is requested or displayed. Detailed legacy causes are retained only for safe migration compatibility.
 
-This control is enforced during:
+## Verified guided experience
 
-- opponent candidate generation;
-- adaptive-plan generation;
-- opponent selection;
-- final battle submission.
+### Four-step home path
 
-### 3. Attack-bit versus attack-bit testing is excluded by default
+The dashboard shows four interactive steps:
 
-When the policy is active, attack-bit mirrors are filtered before plan creation and opponent rendering. Submission contains a second hard guard. Automated tests also verify that disabling the policy deliberately restores attack-bit opponent availability.
+1. Add your parts.
+2. Build three Beys.
+3. Run guided tests.
+4. Check readiness.
 
-### 4. Decks are optimized using explicit engineering proxies
+Each step shows current progress and opens the correct app section. A persistent **How to use** button opens a full guide with child-friendly definitions and an explicit note that the More screen is intended for advanced or adult-assisted use.
 
-The model evaluates each complete Bey across ten bounded 0–100 metrics:
+### Five-choice battle flow
 
-- impact potential;
-- rotational inertia;
-- spin retention;
-- stability;
-- KO resistance;
-- burst resistance;
-- X-Dash potential;
-- control;
-- recoil risk;
-- self-KO risk.
+The required battle workflow is limited to:
 
-Deck ranking combines meta-weighted matchup coverage, weakest-matchup strength, self-KO control, and mechanical diversity. Logged battle evidence is a secondary signal rather than a substitute for legality or supply.
+1. own Bey;
+2. owned opponent;
+3. result;
+4. finish;
+5. ordinary Self-KO Yes/No.
 
-### 5. Candidate search preserves mechanical diversity
+Technical opponent details and optional test metadata are hidden in expandable sections by default. The audit verified that the core workflow works without opening them.
 
-The previous globally sorted candidate pool could overselect mechanically similar low-risk combinations. Version 2.1 uses bounded variant sampling and diversity-aware selection across top families, ratchets, bits, and bit roles. This prevents attack candidates and legal three-Bey assemblies from being crowded out while keeping mobile computation bounded.
+### Self-KO validation
+
+- Self-KO = Yes is stored as valid decided evidence.
+- Self-KO = No is stored explicitly rather than inferred.
+- Yes is rejected for wins, Spin Finishes, Burst Finishes, draws, and relaunches.
+- Self-KO remains a real loss and is not automatically contaminated.
+- The analysis view reports only simple test count, event count, and rate.
+- Detailed cause labels, finish splits, and confidence terminology are absent from the player-facing self-KO panel.
+
+### Legacy migration
+
+Schema-5 and older records migrate to schema 6. Known historical own-self-KO causes map to `selfKo: true`; ordinary known non-self-KO records map to `false`; unclassified historical Over/Xtreme records remain unknown. The migration does not invent attribution.
+
+## Testing and optimization controls
+
+The release retains the engineering and evidence controls established in earlier versions:
+
+- exact opponent combinations made from owned inventory;
+- simultaneous two-Bey inventory-capacity checks;
+- default exclusion of attack-bit versus attack-bit tests;
+- legal, owned three-Bey suggestions;
+- diversity-preserving candidate search;
+- engineering proxies for impact, rotational inertia, spin retention, stability, control, KO resistance, recoil, self-KO risk, ratchet height, and matchup coverage;
+- adaptive test planning;
+- observed self-KO penalties in readiness and deck ranking;
+- order optimization and empirical forecasting.
 
 ## Automated suite
 
@@ -68,110 +90,107 @@ Run:
 npm run check
 ```
 
-The 24 tests cover:
+The 34 tests cover:
 
-1. official finish-point values;
+1. official finish scoring;
 2. legal three-Bey construction;
-3. duplicate-part rejection and ordinary Regulation v12 lock-chip handling;
-4. expanded Custom Line and integrated architectures;
+3. duplicate-part and Regulation v12 lock-chip behavior;
+4. expanded and integrated architectures;
 5. announced-part gating;
-6. deck inventory capacity;
-7. Wilson intervals and contaminated-trial exclusion;
-8. readiness evidence and finish-route gates;
-9. exact owned-opponent adaptive planning;
-10. hard attack-bit mirror exclusion;
-11. expected engineering direction for attack and stamina mechanisms;
-12. bounded engineering metrics and correct deck-position retention;
-13. simultaneous two-Bey inventory capacity;
-14. reversible attack-mirror policy;
-15. legal engineering-ranked deck recommendations;
-16. schema-3 deck-library preservation during schema-4 migration;
-17. position-specific order optimization;
-18. deterministic empirical forecasting;
-19. baseline owned-parts recommendations;
+6. inventory capacity;
+7. Wilson intervals and unfair-test exclusion;
+8. readiness coverage and finish routes;
+9. exact owned-opponent planning;
+10. attack-bit mirror exclusion;
+11. engineering directional behavior;
+12. bounded engineering metrics;
+13. simultaneous two-Bey capacity;
+14. reversible mirror policy;
+15. legal engineering-ranked recommendations;
+16. schema-3 migration;
+17. position-order optimization;
+18. deterministic forecast behavior;
+19. owned-parts shortlist generation;
 20. legacy v1 migration;
-21. catalog integrity and release-status separation;
-22. root-only runtime references;
-23. service-worker cache lifecycle;
-24. backup checksum and catalog-patch uniqueness guards.
+21. catalog integrity;
+22. root-only references and current service-worker cache;
+23. broad-inventory candidate expansion;
+24. backup and catalog-import guards;
+25. ordinary Yes/No self-KO evidence;
+26. self-KO summaries by optional test metadata;
+27. readiness penalty for repeated self-KO;
+28. easy adaptive self-KO checks;
+29. bounded modeled and empirical estimates;
+30. deterministic forecast self-KO output;
+31. legacy detailed-record normalization;
+32. ordinary self-KO and kid-guide HTML surfaces;
+33. opponent-self-KO legacy accounting;
+34. optimizer demotion after repeated observed self-KO.
 
 Result:
 
 ```text
-24 tests
-24 passed
+34 tests
+34 passed
 0 failed
 ```
 
 ## Chromium mobile regression
 
-The unchanged production HTML, CSS, and JavaScript were rendered in Chromium with:
+The unchanged production HTML, CSS, and JavaScript were rendered in Chromium using a deterministic local-storage shim. Material checks include:
 
-- viewport: **390 × 844**;
-- device scale factor: **3**;
-- mobile mode: **enabled**;
-- touch mode: **enabled**.
-
-The execution environment blocks direct navigation to test URL schemes, so the harness injects the unchanged root production files into an isolated Chromium document and provides deterministic local storage. Service-worker behavior is executed separately in the Node suite.
-
-Material results include:
-
-- all six primary views navigated normally;
-- inventory entry and loose-part quantities persisted;
-- the engineering optimizer generated and applied a complete legal owned deck;
-- an adaptive plan displayed exact owned opponents;
-- the selected opponent passed simultaneous capacity verification;
-- attack-bit mirror exclusion was verified;
-- the opponent engineering preview rendered;
-- exact opponent Bey data persisted in battle history;
-- contaminated evidence was retained but excluded from decided analysis;
-- engineering deck analysis, coverage, order analysis, and forecast rendered;
-- engineering-search and readiness settings persisted;
-- backup tamper detection and valid restoration passed;
-- catalog duplicate rejection and valid patch import passed;
-- a fresh application instance restored decks, inventory, and battles;
-- no normal console or uncaught page errors occurred.
+- application initialization and unique IDs;
+- accessible names across all six views;
+- four-step guide rendering;
+- full guide and child-facing explanation;
+- no horizontal overflow at 390 and 320 pixels;
+- 44-pixel bottom navigation and visible button targets;
+- inventory search focus and product/part entry;
+- legal owned-deck generation and deck-library operations;
+- exact owned-opponent selection and simultaneous capacity;
+- attack-bit mirror exclusion;
+- optional engineering details rendering;
+- simple No and Yes self-KO records;
+- rejection of an impossible Yes answer;
+- unfair-test exclusion;
+- simple self-KO analysis without detailed causes;
+- order and forecast completion;
+- guide visibility setting;
+- backup checksum rejection and valid restoration;
+- catalog-patch duplicate rejection;
+- fresh-instance state restoration;
+- zero normal console and uncaught page errors.
 
 Result:
 
 ```text
-57 checks
-57 passed
+70 checks
+70 passed
 0 failed
 ```
 
-See `browser-audit-result.json`. The mobile screenshot is distributed separately as `mobile-v2.1-engineering-final.png` and is not required for deployment.
+See `browser-audit-result.json`. The screenshots `mobile-v2.3-guided-home.png` and `mobile-v2.3-guided-final.png` are distributed separately and are not required for deployment.
 
 ## Engineering basis and limits
 
-The model uses dimensionless proxies, not fabricated physical measurements. The assumptions are consistent with standard rotating-body mechanics: radial mass distribution affects moment of inertia; angular momentum and contact forces influence stability and energy loss; tip contact, friction, precession, and nutation govern real top behavior.
-
-The following measurements are unavailable and are therefore not simulated as facts:
-
-- exact part mass and radial mass distribution;
-- launch angular velocity and launcher calibration;
-- coefficient of friction and material deformation;
-- impact restitution and contact geometry at collision time;
-- mold variation, wear, assembly condition, stadium condition, and player execution.
-
-Accordingly, engineering scores rank testable hypotheses. They do not certify tournament performance. Controlled, representative battle evidence and conservative confidence gates remain the readiness authority.
+The model uses bounded qualitative proxies, not fabricated measurements. It does not know exact part mass distribution, launch angular velocity, friction coefficients, impact restitution, deformation, mold variation, wear, stadium condition, or player execution. Engineering output ranks hypotheses and selects useful tests. Controlled battle evidence remains authoritative.
 
 ## Risk controls
 
 | Risk | Control |
 |---|---|
-| An unowned opponent enters the plan | Exact opponent generation requires positive recorded inventory. |
-| One physical part is needed on both sides | Combined two-Bey capacity check rejects the pairing. |
-| Attack mirror tests waste the default test budget | Hard filter and submission guard when the policy is active. |
-| Similar candidates crowd out viable decks | Diversity-aware bounded candidate selection. |
-| Physics score is mistaken for measured simulation | Explicit proxy labeling, confidence, assumptions, and model warning. |
-| A high model score bypasses evidence | Readiness remains gated by empirical coverage and Wilson confidence. |
-| Invalid launches inflate results | Contamination and relaunch exclusion. |
-| Illegal or unsupplyable decks are recommended | Construction and inventory capacity are independent hard gates. |
-| Upgrade loses existing decks | Schema-3 deck-library migration test. |
-| Imported data is altered | Backup checksum verification before mutation. |
-| Static rules become stale | Verification date, announced/released separation, custom profiles, and catalog patches. |
+| Self-KO recording is too complicated | One required Yes/No question; no subtype UI. |
+| Children do not know where to begin | Four-step home path, full guide, progress markers, and section links. |
+| Technical fields obstruct the main flow | Engineering and optional test details are collapsed by default. |
+| A contradictory Self-KO is saved | Yes is accepted only for an Over/Xtreme loss. |
+| A real self-KO is discarded | Self-KO remains decided evidence unless the trial itself was unfair. |
+| Historical records are misclassified | Only unambiguous legacy data is normalized; unknown KOs remain unknown. |
+| Opponent requires unowned or shared parts | Complete owned-build generation plus combined two-Bey capacity check. |
+| Default tests waste time on attack mirrors | Attack-bit mirror generation and submission guards. |
+| Physics score is mistaken for simulation | Explicit proxy wording and documented missing measurements. |
+| Imported state is altered | Backup checksum verification before replacement. |
+| Static rules or products become stale | Verification date, release-status separation, custom event profiles, and catalog patches. |
 
 ## Final approval
 
-The requested testing and engineering changes are complete. X Deck Lab 2.1.0 is approved as the current root-only release, subject to catalog and rules maintenance after the stated verification date and the documented limits of qualitative physical modeling.
+X Deck Lab 2.3.0 provides a simple child-usable player path while preserving advanced engineering, legality, evidence, and data-integrity controls. It is approved as the current root-only release, subject to ongoing rules and catalog maintenance.

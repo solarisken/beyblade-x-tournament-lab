@@ -1,10 +1,12 @@
 (function (root) {
   'use strict';
 
-  const SCHEMA_VERSION = 4;
-  const ENGINEERING_MODEL_VERSION = 1;
+  const SCHEMA_VERSION = 6;
+  const ENGINEERING_MODEL_VERSION = 2;
   const PART_SLOTS = ['blade','ratchetIntegratedBlade','lockChip','metalBlade','overBlade','mainBlade','assistBlade','ratchet','bit','integratedBit'];
   const CORE_ARCHETYPES = ['attack','stamina','defense','balance','left-spin'];
+  const OWN_SELF_KO_CAUSES = new Set(['own-no-contact-self-ko','own-glancing-self-ko','own-rail-overshoot','own-rebound-self-ko','own-launch-destabilization','own-unknown-self-ko']);
+  const SELF_KO_CAUSES = new Set([...OWN_SELF_KO_CAUSES, 'opponent-self-ko']);
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const round = (value, digits = 1) => Number(Number(value || 0).toFixed(digits));
@@ -330,29 +332,66 @@
     });
   }
 
+  function defaultFinishCause(result, finish) {
+    if (finish === 'spin') return 'spin-exhaustion';
+    if (finish === 'burst') return 'burst-impact';
+    if (finish === 'draw' || finish === 'relaunch' || result === 'draw' || result === 'relaunch') return 'draw-invalid';
+    if (finish === 'over' || finish === 'xtreme') return 'unknown-contact-cause';
+    return 'unknown';
+  }
+
   function normalizeBattle(battle, scoring = {}) {
     const result = battle?.result || (battle?.won === true ? 'win' : battle?.won === false ? 'loss' : 'draw');
     const finish = battle?.finish || 'spin';
     const contaminated = Boolean(battle?.contaminated || battle?.launchError);
     const decided = !contaminated && ['win','loss'].includes(result) && !['draw','relaunch'].includes(finish);
     const points = scoreForFinish(finish, scoring);
-    return { ...battle, result, finish, contaminated, decided, points };
+    let finishCause = String(battle?.finishCause || '');
+    if (!finishCause && (battle?.selfKo === true || battle?.selfKoSide === 'own')) finishCause = 'own-unknown-self-ko';
+    if (!finishCause && battle?.selfKoSide === 'opponent') finishCause = 'opponent-self-ko';
+    if (!finishCause) finishCause = defaultFinishCause(result, finish);
+
+    const explicitSelfKo = typeof battle?.selfKo === 'boolean';
+    const legacyOwnSelfKo = battle?.selfKoSide === 'own' || OWN_SELF_KO_CAUSES.has(finishCause);
+    const legacyOpponentSelfKo = battle?.selfKoSide === 'opponent' || finishCause === 'opponent-self-ko';
+    const selfKo = explicitSelfKo ? battle.selfKo : Boolean(legacyOwnSelfKo);
+    const legacyAnswerKnown = !['unknown','unknown-contact-cause'].includes(finishCause);
+    const selfKoKnown = typeof battle?.selfKoKnown === 'boolean'
+      ? battle.selfKoKnown
+      : explicitSelfKo || Boolean(battle?.selfKoSide) || legacyAnswerKnown;
+    const ownSelfKo = decided && selfKoKnown && selfKo;
+    const opponentSelfKo = decided && !selfKo && legacyOpponentSelfKo;
+    const causeKnown = selfKoKnown;
+    const stabilityEvidence = decided && selfKoKnown;
+    return { ...battle, result, finish, finishCause, selfKo, selfKoKnown, selfKoSide: ownSelfKo ? 'own' : opponentSelfKo ? 'opponent' : '', causeKnown, ownSelfKo, opponentSelfKo, stabilityEvidence, contaminated, decided, points };
   }
 
   function summarizeBattles(battles, scoring = {}) {
     const normalized = (battles || []).map((battle) => normalizeBattle(battle, scoring));
     const effective = normalized.filter((battle) => battle.decided);
+    const knownCause = effective.filter((battle) => battle.causeKnown);
     const wins = effective.filter((battle) => battle.result === 'win').length;
     const losses = effective.filter((battle) => battle.result === 'loss').length;
     const interval = wilsonInterval(wins, effective.length);
     const pointsFor = sum(effective.filter((battle) => battle.result === 'win').map((battle) => battle.points));
     const pointsAgainst = sum(effective.filter((battle) => battle.result === 'loss').map((battle) => battle.points));
     const contaminated = normalized.filter((battle) => battle.contaminated).length;
+    const ownSelfKos = knownCause.filter((battle) => battle.ownSelfKo);
+    const opponentSelfKos = knownCause.filter((battle) => battle.opponentSelfKo);
+    const selfKoInterval = wilsonInterval(ownSelfKos.length, knownCause.length);
     const finishCounts = {};
+    const causeCounts = {};
     effective.forEach((battle) => {
       const key = `${battle.result}:${battle.finish}`;
       finishCounts[key] = (finishCounts[key] || 0) + 1;
+      causeCounts[battle.finishCause] = (causeCounts[battle.finishCause] || 0) + 1;
     });
+    const ownSelfKoByFinish = {
+      over: ownSelfKos.filter((battle) => battle.finish === 'over').length,
+      xtreme: ownSelfKos.filter((battle) => battle.finish === 'xtreme').length
+    };
+    const controlledStability = knownCause.filter((battle) => ['stamina','defense'].includes(battle.opponentArchetype) && battle.opponentBitRole !== 'attack');
+    const controlledSelfKos = controlledStability.filter((battle) => battle.ownSelfKo).length;
     return {
       total: normalized.length,
       effective: effective.length,
@@ -365,7 +404,22 @@
       pointDifferential: pointsFor - pointsAgainst,
       contaminated,
       contaminationRate: normalized.length ? contaminated / normalized.length : 0,
-      finishCounts
+      finishCounts,
+      causeCounts,
+      causeKnown: knownCause.length,
+      causeCoverage: effective.length ? knownCause.length / effective.length : 0,
+      selfKoAnswered: knownCause.length,
+      selfKoAnswerRate: effective.length ? knownCause.length / effective.length : 0,
+      selfKoEvidence: knownCause.length,
+      ownSelfKos: ownSelfKos.length,
+      opponentSelfKos: opponentSelfKos.length,
+      selfKoRate: knownCause.length ? ownSelfKos.length / knownCause.length : 0,
+      selfKoInterval,
+      ownSelfKoByFinish,
+      controlledStabilityBattles: controlledStability.length,
+      controlledSelfKos,
+      controlledSelfKoRate: controlledStability.length ? controlledSelfKos / controlledStability.length : 0,
+      controlledSelfKoInterval: wilsonInterval(controlledSelfKos, controlledStability.length)
     };
   }
 
@@ -379,6 +433,13 @@
     return Object.fromEntries(Object.entries(groups).map(([key, values]) => [key, summarizeBattles(values, scoring)]));
   }
 
+  function selfKoBreakdown(battles, keyFn, scoring) {
+    return Object.entries(groupBattleSummary(battles, keyFn, scoring))
+      .map(([key, summary]) => ({ key, ...summary }))
+      .filter((row) => row.selfKoEvidence > 0)
+      .sort((a, b) => b.ownSelfKos - a.ownSelfKos || b.selfKoEvidence - a.selfKoEvidence || a.key.localeCompare(b.key));
+  }
+
   function battleAnalytics({ battles, deck, deckId, scoring }) {
     const relevant = relevantBattlesForDeck(battles, deck, deckId);
     const overall = summarizeBattles(relevant, scoring);
@@ -390,7 +451,25 @@
     const multiPointWinsByBey = {};
     relevant.map((battle) => normalizeBattle(battle, scoring)).filter((battle) => battle.decided && battle.result === 'win' && battle.points >= 2)
       .forEach((battle) => { multiPointWinsByBey[battle.ownSignature] = (multiPointWinsByBey[battle.ownSignature] || 0) + 1; });
-    return { relevant, overall, byBey, byArchetype, byCell, byOpponent, byOpponentCell, multiPointWinsByBey };
+    return {
+      relevant, overall, byBey, byArchetype, byCell, byOpponent, byOpponentCell, multiPointWinsByBey,
+      selfKoByTechnique: selfKoBreakdown(relevant, (battle) => battle.technique || 'Not recorded', scoring),
+      selfKoByPosition: selfKoBreakdown(relevant, (battle) => battle.launchPosition || 'Not recorded', scoring),
+      selfKoByStadium: selfKoBreakdown(relevant, (battle) => battle.stadium || 'Not recorded', scoring)
+    };
+  }
+
+  function modeledSelfKoProbability(profileOrBey, partMap) {
+    const profile = profileOrBey?.metrics ? profileOrBey : engineeringProfileForBey(profileOrBey, partMap);
+    const risk = clamp(Number(profile?.metrics?.selfKoRisk || 0) / 100, 0, 1);
+    return clamp(0.015 + 0.22 * Math.pow(risk, 1.35), 0.01, 0.28);
+  }
+
+  function empiricalSelfKoEstimate(summary, modeledProbability = 0.08, priorStrength = 4) {
+    const evidence = Math.max(0, Number(summary?.selfKoEvidence || 0));
+    const events = Math.max(0, Number(summary?.ownSelfKos || 0));
+    const probability = (events + priorStrength * clamp(modeledProbability, 0, 1)) / (evidence + priorStrength);
+    return { probability: clamp(probability, 0, 1), evidence, events, modeledProbability: clamp(modeledProbability, 0, 1) };
   }
 
   function readinessAssessment({ deck, deckId, profile, partMap, inventory, battles, includeAnnounced, settings = {}, scoring = {} }) {
@@ -400,16 +479,21 @@
       minimumPerArchetype: Number(settings.minimumPerArchetype || 6),
       lowerBoundTarget: Number(settings.lowerBoundTarget || 0.50),
       maxContaminationRate: Number(settings.maxContaminationRate || 0.10),
-      requireMultiPointFinish: settings.requireMultiPointFinish !== false
+      requireMultiPointFinish: settings.requireMultiPointFinish !== false,
+      minimumSelfKoTestsPerBey: Number(settings.minimumSelfKoTestsPerBey || settings.minimumStabilityPerBey || 8),
+      maxObservedSelfKoRate: Number(settings.maxObservedSelfKoRate ?? 0.15)
     };
     const legality = legalityCheck(deck, profile, partMap, { includeAnnounced });
     const capacity = inventoryCapacityCheck(deck, inventory || {}, partMap);
     const analytics = battleAnalytics({ battles, deck, deckId, scoring });
     const signatures = (deck || []).map(beySignature);
     const perBeyCounts = signatures.map((signature) => analytics.byBey[signature]?.effective || 0);
+    const perBeySelfKo = signatures.map((signature) => analytics.byBey[signature] || summarizeBattles([], scoring));
     const archetypeCounts = CORE_ARCHETYPES.slice(0, 4).map((archetype) => analytics.byArchetype[archetype]?.effective || 0);
     const criticalCounts = signatures.map((signature) => analytics.multiPointWinsByBey[signature] || 0);
     const diversity = roleDiversity(deck, partMap);
+    const selfKoControlPass = perBeySelfKo.every((summary) => summary.selfKoEvidence >= cfg.minimumSelfKoTestsPerBey && summary.selfKoRate <= cfg.maxObservedSelfKoRate);
+    const worstSelfKo = perBeySelfKo.slice().sort((a, b) => b.selfKoRate - a.selfKoRate || b.selfKoInterval.high - a.selfKoInterval.high)[0] || summarizeBattles([], scoring);
 
     const gates = [
       { id: 'legal', label: 'Legal construction', pass: legality.legal, detail: legality.legal ? 'No rules blockers.' : legality.issues[0] },
@@ -419,18 +503,27 @@
       { id: 'matchups', label: 'Core matchup coverage', pass: archetypeCounts.every((count) => count >= cfg.minimumPerArchetype), detail: `${archetypeCounts.length ? Math.min(...archetypeCounts) : 0}/${cfg.minimumPerArchetype} lowest coverage` },
       { id: 'confidence', label: 'Defensible win-rate floor', pass: analytics.overall.interval.low >= cfg.lowerBoundTarget, detail: `${round(analytics.overall.interval.low * 100, 1)}% lower 95% bound` },
       { id: 'execution', label: 'Launch-data quality', pass: analytics.overall.contaminationRate <= cfg.maxContaminationRate, detail: `${round(analytics.overall.contaminationRate * 100, 1)}% contaminated` },
+      { id: 'selfKoControl', label: 'Self-KO check for every Bey', pass: selfKoControlPass, detail: `${perBeySelfKo.length ? Math.min(...perBeySelfKo.map((summary) => summary.selfKoEvidence)) : 0}/${cfg.minimumSelfKoTestsPerBey} lowest test count; worst rate ${round(worstSelfKo.selfKoRate * 100, 1)}%` },
       { id: 'finishRoutes', label: 'Multi-point finish evidence', pass: !cfg.requireMultiPointFinish || criticalCounts.every((count) => count >= 1), detail: cfg.requireMultiPointFinish ? `${criticalCounts.filter((count) => count > 0).length}/${signatures.length} Beys demonstrated` : 'Not required' },
       { id: 'roles', label: 'Role spread', pass: diversity.unique >= 2, detail: `${diversity.unique} distinct empirical role labels` }
     ];
 
-    const evidenceScore = clamp((analytics.overall.effective / cfg.minimumBattles) * 25, 0, 25);
-    const performanceScore = clamp(((analytics.overall.interval.low - 0.30) / 0.30) * 25, 0, 25);
-    const perBeyScore = clamp(mean(perBeyCounts.map((count) => count / cfg.minimumPerBey)) * 10, 0, 10);
-    const matchupScore = clamp(mean(archetypeCounts.map((count) => count / cfg.minimumPerArchetype)) * 12, 0, 12);
-    const executionScore = clamp((1 - analytics.overall.contaminationRate / Math.max(cfg.maxContaminationRate * 2, 0.01)) * 8, 0, 8);
-    const finishScore = clamp((criticalCounts.filter((count) => count > 0).length / Math.max(signatures.length, 1)) * 10, 0, 10);
-    const roleScore = diversity.unique >= 3 ? 10 : diversity.unique === 2 ? 7 : 2;
-    let score = round(evidenceScore + performanceScore + perBeyScore + matchupScore + executionScore + finishScore + roleScore, 0);
+    const evidenceScore = clamp((analytics.overall.effective / cfg.minimumBattles) * 20, 0, 20);
+    const performanceScore = clamp(((analytics.overall.interval.low - 0.30) / 0.30) * 22, 0, 22);
+    const perBeyScore = clamp(mean(perBeyCounts.map((count) => count / cfg.minimumPerBey)) * 8, 0, 8);
+    const matchupScore = clamp(mean(archetypeCounts.map((count) => count / cfg.minimumPerArchetype)) * 10, 0, 10);
+    const executionScore = clamp((1 - analytics.overall.contaminationRate / Math.max(cfg.maxContaminationRate * 2, 0.01)) * 7, 0, 7);
+    const finishScore = clamp((criticalCounts.filter((count) => count > 0).length / Math.max(signatures.length, 1)) * 8, 0, 8);
+    const roleScore = diversity.unique >= 3 ? 7 : diversity.unique === 2 ? 5 : 1;
+    const selfKoQuality = mean(perBeySelfKo.map((summary) => {
+      if (summary.selfKoEvidence < cfg.minimumSelfKoTestsPerBey) return clamp(summary.selfKoEvidence / cfg.minimumSelfKoTestsPerBey, 0, 1) * 0.35;
+      return clamp(1 - summary.selfKoRate / Math.max(cfg.maxObservedSelfKoRate * 1.5, 0.01), 0, 1);
+    }));
+    const selfKoScore = clamp(selfKoQuality * 18, 0, 18);
+    const excessSelfKo = Math.max(0, analytics.overall.selfKoRate - cfg.maxObservedSelfKoRate);
+    const selfKoPenalty = analytics.overall.selfKoEvidence >= cfg.minimumSelfKoTestsPerBey ? clamp(5 * (excessSelfKo > 0 ? 1 : 0) + excessSelfKo / Math.max(cfg.maxObservedSelfKoRate, 0.01) * 15, 0, 20) : 0;
+    let score = round(evidenceScore + performanceScore + perBeyScore + matchupScore + executionScore + finishScore + roleScore + selfKoScore - selfKoPenalty, 0);
+    score = clamp(score, 0, 100);
     if (!legality.legal || !capacity.valid) score = Math.min(score, 39);
 
     const hardPass = gates.every((gate) => gate.pass);
@@ -451,7 +544,7 @@
       analytics,
       diversity,
       settings: cfg,
-      components: { evidence: round(evidenceScore), performance: round(performanceScore), perBey: round(perBeyScore), matchups: round(matchupScore), execution: round(executionScore), finishes: round(finishScore), roles: round(roleScore) }
+      components: { evidence: round(evidenceScore), performance: round(performanceScore), perBey: round(perBeyScore), matchups: round(matchupScore), execution: round(executionScore), finishes: round(finishScore), roles: round(roleScore), selfKo: round(selfKoScore), selfKoPenalty: -round(selfKoPenalty) }
     };
   }
 
@@ -497,6 +590,8 @@
     const targetPerCell = Math.max(1, Number(settings.targetPerCell || 5));
     const targetPerOpponent = Math.max(1, Number(settings.targetPerOpponent || Math.min(3, targetPerCell)));
     const avoidAttackMirrors = settings.avoidAttackMirrors !== false;
+    const minimumSelfKoTestsPerBey = Math.max(1, Number(settings.minimumSelfKoTestsPerBey || settings.minimumStabilityPerBey || 8));
+    const maxObservedSelfKoRate = Number(settings.maxObservedSelfKoRate ?? 0.15);
     const analytics = battleAnalytics({ battles, deck, deckId, scoring });
     const weights = metaArchetypeWeights(metaProfiles);
     const tasks = [];
@@ -506,6 +601,12 @@
       const signature = beySignature(bey);
       const ownRole = inferBeyRole(bey, partMap);
       const ownBitRole = bitRoleForBey(bey, partMap);
+      const ownEngineering = engineeringProfileForBey(bey, partMap);
+      const modeledSelfKoRate = modeledSelfKoProbability(ownEngineering);
+      const ownSummary = analytics.byBey[signature] || summarizeBattles([], scoring);
+      const stabilityDeficit = Math.max(0, minimumSelfKoTestsPerBey - ownSummary.selfKoEvidence);
+      const observedHigh = ownSummary.selfKoEvidence >= 3 && ownSummary.selfKoRate > maxObservedSelfKoRate;
+      const disagreement = ownSummary.selfKoEvidence >= 3 ? Math.abs(ownSummary.selfKoRate - modeledSelfKoRate) : 0;
       const opponents = generateOwnedOpponentCandidates({ inventory, ownBey: bey, partMap, includeAnnounced, avoidAttackMirrors, maxCandidates: Number(settings.opponentPoolSize || 90) });
       opponents.forEach((opponent) => {
         const archetype = opponent.opponentArchetype;
@@ -514,11 +615,21 @@
         const archetypeTarget = archetype === 'left-spin' ? Math.max(2, Math.ceil(targetPerCell * 0.6)) : targetPerCell;
         const archetypeDeficit = Math.max(0, archetypeTarget - archetypeSummary.effective);
         const opponentDeficit = Math.max(0, targetPerOpponent - opponentSummary.effective);
-        if (!archetypeDeficit && !opponentDeficit) return;
+        const stabilityBenchmark = ['stamina','defense'].includes(archetype) && opponent.engineering.bitRole !== 'attack';
+        const stabilityNeed = stabilityBenchmark && (stabilityDeficit > 0 || observedHigh || disagreement >= 0.08);
+        if (!archetypeDeficit && !opponentDeficit && !stabilityNeed) return;
         const uncertainty = 1 - Math.min(1, opponentSummary.effective / targetPerOpponent);
         const metaWeight = weights[archetype] || (archetype === 'left-spin' ? 0.08 : 0.1);
         const benchmark = opponent.benchmarkScore / 100;
-        const priority = archetypeDeficit * 2.4 + opponentDeficit * 2.1 + uncertainty * 3.5 + metaWeight * 9 + benchmark * 2;
+        const stabilityBoost = stabilityNeed ? Math.min(14, stabilityDeficit * 2.2 + (observedHigh ? 6 : 0) + (disagreement >= 0.08 ? 4 : 0)) : 0;
+        const priority = archetypeDeficit * 2.4 + opponentDeficit * 2.1 + uncertainty * 3.5 + metaWeight * 9 + benchmark * 2 + stabilityBoost;
+        const testType = stabilityNeed ? 'stability' : 'matchup';
+        let rationale = opponentSummary.effective === 0
+          ? `Untested owned benchmark; ${archetypeSummary.effective}/${archetypeTarget} ${archetype} evidence.`
+          : `Adds repeat evidence against a physically constructible owned ${archetype} benchmark.`;
+        if (stabilityNeed) {
+          rationale = `${stabilityDeficit}/${minimumSelfKoTestsPerBey} self-KO checks remaining. Use the same controlled launch and answer Yes only when your Bey goes out by itself.`;
+        }
         tasks.push({
           id: `${signature}::${opponent.signature}`,
           beyIndex,
@@ -526,6 +637,13 @@
           ownName: nameForBey(bey, partMap),
           ownRole,
           ownBitRole,
+          ownEngineering,
+          modeledSelfKoRate,
+          observedSelfKoRate: ownSummary.selfKoRate,
+          observedSelfKoUpper: ownSummary.selfKoInterval.high,
+          stabilityEvidence: ownSummary.selfKoEvidence,
+          testType,
+          launchProtocol: stabilityNeed ? 'Use the same launcher, position, and launch style. After the battle, answer the simple self-KO question.' : 'Use your planned launch and record the result, finish, and self-KO answer.',
           opponentBey: opponent.bey,
           opponentSignature: opponent.signature,
           opponentName: nameForBey(opponent.bey, partMap),
@@ -536,19 +654,23 @@
           archetypeCompleted: archetypeSummary.effective,
           target: targetPerOpponent,
           archetypeTarget,
-          deficit: Math.max(opponentDeficit, Math.min(archetypeDeficit, targetPerOpponent)),
+          deficit: Math.max(opponentDeficit, Math.min(archetypeDeficit, targetPerOpponent), stabilityNeed ? Math.min(stabilityDeficit, targetPerOpponent) : 0),
           priority: round(priority, 2),
-          rationale: opponentSummary.effective === 0
-            ? `Untested owned benchmark; ${archetypeSummary.effective}/${archetypeTarget} ${archetype} evidence.`
-            : `Adds repeat evidence against a physically constructible owned ${archetype} benchmark.`
+          rationale
         });
       });
     });
 
     const selected = [];
+    const selectedIds = new Set();
     const perOwnArchetype = {};
     tasks.sort((a, b) => b.priority - a.priority || a.completed - b.completed || a.beyIndex - b.beyIndex);
+    for (const beyIndex of unique(tasks.filter((task) => task.testType === 'stability').map((task) => task.beyIndex))) {
+      const task = tasks.find((entry) => entry.beyIndex === beyIndex && entry.testType === 'stability');
+      if (task && selected.length < limit) { selected.push(task); selectedIds.add(task.id); }
+    }
     for (const task of tasks) {
+      if (selectedIds.has(task.id)) continue;
       const key = `${task.beyIndex}:${task.opponentArchetype}`;
       if ((perOwnArchetype[key] || 0) >= 2) continue;
       perOwnArchetype[key] = (perOwnArchetype[key] || 0) + 1;
@@ -648,7 +770,14 @@
     const analytics = battleAnalytics({ battles, deck, deckId, scoring });
     const random = mulberry32(Number(seed) || 1);
     const normalizedRelevant = analytics.relevant.map((battle) => normalizeBattle(battle, scoring)).filter((battle) => battle.decided);
+    const selfKoEstimates = Object.fromEntries(deck.map((bey) => {
+      const signature = beySignature(bey);
+      const modeled = modeledSelfKoProbability(bey, partMap);
+      return [signature, empiricalSelfKoEstimate(analytics.byBey[signature], modeled)];
+    }));
     let matchWins = 0;
+    let simulatedSelfKos = 0;
+    let simulatedBattles = 0;
     const samples = [];
 
     for (let simulation = 0; simulation < simulations; simulation += 1) {
@@ -656,6 +785,7 @@
       let ownPoints = 0;
       let opponentPoints = 0;
       let battleIndex = 0;
+      let matchSelfKos = 0;
       while (ownPoints < targetPoints && opponentPoints < targetPoints && battleIndex < 18) {
         const position = battleIndex % 3;
         const beyIndex = selectedOrder[position];
@@ -664,26 +794,39 @@
         const cell = normalizedRelevant.filter((battle) => battle.ownSignature === signature && battle.opponentArchetype === archetype);
         let win;
         let points;
+        let selfKo = false;
         if (cell.length >= 3) {
           const sampled = cell[Math.floor(random() * cell.length)];
           win = sampled.result === 'win';
           points = Math.max(1, sampled.points || 1);
+          selfKo = Boolean(sampled.ownSelfKo);
         } else {
           const estimate = matchupEstimate(analytics, signature, archetype);
-          const p = clamp(estimate.mean * Math.min(1, cell.length / 3) + 0.44 * (1 - Math.min(1, cell.length / 3)), 0.25, 0.75);
-          win = random() < p;
-          const distribution = priorPointDistribution(inferBeyRole(deck[beyIndex], partMap));
-          points = distribution[Math.floor(random() * distribution.length)];
+          const evidenceBlend = Math.min(1, cell.length / 3);
+          const baseWin = clamp(estimate.mean * evidenceBlend + 0.44 * (1 - evidenceBlend), 0.25, 0.75);
+          const selfKoProbability = selfKoEstimates[signature]?.probability || 0.08;
+          selfKo = random() < selfKoProbability;
+          if (selfKo) {
+            win = false;
+            points = random() < 0.58 ? 2 : 3;
+          } else {
+            win = random() < baseWin;
+            const distribution = priorPointDistribution(inferBeyRole(deck[beyIndex], partMap));
+            points = distribution[Math.floor(random() * distribution.length)];
+          }
         }
+        if (selfKo) { simulatedSelfKos += 1; matchSelfKos += 1; }
+        simulatedBattles += 1;
         if (win) ownPoints = Math.min(targetPoints, ownPoints + points);
         else opponentPoints = Math.min(targetPoints, opponentPoints + points);
         battleIndex += 1;
       }
       const won = ownPoints >= targetPoints && ownPoints > opponentPoints;
       if (won) matchWins += 1;
-      samples.push({ won, ownPoints, opponentPoints });
+      samples.push({ won, ownPoints, opponentPoints, selfKos: matchSelfKos });
     }
     const interval = wilsonInterval(matchWins, simulations);
+    const selfKoInterval = wilsonInterval(simulatedSelfKos, simulatedBattles);
     return {
       available: true,
       simulations,
@@ -693,10 +836,15 @@
       averagePointsFor: mean(samples.map((sample) => sample.ownPoints)),
       averagePointsAgainst: mean(samples.map((sample) => sample.opponentPoints)),
       evidenceBattles: analytics.overall.effective,
-      lowEvidence: analytics.overall.effective < 30,
-      reason: analytics.overall.effective < 30
-        ? 'Forecast is prior-heavy because fewer than 30 relevant decided battles are available.'
-        : 'Forecast resamples empirical matchup outcomes and uses conservative priors only for sparse cells.'
+      observedSelfKoRate: analytics.overall.selfKoRate,
+      observedSelfKoInterval: analytics.overall.selfKoInterval,
+      simulatedSelfKoRate: simulatedBattles ? simulatedSelfKos / simulatedBattles : 0,
+      simulatedSelfKoInterval: selfKoInterval,
+      averageSelfKosPerMatch: mean(samples.map((sample) => sample.selfKos)),
+      lowEvidence: analytics.overall.effective < 30 || analytics.overall.selfKoAnswerRate < 0.8,
+      reason: analytics.overall.effective < 30 || analytics.overall.selfKoAnswerRate < 0.8
+        ? 'Forecast is prior-heavy because battle count or self-KO answers are limited; sparse cells use the engineering-informed self-KO estimate.'
+        : 'Forecast resamples recorded matchups and ordinary self-KO results; conservative estimates are used only for sparse matchups.'
     };
   }
 
@@ -885,18 +1033,22 @@
             if (!legality.legal || !inventoryCapacityCheck(deck, inventory, partMap).valid) continue;
             const roles = selected.map((candidate) => candidate.role);
             const engineering = engineeringDeckAssessment(deck, partMap, metaArchetypeWeights(metaProfiles));
-            const evidenceBonus = sum(selected.map((candidate) => {
-              const summary = summarizeBattles((battles || []).filter((battle) => battle.ownSignature === candidate.signature), {});
-              return Math.min(3, summary.effective / 4) + summary.interval.low * 1.5;
+            const candidateSummaries = selected.map((candidate) => summarizeBattles((battles || []).filter((battle) => battle.ownSignature === candidate.signature), {}));
+            const evidenceBonus = sum(candidateSummaries.map((summary) => Math.min(3, summary.effective / 4) + summary.interval.low * 1.5));
+            const selfKoPenalty = sum(candidateSummaries.map((summary) => {
+              if (summary.selfKoEvidence < 3) return 0;
+              const threshold = Number(settings.maxObservedSelfKoRate ?? 0.15);
+              const excess = Math.max(0, summary.selfKoRate - threshold);
+              return summary.selfKoRate * 4 + excess * 34;
             }));
-            const score = engineering.score + evidenceBonus * 1.5;
+            const score = engineering.score + evidenceBonus * 1.5 - selfKoPenalty;
             suggestions.push({
               deck,
               score: round(score, 2),
               roles,
               legality,
               engineering,
-              note: `Physics-informed shortlist from owned parts. It maximizes the weakest modeled matchup (${engineering.weakestMatchup} ${engineering.weakestRating}/100), controls self-KO risk, and then uses existing logs as a secondary signal.`
+              note: `Physics-informed shortlist from owned parts. It maximizes the weakest modeled matchup (${engineering.weakestMatchup} ${engineering.weakestRating}/100), controls modeled and observed self-KO risk, and uses existing battle logs as a secondary signal.`
             });
             if (suggestions.length > 500) suggestions.sort((a, b) => b.score - a.score).splice(250);
           }
@@ -948,11 +1100,19 @@
         schemaVersion: SCHEMA_VERSION,
         decks: raw.decks.map((deck) => ({ ...deck, beys: Array.isArray(deck.beys) ? deck.beys : [] })),
         inventory: raw.inventory && typeof raw.inventory === 'object' ? raw.inventory : {},
-        battles: Array.isArray(raw.battles) ? raw.battles : [],
+        battles: Array.isArray(raw.battles) ? raw.battles.map((battle) => normalizeBattle(battle, {})) : [],
         metaProfiles: Array.isArray(raw.metaProfiles) ? raw.metaProfiles : [],
         customProfiles: Array.isArray(raw.customProfiles) ? raw.customProfiles : [],
         customParts: Array.isArray(raw.customParts) ? raw.customParts : [],
-        settings: { ...(raw.settings || {}) },
+        settings: (() => {
+          const settings = { ...(raw.settings || {}) };
+          if (settings.minimumSelfKoTestsPerBey == null && settings.minimumStabilityPerBey != null) settings.minimumSelfKoTestsPerBey = settings.minimumStabilityPerBey;
+          delete settings.minimumFinishCauseCoverage;
+          delete settings.minimumStabilityPerBey;
+          delete settings.maxSelfKoUpperBound;
+          if (settings.showGuide == null) settings.showGuide = true;
+          return settings;
+        })(),
         updatedAt: raw.updatedAt || now
       };
     }
@@ -968,7 +1128,11 @@
       deckId: battle.deckId || deckId,
       ownSignature: battle.ownSignature || (Number.isInteger(battle.ownBeyIndex) ? beySignature(deck[battle.ownBeyIndex]) : ''),
       result: battle.result || (battle.won === true ? 'win' : battle.won === false ? 'loss' : 'draw'),
-      contaminated: Boolean(battle.contaminated || battle.launchError)
+      contaminated: Boolean(battle.contaminated || battle.launchError),
+      finishCause: normalizeBattle(battle, {}).finishCause,
+      selfKo: normalizeBattle(battle, {}).selfKo,
+      selfKoKnown: normalizeBattle(battle, {}).selfKoKnown,
+      selfKoSide: normalizeBattle(battle, {}).selfKoSide
     }));
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -980,7 +1144,7 @@
       battles: migratedBattles,
       metaProfiles: [],
       customProfiles: [],
-      settings: {},
+      settings: { minimumSelfKoTestsPerBey: 8, maxObservedSelfKoRate: 0.15, showGuide: true },
       createdAt: now,
       updatedAt: now
     };
@@ -991,6 +1155,8 @@
     ENGINEERING_MODEL_VERSION,
     PART_SLOTS,
     CORE_ARCHETYPES,
+    OWN_SELF_KO_CAUSES,
+    SELF_KO_CAUSES,
     clamp,
     round,
     scoreForFinish,
@@ -1015,9 +1181,13 @@
     engineeringDeckAssessment,
     opponentArchetypeForBey,
     relevantBattlesForDeck,
+    defaultFinishCause,
     normalizeBattle,
     summarizeBattles,
+    selfKoBreakdown,
     battleAnalytics,
+    modeledSelfKoProbability,
+    empiricalSelfKoEstimate,
     readinessAssessment,
     metaArchetypeWeights,
     buildTestPlan,
