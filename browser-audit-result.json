@@ -1,0 +1,287 @@
+{
+  "application": "X Deck Lab",
+  "version": "2.0.0",
+  "timestampUtc": "2026-07-19T07:59:47.870916+00:00",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "deviceScaleFactor": 3,
+    "mobile": true,
+    "touch": true
+  },
+  "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
+  "durationSeconds": 15.828,
+  "summary": {
+    "checks": 52,
+    "passed": 52,
+    "failed": 0
+  },
+  "normalConsoleErrors": [],
+  "uncaughtPageErrors": [],
+  "expectedValidationLogs": [
+    "Error: Backup checksum mismatch: expected d2943fc5, calculated 4fcc6975.\n    at HTMLInputElement.<anonymous> (<anonymous>:811:58)",
+    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:650:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:649:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:821:13)"
+  ],
+  "checks": [
+    {
+      "name": "Application initializes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No initial page errors",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal overflow",
+      "passed": true,
+      "detail": "390px content / 390px viewport"
+    },
+    {
+      "name": "Initial visible controls have accessible names",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Document IDs are unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Dashboard view navigates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Inventory view navigates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Deck view navigates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Test view navigates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Results view navigates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "More view navigates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Visible controls across primary views have accessible names",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Management navigation does not stall",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Primary navigation meets 44 px touch target",
+      "passed": true,
+      "detail": "[{\"w\": 63, \"h\": 59, \"left\": 6, \"right\": 69, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 69, \"right\": 132, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 132, \"right\": 195, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 195, \"right\": 258, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 258, \"right\": 321, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 321, \"right\": 384, \"bottom\": 837}]"
+    },
+    {
+      "name": "Primary navigation stays inside viewport",
+      "passed": true,
+      "detail": "[{\"w\": 63, \"h\": 59, \"left\": 6, \"right\": 69, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 69, \"right\": 132, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 132, \"right\": 195, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 195, \"right\": 258, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 258, \"right\": 321, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 321, \"right\": 384, \"bottom\": 837}]"
+    },
+    {
+      "name": "Product search retains focus",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Known-products panel remains open",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Product entry updates inventory",
+      "passed": true,
+      "detail": "14 unique parts"
+    },
+    {
+      "name": "Inventory search retains focus",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Inventory filtering renders owned part",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Loose-part dialog saves quantity and condition",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Owned-parts optimizer returns ranked decks",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Optimizer applies three complete Beys",
+      "passed": true,
+      "detail": "attack role · basic | attack role · basic | attack role · basic"
+    },
+    {
+      "name": "Applied deck passes rules and inventory gates",
+      "passed": true,
+      "detail": "Construction passes\n\nOfficial scoring. In Custom Line, ordinary lock chips may repeat; Valkyrie and Emperor are limited to one each.\n\nPass"
+    },
+    {
+      "name": "Deck library clones complete decks",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Deck library deletes selected version safely",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Adaptive test plan renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Battle logging persists result and finish",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Xtreme Finish receives three points",
+      "passed": true,
+      "detail": "DranStrike 1-60 Free Flat · WIN\n\nStamina · Audit opponent · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 7:59 AM · Controlled launch"
+    },
+    {
+      "name": "Contaminated battle is retained but marked for exclusion",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Analysis reports decided evidence",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coverage matrix renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Order analysis renders without failure",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Forecast action completes",
+      "passed": true,
+      "detail": "Estimated match win rate\n41.6%\n95% simulation interval 40.3%–42.8%\nAverage score\n2.34–2.89\n6,000 simulated matches\nEmpirical evidence\n1\nrelevant decided battles\nModel status\nPrior-heavy\nnot a physics simulation\n\nForecast is prior-heavy because fewer than 30 relevant decided battles are available."
+    },
+    {
+      "name": "Meta-profile management saves weighted lineup",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Custom tournament profile persists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Readiness policy persists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Diagnostics report integrity pass",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Backup export includes valid checksum",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Backup export uses current schema",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Normal workflow has no console errors",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Normal workflow has no uncaught errors",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Tampered backup is rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Valid backup imports and normalizes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Duplicate product IDs in one catalog patch are rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Valid catalog patch imports",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Visible button targets meet 44 px minimum",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "Final workflow has no horizontal overflow",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Final mobile screenshot captured",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Fresh application instance restores deck library",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Fresh application instance restores inventory",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Fresh application instance restores battles",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}
