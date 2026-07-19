@@ -222,6 +222,20 @@ def run() -> dict[str, Any]:
         page.locator("[data-apply-suggestion]").first.click()
         subtitles = page.locator(".bey-card .bey-title small").all_inner_texts()
         audit.record("Optimizer applies three complete Beys", len(subtitles) == 3 and all("Incomplete" not in item for item in subtitles), " | ".join(subtitles))
+        metric_counts = page.locator(".bey-card .bey-metric").evaluate_all("els => { const cards = [...document.querySelectorAll('.bey-card')]; return cards.map(card => card.querySelectorAll('.bey-metric').length); }")
+        audit.record("Each completed Bey uses a four-cell mobile score grid", metric_counts == [4, 4, 4], json.dumps(metric_counts))
+        metric_layout = page.locator(".bey-card").first.evaluate("""card => {
+          const grid = card.querySelector('.bey-metric-grid');
+          const cardRect = card.getBoundingClientRect();
+          const cells = [...card.querySelectorAll('.bey-metric')].map(el => { const r = el.getBoundingClientRect(); return { left:r.left, right:r.right, width:r.width }; });
+          return {
+            columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+            contained: cells.every(r => r.left >= cardRect.left - 0.5 && r.right <= cardRect.right + 0.5),
+            legacyInlineSpans: card.querySelectorAll('.bey-engineering > span').length,
+            labeledCells: [...card.querySelectorAll('.bey-metric')].every(el => el.querySelector('small') && el.querySelector('strong') && el.querySelector('em'))
+          };
+        }""")
+        audit.record("Mobile engineering scores are separated and contained", metric_layout["columns"] == 2 and metric_layout["contained"] and metric_layout["legacyInlineSpans"] == 0 and metric_layout["labeledCells"], json.dumps(metric_layout))
         validation_text = page.locator("#deckValidation").inner_text()
         audit.record("Applied deck passes rules and inventory gates", "Construction passes" in validation_text and "Shortage" not in validation_text and "Rules" not in validation_text, validation_text[:500])
 
@@ -361,7 +375,7 @@ def run() -> dict[str, Any]:
         backup = json.loads(backup_text)
         checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
         audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 6 and backup["appVersion"] == "2.3.0")
+        audit.record("Backup export uses current schema", backup["schemaVersion"] == 6 and backup["appVersion"] == "2.3.1")
 
         normal_error_count = len(audit.normal_console_errors)
         audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
@@ -451,7 +465,7 @@ def run() -> dict[str, Any]:
     failed = len(audit.checks) - passed
     result = {
         "application": "X Deck Lab",
-        "version": "2.3.0",
+        "version": "2.3.1",
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
         "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",

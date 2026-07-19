@@ -1,6 +1,6 @@
-# X Deck Lab 2.3.0 — Guided Player Release Audit
+# X Deck Lab 2.3.1 — Guided Player Release Audit
 
-- Release target: **2.3.0**
+- Release target: **2.3.1**
 - State schema: **6**
 - Engineering model: **2**
 - Catalog verification-through date: **2026-07-19**
@@ -12,13 +12,19 @@
 **PASS — approved for deployment.**
 
 - Syntax and automated engine suite: **34 passed, 0 failed**.
-- Chromium mobile workflow: **70 passed, 0 failed**.
+- Chromium mobile workflow: **72 passed, 0 failed**.
 - Primary viewport: **390 × 844**, mobile and touch enabled.
 - Additional small-phone overflow check: **320 pixels wide**.
 - Normal-workflow console errors: **0**.
 - Uncaught page errors: **0**.
 - Visible button targets below 44 pixels: **0**.
 - Initial and final horizontal overflow: **none**.
+
+## Closed mobile deck-card defect
+
+The 2.3.0 deck editor rendered Impact, Spin, Stability, and Self-KO values as adjacent inline text. On a real iPhone viewport this could appear as one concatenated string, such as `Impact 31.4Spin 86.9Stability 77.2Self-KO 0`.
+
+Version 2.3.1 replaces that row with a responsive two-column metric grid. Each score has its own label, `/100` unit, and higher-is-better or lower-is-better guidance. The browser audit now verifies four cells per completed Bey, two computed columns at the mobile viewport, card containment, and absence of concatenated metric text.
 
 ## Closed usability gap
 
@@ -149,6 +155,7 @@ The unchanged production HTML, CSS, and JavaScript were rendered in Chromium usi
 - legal owned-deck generation and deck-library operations;
 - exact owned-opponent selection and simultaneous capacity;
 - attack-bit mirror exclusion;
+- four-cell deck-card score grids with two-column mobile containment;
 - optional engineering details rendering;
 - simple No and Yes self-KO records;
 - rejection of an impossible Yes answer;
@@ -164,8 +171,8 @@ The unchanged production HTML, CSS, and JavaScript were rendered in Chromium usi
 Result:
 
 ```text
-70 checks
-70 passed
+72 checks
+72 passed
 0 failed
 ```
 
@@ -193,4 +200,4 @@ The model uses bounded qualitative proxies, not fabricated measurements. It does
 
 ## Final approval
 
-X Deck Lab 2.3.0 provides a simple child-usable player path while preserving advanced engineering, legality, evidence, and data-integrity controls. It is approved as the current root-only release, subject to ongoing rules and catalog maintenance.
+X Deck Lab 2.3.1 provides a simple child-usable player path while preserving advanced engineering, legality, evidence, and data-integrity controls. It is approved as the current root-only release, subject to ongoing rules and catalog maintenance.

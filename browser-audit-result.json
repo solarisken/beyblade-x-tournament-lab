@@ -1,7 +1,7 @@
 {
   "application": "X Deck Lab",
-  "version": "2.3.0",
-  "timestampUtc": "2026-07-19T13:29:45.988680+00:00",
+  "version": "2.3.1",
+  "timestampUtc": "2026-07-19T13:54:17.761152+00:00",
   "viewport": {
     "width": 390,
     "height": 844,
@@ -10,17 +10,17 @@
     "touch": true
   },
   "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 23.594,
+  "durationSeconds": 23.682,
   "summary": {
-    "checks": 70,
-    "passed": 70,
+    "checks": 72,
+    "passed": 72,
     "failed": 0
   },
   "normalConsoleErrors": [],
   "uncaughtPageErrors": [],
   "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected 089c2338, calculated f28b02f8.\n    at HTMLInputElement.<anonymous> (<anonymous>:939:58)",
-    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:769:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:768:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:949:13)"
+    "Error: Backup checksum mismatch: expected c029d8a2, calculated 04092af2.\n    at HTMLInputElement.<anonymous> (<anonymous>:945:58)",
+    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:775:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:774:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:955:13)"
   ],
   "checks": [
     {
@@ -156,7 +156,17 @@
     {
       "name": "Optimizer applies three complete Beys",
       "passed": true,
-      "detail": "stamina role · stamina bit · engineering fit 78.4/100 | balance role · attack bit · engineering fit 61.5/100 | attack role · stamina bit · engineering fit 55/100"
+      "detail": "stamina setup · stamina bit · fit 78/100 | balance setup · attack bit · fit 62/100 | attack setup · stamina bit · fit 55/100"
+    },
+    {
+      "name": "Each completed Bey uses a four-cell mobile score grid",
+      "passed": true,
+      "detail": "[4, 4, 4]"
+    },
+    {
+      "name": "Mobile engineering scores are separated and contained",
+      "passed": true,
+      "detail": "{\"columns\": 2, \"contained\": true, \"legacyInlineSpans\": 0, \"labeledCells\": true}"
     },
     {
       "name": "Applied deck passes rules and inventory gates",
@@ -211,7 +221,7 @@
     {
       "name": "Xtreme Finish receives three points",
       "passed": true,
-      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 1:29 PM"
+      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 1:54 PM"
     },
     {
       "name": "Impossible Self-KO Yes answer is blocked",

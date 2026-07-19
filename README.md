@@ -1,8 +1,10 @@
-# X Deck Lab 2.3.0
+# X Deck Lab 2.3.1
 
 X Deck Lab is a root-only, mobile-first GitHub Pages PWA for Beyblade X inventory, three-Bey deck building, owned-parts battle testing, physics-informed recommendations, and tournament-readiness analysis.
 
-Version 2.3.0 simplifies the normal player experience so children and first-time users can follow it without understanding the advanced analytics. The app still runs entirely in the browser, with no build step, server, account, telemetry, or external runtime dependency.
+Version 2.3.1 simplifies the normal player experience so children and first-time users can follow it without understanding the advanced analytics. The app still runs entirely in the browser, with no build step, server, account, telemetry, or external runtime dependency.
+
+Patch 2.3.1 corrects the mobile deck-card score row shown in 2.3.0. Impact, Spin, Stability, and Self-KO risk now appear as four separate two-column cards with `/100` units and clear higher/lower guidance. Long Bey names may wrap to two lines instead of forcing the card wider.
 
 ## The four-step player path
 
@@ -99,8 +101,8 @@ python browser-audit.py
 Certified result:
 
 ```text
-70 checks
-70 passed
+72 checks
+72 passed
 0 failed
 ```
 

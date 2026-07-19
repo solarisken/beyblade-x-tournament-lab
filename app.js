@@ -381,7 +381,13 @@
         }
       }
       const engineering = Core.beyIsComplete(bey) ? Core.engineeringProfileForBey(bey, map) : null;
-      return `<article class="bey-card"><div class="bey-card-header"><span class="bey-number">${index + 1}</span><div class="bey-title"><strong>${escapeHtml(Core.nameForBey(bey, map))}</strong><small>${engineering ? `${escapeHtml(role)} role · ${escapeHtml(engineering.bitRole)} bit · engineering fit ${escapeHtml(engineering.roleFit)}/100` : 'Incomplete combination'}</small></div><button class="icon-button" type="button" data-clear-bey="${index}" aria-label="Clear Bey ${index + 1}">×</button></div><div class="bey-fields">${fields}</div>${engineering ? `<div class="bey-engineering"><span>Impact ${engineering.metrics.impactPotential}</span><span>Spin ${engineering.metrics.spinRetention}</span><span>Stability ${engineering.metrics.stability}</span><span>Self-KO ${engineering.metrics.selfKoRisk}</span></div>` : ''}</article>`;
+      const quickMetrics = engineering ? [
+        ['Attack power', engineering.metrics.impactPotential, 'higher is better'],
+        ['Spin', engineering.metrics.spinRetention, 'higher is better'],
+        ['Stability', engineering.metrics.stability, 'higher is better'],
+        ['Self-KO risk', engineering.metrics.selfKoRisk, 'lower is better']
+      ].map(([label, value, hint]) => `<div class="bey-metric"><small>${escapeHtml(label)}</small><strong>${escapeHtml(Math.round(Number(value) || 0))}<span>/100</span></strong><em>${escapeHtml(hint)}</em></div>`).join('') : '';
+      return `<article class="bey-card"><div class="bey-card-header"><span class="bey-number">${index + 1}</span><div class="bey-title"><strong>${escapeHtml(Core.nameForBey(bey, map))}</strong><small>${engineering ? `${escapeHtml(role)} setup · ${escapeHtml(engineering.bitRole)} bit · fit ${escapeHtml(Math.round(Number(engineering.roleFit) || 0))}/100` : 'Choose the parts for this Bey'}</small></div><button class="icon-button" type="button" data-clear-bey="${index}" aria-label="Clear Bey ${index + 1}">×</button></div><div class="bey-fields">${fields}</div>${engineering ? `<div class="bey-engineering" aria-label="Quick engineering scores"><div class="bey-engineering-head"><strong>Quick view</strong><small>Scores are estimates until you test the Bey.</small></div><div class="bey-metric-grid">${quickMetrics}</div></div>` : ''}</article>`;
     }).join('');
   }
 

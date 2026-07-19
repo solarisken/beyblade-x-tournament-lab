@@ -239,7 +239,7 @@ test('root HTML references only root runtime assets and includes all six primary
 
 test('service worker lifecycle caches every production root asset and clears old versions', async () => {
   const source = fs.readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8');
-  assert.match(source, /x-deck-lab-v2\.3\.0/);
+  assert.match(source, /x-deck-lab-v2\.3\.1/);
   const listeners = {};
   const cache = { addAll: async (assets) => { cache.assets = assets; }, put: async () => {} };
   const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.2.0'], delete: async (key) => key === 'old-cache', match: async () => null };

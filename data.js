@@ -17,7 +17,7 @@
   const data = {
     meta: {
       appName: 'X Deck Lab',
-      version: '2.3.0',
+      version: '2.3.1',
       verifiedThrough: '2026-07-19',
       schemaVersion: 6,
       rulesVersion: 'Takara Tomy Regulation v12 / WBO rules checked 2026-07-19',
