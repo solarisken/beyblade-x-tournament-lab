@@ -1,7 +1,8 @@
 (function (root) {
   'use strict';
 
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 4;
+  const ENGINEERING_MODEL_VERSION = 1;
   const PART_SLOTS = ['blade','ratchetIntegratedBlade','lockChip','metalBlade','overBlade','mainBlade','assistBlade','ratchet','bit','integratedBit'];
   const CORE_ARCHETYPES = ['attack','stamina','defense','balance','left-spin'];
 
@@ -83,6 +84,11 @@
     return { valid: shortages.length === 0, shortages, used };
   }
 
+
+  function inventoryCapacityForBattle(ownBey, opponentBey, inventory, partMap) {
+    return inventoryCapacityCheck([ownBey, opponentBey], inventory, partMap);
+  }
+
   function legalityCheck(deck, profile, partMap, options = {}) {
     const issues = [];
     const warnings = [];
@@ -141,6 +147,178 @@
   function roleDiversity(deck, partMap) {
     const roles = (deck || []).filter(beyIsComplete).map((bey) => inferBeyRole(bey, partMap));
     return { roles, unique: unique(roles).length, complete: roles.length === (deck || []).length };
+  }
+
+
+  function bitIdFromBey(bey) {
+    return bey?.integratedBit || bey?.bit || '';
+  }
+
+  function bitRoleForBey(bey, partMap) {
+    const role = partMap?.[bitIdFromBey(bey)]?.role;
+    return ['attack','stamina','defense','balance'].includes(role) ? role : 'balance';
+  }
+
+  function isLeftSpinBey(bey, partMap) {
+    return partIdsFromBey(bey).some((id) => /left[- ]spin/i.test(`${partMap?.[id]?.notes || ''} ${partMap?.[id]?.name || ''}`));
+  }
+
+  function ratchetHeightForBey(bey, partMap) {
+    if (bey?.integratedBit) return 70;
+    if (bey?.system === 'integrated' && !bey?.ratchet) return 65;
+    const text = `${partMap?.[bey?.ratchet]?.name || bey?.ratchet || ''}`;
+    const match = text.match(/-(\d{2})(?:\D|$)/);
+    return match ? clamp(Number(match[1]), 50, 85) : 70;
+  }
+
+  function roleTopDefaults(role) {
+    const defaults = {
+      attack:  { aggression: 0.86, inertia: 0.58, symmetry: 0.43, koResistance: 0.42, recoil: 0.68 },
+      stamina: { aggression: 0.27, inertia: 0.80, symmetry: 0.84, koResistance: 0.58, recoil: 0.22 },
+      defense: { aggression: 0.39, inertia: 0.68, symmetry: 0.72, koResistance: 0.84, recoil: 0.28 },
+      balance: { aggression: 0.56, inertia: 0.66, symmetry: 0.65, koResistance: 0.65, recoil: 0.44 }
+    };
+    return { ...(defaults[role] || defaults.balance) };
+  }
+
+  function roleBitDefaults(role) {
+    const defaults = {
+      attack:  { traction: 0.84, mobility: 0.91, spinRetention: 0.34, stability: 0.43, control: 0.42, peripheralMass: 0.25 },
+      stamina: { traction: 0.25, mobility: 0.24, spinRetention: 0.91, stability: 0.74, control: 0.67, peripheralMass: 0.62 },
+      defense: { traction: 0.56, mobility: 0.22, spinRetention: 0.63, stability: 0.88, control: 0.84, peripheralMass: 0.38 },
+      balance: { traction: 0.57, mobility: 0.55, spinRetention: 0.64, stability: 0.68, control: 0.68, peripheralMass: 0.42 }
+    };
+    return { ...(defaults[role] || defaults.balance) };
+  }
+
+  function boundedVector(vector) {
+    return Object.fromEntries(Object.entries(vector).map(([key, value]) => [key, clamp(value, 0, 1)]));
+  }
+
+  function partTopEngineering(part) {
+    const result = roleTopDefaults(part?.role);
+    const text = `${part?.name || ''} ${part?.notes || ''}`.toLowerCase();
+    if (/(ring|circle|rod|round|arc|orbital|wheel)/.test(text)) { result.inertia += 0.08; result.symmetry += 0.09; result.recoil -= 0.06; }
+    if (/(impact|buster|strike|sword|spear|shark|blast|brave|blitz|whip|flare|reaper|drake)/.test(text)) { result.aggression += 0.09; result.recoil += 0.07; result.symmetry -= 0.05; }
+    if (/(shield|mail|crest|fort|fortress|shell|rock|press|guard)/.test(text)) { result.koResistance += 0.09; result.symmetry += 0.04; result.aggression -= 0.03; }
+    if (part?.category === 'assistBlade') { result.aggression *= 0.8; result.inertia *= 0.82; result.koResistance *= 0.82; }
+    if (part?.category === 'overBlade') { result.aggression *= 0.88; result.inertia *= 0.9; result.koResistance *= 0.9; }
+    if (part?.engineering && typeof part.engineering === 'object') Object.assign(result, part.engineering);
+    return boundedVector(result);
+  }
+
+  function partBitEngineering(part) {
+    const result = roleBitDefaults(part?.role);
+    const text = `${part?.name || ''} ${part?.code || ''}`.toLowerCase();
+    if (/rubber/.test(text)) { result.traction += 0.15; result.mobility += 0.06; result.spinRetention -= 0.12; }
+    if (/(flat|rush|accel|jolt|vortex|zap|cyclone|quake|ignition)/.test(text)) { result.mobility += 0.08; result.traction += 0.05; result.control -= 0.04; }
+    if (/(ball|orb)/.test(text)) { result.spinRetention += 0.08; result.stability += 0.07; result.mobility -= 0.05; }
+    if (/(needle|spike|wedge|dot|hexa|narrow)/.test(text)) { result.stability += 0.08; result.control += 0.09; result.mobility -= 0.06; }
+    if (/free/.test(text)) { result.spinRetention += 0.07; result.control += 0.02; }
+    if (/(disk|wall)/.test(text)) { result.peripheralMass += 0.10; result.spinRetention += 0.04; }
+    if (/gear/.test(text)) { result.mobility += 0.05; result.traction += 0.04; result.spinRetention -= 0.03; }
+    if (part?.engineering && typeof part.engineering === 'object') Object.assign(result, part.engineering);
+    return boundedVector(result);
+  }
+
+  function weightedTopEngineering(bey, partMap) {
+    const weighted = [];
+    const add = (id, weight) => { if (id && partMap?.[id]) weighted.push({ vector: partTopEngineering(partMap[id]), weight }); };
+    add(bey?.blade, 1);
+    add(bey?.ratchetIntegratedBlade, 1);
+    add(bey?.mainBlade, 0.82);
+    add(bey?.metalBlade, 0.72);
+    add(bey?.overBlade, 0.42);
+    add(bey?.assistBlade, 0.30);
+    if (!weighted.length) return roleTopDefaults('balance');
+    const keys = ['aggression','inertia','symmetry','koResistance','recoil'];
+    const totalWeight = sum(weighted.map((entry) => entry.weight));
+    return Object.fromEntries(keys.map((key) => [key, sum(weighted.map((entry) => entry.vector[key] * entry.weight)) / totalWeight]));
+  }
+
+  function engineeringRoleFit(profile, role) {
+    const metric = profile.metrics;
+    const weights = {
+      attack:  { impactPotential: 0.30, xDashPotential: 0.23, control: 0.14, stability: 0.10, burstResistance: 0.08, spinRetention: 0.08, koResistance: 0.07 },
+      stamina: { spinRetention: 0.34, rotationalInertia: 0.24, stability: 0.18, control: 0.11, burstResistance: 0.08, koResistance: 0.05 },
+      defense: { koResistance: 0.30, stability: 0.24, burstResistance: 0.14, control: 0.13, spinRetention: 0.11, rotationalInertia: 0.08 },
+      balance: { control: 0.20, stability: 0.18, spinRetention: 0.17, koResistance: 0.16, impactPotential: 0.13, burstResistance: 0.09, xDashPotential: 0.07 }
+    }[role] || null;
+    if (!weights) return 0;
+    return round(sum(Object.entries(weights).map(([key, weight]) => metric[key] * weight)), 1);
+  }
+
+  function engineeringMatchupRatings(profile) {
+    const m = profile.metrics;
+    return {
+      attack: round(0.30 * m.koResistance + 0.22 * m.stability + 0.16 * m.control + 0.14 * m.burstResistance + 0.10 * m.spinRetention + 0.08 * (100 - m.selfKoRisk), 1),
+      stamina: round(0.30 * m.impactPotential + 0.20 * m.xDashPotential + 0.17 * m.control + 0.15 * m.spinRetention + 0.10 * m.stability + 0.08 * m.rotationalInertia, 1),
+      defense: round(0.27 * m.spinRetention + 0.22 * m.impactPotential + 0.17 * m.control + 0.14 * m.xDashPotential + 0.12 * m.stability + 0.08 * m.rotationalInertia, 1),
+      balance: round(0.18 * m.impactPotential + 0.18 * m.spinRetention + 0.18 * m.stability + 0.17 * m.koResistance + 0.16 * m.control + 0.13 * m.burstResistance, 1),
+      'left-spin': round(0.27 * m.spinRetention + 0.23 * m.stability + 0.19 * m.control + 0.16 * m.rotationalInertia + 0.15 * m.koResistance, 1)
+    };
+  }
+
+  function engineeringProfileForBey(bey, partMap) {
+    const top = weightedTopEngineering(bey, partMap);
+    const bitPart = partMap?.[bitIdFromBey(bey)] || { role: 'balance', name: '' };
+    const bit = partBitEngineering(bitPart);
+    const ratchetHeight = ratchetHeightForBey(bey, partMap);
+    const bitName = `${bitPart.name || ''}`.toLowerCase();
+    const bitHeightOffset = /low|under/.test(bitName) ? -0.08 : /high/.test(bitName) ? 0.08 : 0;
+    const lowCenter = clamp(1 - ((ratchetHeight - 50) / 35) - bitHeightOffset, 0, 1);
+    const impactPotential = clamp(0.42 * top.aggression + 0.27 * bit.mobility + 0.18 * bit.traction + 0.13 * top.inertia, 0, 1);
+    const rotationalInertia = clamp(0.74 * top.inertia + 0.16 * top.symmetry + 0.10 * bit.peripheralMass, 0, 1);
+    const spinRetention = clamp(0.39 * bit.spinRetention + 0.27 * rotationalInertia + 0.19 * top.symmetry + 0.15 * bit.stability - 0.07 * bit.traction, 0, 1);
+    const stability = clamp(0.31 * bit.stability + 0.20 * bit.control + 0.18 * top.symmetry + 0.17 * lowCenter + 0.14 * top.koResistance - 0.07 * top.recoil, 0, 1);
+    const koResistance = clamp(0.30 * top.koResistance + 0.24 * stability + 0.18 * lowCenter + 0.15 * bit.control + 0.13 * bit.traction, 0, 1);
+    const burstResistance = clamp(0.34 * lowCenter + 0.25 * stability + 0.18 * top.symmetry + 0.16 * bit.control + 0.07 * top.koResistance - 0.07 * top.recoil, 0, 1);
+    const xDashPotential = clamp(0.45 * bit.mobility + 0.34 * bit.traction + 0.21 * top.aggression, 0, 1);
+    const control = clamp(0.46 * bit.control + 0.21 * stability + 0.17 * top.symmetry + 0.10 * lowCenter + 0.06 * (1 - top.recoil), 0, 1);
+    const recoilRisk = clamp(0.72 * top.recoil + 0.28 * bit.mobility, 0, 1);
+    const selfKoRisk = clamp(0.39 * bit.mobility + 0.27 * top.recoil + 0.20 * bit.traction - 0.26 * control + 0.10 * (1 - lowCenter), 0, 1);
+    const metrics = Object.fromEntries(Object.entries({ impactPotential, rotationalInertia, spinRetention, stability, koResistance, burstResistance, xDashPotential, control, recoilRisk, selfKoRisk }).map(([key, value]) => [key, round(value * 100, 1)]));
+    const inferredRole = inferBeyRole(bey, partMap);
+    const profile = {
+      modelVersion: ENGINEERING_MODEL_VERSION,
+      inferredRole,
+      bitRole: bitRoleForBey(bey, partMap),
+      spinDirection: isLeftSpinBey(bey, partMap) ? 'left' : 'right',
+      ratchetHeight,
+      metrics,
+      confidence: partIdsFromBey(bey).some((id) => partMap?.[id]?.status === 'custom') ? 0.38 : 0.58,
+      assumptions: ['Qualitative geometry/type proxies', 'No measured mass or RPM', 'No coefficient-of-friction or mold-variation data']
+    };
+    profile.roleFit = engineeringRoleFit(profile, inferredRole);
+    profile.matchups = engineeringMatchupRatings(profile);
+    const ordered = Object.entries(profile.matchups).sort((a, b) => b[1] - a[1]);
+    profile.strongestMatchup = ordered[0]?.[0] || 'balance';
+    profile.weakestMatchup = ordered.at(-1)?.[0] || 'balance';
+    return profile;
+  }
+
+  function engineeringDeckAssessment(deck, partMap, metaWeights = {}) {
+    const profiles = (deck || []).map((bey, deckIndex) => ({ bey, deckIndex })).filter((entry) => beyIsComplete(entry.bey)).map((entry) => ({ ...engineeringProfileForBey(entry.bey, partMap), deckIndex: entry.deckIndex, bey: entry.bey }));
+    if (!profiles.length) return { score: 0, profiles: [], matchups: {}, weakestMatchup: 'unknown', averageSelfKoRisk: 100, roleSpread: 0, bitRoleSpread: 0 };
+    const matchups = {};
+    CORE_ARCHETYPES.forEach((archetype) => {
+      const ratings = profiles.map((profile) => profile.matchups[archetype] || 0).sort((a, b) => b - a);
+      matchups[archetype] = round((ratings[0] || 0) * 0.62 + (ratings[1] || ratings[0] || 0) * 0.27 + (ratings[2] || ratings[1] || ratings[0] || 0) * 0.11, 1);
+    });
+    const weights = Object.keys(metaWeights || {}).length ? metaWeights : { attack: 0.25, stamina: 0.25, defense: 0.25, balance: 0.25, 'left-spin': 0 };
+    const weightTotal = sum(CORE_ARCHETYPES.map((id) => Number(weights[id] || 0))) || 1;
+    const weightedAverage = sum(CORE_ARCHETYPES.map((id) => matchups[id] * Number(weights[id] || 0))) / weightTotal;
+    const weakest = Object.entries(matchups).filter(([id]) => id !== 'left-spin' || Number(weights[id] || 0) > 0).sort((a, b) => a[1] - b[1])[0] || ['unknown', 0];
+    const averageSelfKoRisk = mean(profiles.map((profile) => profile.metrics.selfKoRisk));
+    const roleSpread = unique(profiles.map((profile) => profile.inferredRole)).length;
+    const bitRoleSpread = unique(profiles.map((profile) => profile.bitRole)).length;
+    const diversityScore = clamp(((roleSpread - 1) / 2) * 65 + ((bitRoleSpread - 1) / 2) * 35, 0, 100);
+    const score = round(0.38 * weightedAverage + 0.34 * weakest[1] + 0.17 * (100 - averageSelfKoRisk) + 0.11 * diversityScore, 1);
+    return { modelVersion: ENGINEERING_MODEL_VERSION, score, profiles, matchups, weakestMatchup: weakest[0], weakestRating: weakest[1], weightedAverage: round(weightedAverage, 1), averageSelfKoRisk: round(averageSelfKoRisk, 1), roleSpread, bitRoleSpread, confidence: round(mean(profiles.map((profile) => profile.confidence)), 2) };
+  }
+
+  function opponentArchetypeForBey(bey, partMap) {
+    return isLeftSpinBey(bey, partMap) ? 'left-spin' : inferBeyRole(bey, partMap);
   }
 
   function relevantBattlesForDeck(battles, deck, deckId) {
@@ -207,10 +385,12 @@
     const byBey = groupBattleSummary(relevant, (battle) => battle.ownSignature, scoring);
     const byArchetype = groupBattleSummary(relevant, (battle) => battle.opponentArchetype, scoring);
     const byCell = groupBattleSummary(relevant, (battle) => `${battle.ownSignature}::${battle.opponentArchetype || 'unknown'}`, scoring);
+    const byOpponent = groupBattleSummary(relevant.filter((battle) => battle.opponentSignature), (battle) => battle.opponentSignature, scoring);
+    const byOpponentCell = groupBattleSummary(relevant.filter((battle) => battle.opponentSignature), (battle) => `${battle.ownSignature}::${battle.opponentSignature}`, scoring);
     const multiPointWinsByBey = {};
     relevant.map((battle) => normalizeBattle(battle, scoring)).filter((battle) => battle.decided && battle.result === 'win' && battle.points >= 2)
       .forEach((battle) => { multiPointWinsByBey[battle.ownSignature] = (multiPointWinsByBey[battle.ownSignature] || 0) + 1; });
-    return { relevant, overall, byBey, byArchetype, byCell, multiPointWinsByBey };
+    return { relevant, overall, byBey, byArchetype, byCell, byOpponent, byOpponentCell, multiPointWinsByBey };
   }
 
   function readinessAssessment({ deck, deckId, profile, partMap, inventory, battles, includeAnnounced, settings = {}, scoring = {} }) {
@@ -288,8 +468,34 @@
     return weights;
   }
 
-  function buildTestPlan({ deck, deckId, partMap, battles, scoring, metaProfiles, settings = {}, limit = 12 }) {
+  function generateOwnedOpponentCandidates({ inventory, ownBey, partMap, includeAnnounced = false, avoidAttackMirrors = true, maxCandidates = 90 }) {
+    if (!beyIsComplete(ownBey)) return [];
+    const ownSignature = beySignature(ownBey);
+    const ownBitRole = bitRoleForBey(ownBey, partMap);
+    const pool = generateOwnedCandidates({ inventory, partMap, includeAnnounced, maxCandidates: Math.max(maxCandidates * 2, 120) });
+    const candidates = pool.filter((candidate) => {
+      if (candidate.signature === ownSignature) return false;
+      if (!inventoryCapacityForBattle(ownBey, candidate.bey, inventory, partMap).valid) return false;
+      if (avoidAttackMirrors && ownBitRole === 'attack' && candidate.engineering.bitRole === 'attack') return false;
+      return true;
+    }).map((candidate) => {
+      const opponentArchetype = opponentArchetypeForBey(candidate.bey, partMap);
+      const benchmarkScore = round(0.42 * candidate.engineering.roleFit + 0.28 * mean(Object.values(candidate.engineering.matchups)) + 0.18 * (100 - candidate.engineering.metrics.selfKoRisk) + 0.12 * candidate.engineering.metrics.control, 1);
+      return { ...candidate, opponentArchetype, benchmarkScore, ownedCapacity: true };
+    });
+    const perArchetype = {};
+    candidates.sort((a, b) => b.benchmarkScore - a.benchmarkScore || a.signature.localeCompare(b.signature));
+    return candidates.filter((candidate) => {
+      const count = perArchetype[candidate.opponentArchetype] || 0;
+      if (count >= Math.max(8, Math.ceil(maxCandidates / 5))) return false;
+      perArchetype[candidate.opponentArchetype] = count + 1;
+      return true;
+    }).slice(0, maxCandidates);
+  }
+
+  function buildTestPlan({ deck, deckId, partMap, inventory = {}, includeAnnounced = false, battles, scoring, metaProfiles, settings = {}, limit = 12 }) {
     const targetPerCell = Math.max(1, Number(settings.targetPerCell || 5));
+    const targetPerOpponent = Math.max(1, Number(settings.targetPerOpponent || Math.min(3, targetPerCell)));
     const avoidAttackMirrors = settings.avoidAttackMirrors !== false;
     const analytics = battleAnalytics({ battles, deck, deckId, scoring });
     const weights = metaArchetypeWeights(metaProfiles);
@@ -299,35 +505,57 @@
       if (!beyIsComplete(bey)) return;
       const signature = beySignature(bey);
       const ownRole = inferBeyRole(bey, partMap);
-      CORE_ARCHETYPES.forEach((archetype) => {
-        const summary = analytics.byCell[`${signature}::${archetype}`] || summarizeBattles([], scoring);
-        const target = archetype === 'left-spin' ? Math.max(2, Math.ceil(targetPerCell * 0.6)) : targetPerCell;
-        const deficit = Math.max(0, target - summary.effective);
-        if (!deficit) return;
-        const uncertainty = 1 - Math.min(1, summary.effective / target);
+      const ownBitRole = bitRoleForBey(bey, partMap);
+      const opponents = generateOwnedOpponentCandidates({ inventory, ownBey: bey, partMap, includeAnnounced, avoidAttackMirrors, maxCandidates: Number(settings.opponentPoolSize || 90) });
+      opponents.forEach((opponent) => {
+        const archetype = opponent.opponentArchetype;
+        const archetypeSummary = analytics.byCell[`${signature}::${archetype}`] || summarizeBattles([], scoring);
+        const opponentSummary = analytics.byOpponentCell[`${signature}::${opponent.signature}`] || summarizeBattles([], scoring);
+        const archetypeTarget = archetype === 'left-spin' ? Math.max(2, Math.ceil(targetPerCell * 0.6)) : targetPerCell;
+        const archetypeDeficit = Math.max(0, archetypeTarget - archetypeSummary.effective);
+        const opponentDeficit = Math.max(0, targetPerOpponent - opponentSummary.effective);
+        if (!archetypeDeficit && !opponentDeficit) return;
+        const uncertainty = 1 - Math.min(1, opponentSummary.effective / targetPerOpponent);
         const metaWeight = weights[archetype] || (archetype === 'left-spin' ? 0.08 : 0.1);
-        const mirrorPenalty = avoidAttackMirrors && ownRole === 'attack' && archetype === 'attack' ? 0.28 : 1;
-        const priority = (deficit * 2 + uncertainty * 4 + metaWeight * 10) * mirrorPenalty;
+        const benchmark = opponent.benchmarkScore / 100;
+        const priority = archetypeDeficit * 2.4 + opponentDeficit * 2.1 + uncertainty * 3.5 + metaWeight * 9 + benchmark * 2;
         tasks.push({
-          id: `${signature}::${archetype}`,
+          id: `${signature}::${opponent.signature}`,
           beyIndex,
           ownSignature: signature,
           ownName: nameForBey(bey, partMap),
           ownRole,
+          ownBitRole,
+          opponentBey: opponent.bey,
+          opponentSignature: opponent.signature,
+          opponentName: nameForBey(opponent.bey, partMap),
           opponentArchetype: archetype,
-          completed: summary.effective,
-          target,
-          deficit,
+          opponentBitRole: opponent.engineering.bitRole,
+          opponentEngineering: opponent.engineering,
+          completed: opponentSummary.effective,
+          archetypeCompleted: archetypeSummary.effective,
+          target: targetPerOpponent,
+          archetypeTarget,
+          deficit: Math.max(opponentDeficit, Math.min(archetypeDeficit, targetPerOpponent)),
           priority: round(priority, 2),
-          rationale: mirrorPenalty < 1
-            ? 'Deferred attack mirror; retained only because evidence is still incomplete.'
-            : summary.effective === 0 ? 'Untested matchup cell.' : 'Raises the weakest evidence cell and narrows uncertainty.'
+          rationale: opponentSummary.effective === 0
+            ? `Untested owned benchmark; ${archetypeSummary.effective}/${archetypeTarget} ${archetype} evidence.`
+            : `Adds repeat evidence against a physically constructible owned ${archetype} benchmark.`
         });
       });
     });
 
+    const selected = [];
+    const perOwnArchetype = {};
     tasks.sort((a, b) => b.priority - a.priority || a.completed - b.completed || a.beyIndex - b.beyIndex);
-    return tasks.slice(0, limit);
+    for (const task of tasks) {
+      const key = `${task.beyIndex}:${task.opponentArchetype}`;
+      if ((perOwnArchetype[key] || 0) >= 2) continue;
+      perOwnArchetype[key] = (perOwnArchetype[key] || 0) + 1;
+      selected.push(task);
+      if (selected.length >= limit) break;
+    }
+    return selected;
   }
 
   function permutations(values) {
@@ -499,47 +727,149 @@
       const signature = beySignature(bey);
       if (candidateSignatures.has(signature)) return;
       candidateSignatures.add(signature);
-      candidates.push({ bey, signature, role: inferBeyRole(bey, partMap), architecture, heuristic: roleCompatibility(topRole, bitRole, assistRole) });
-      if (candidates.length > 5000) candidates.sort((a, b) => b.heuristic - a.heuristic).splice(2500);
+      const engineering = engineeringProfileForBey(bey, partMap);
+      const compatibility = roleCompatibility(topRole, bitRole, assistRole);
+      const heuristic = round(engineering.roleFit / 12 + compatibility * 0.32 + mean(Object.values(engineering.matchups)) / 45 - engineering.metrics.selfKoRisk / 90, 3);
+      candidates.push({ bey, signature, role: engineering.inferredRole, architecture, heuristic, engineering });
     };
 
-    const ratchets = (byCategory.ratchet || []).slice(0, 16);
+    const partHeight = (part) => {
+      const match = `${part?.name || ''}`.match(/-(\d{2})(?:\D|$)/);
+      return match ? Number(match[1]) : 70;
+    };
+    const allRatchets = (byCategory.ratchet || []).slice().sort((a, b) => partHeight(a) - partHeight(b) || a.name.localeCompare(b.name));
+    const heightGroups = new Map();
+    allRatchets.forEach((part) => {
+      const height = partHeight(part);
+      if (!heightGroups.has(height)) heightGroups.set(height, []);
+      heightGroups.get(height).push(part);
+    });
+    const ratchets = [];
+    let ratchetDepth = 0;
+    while (ratchets.length < Math.min(15, allRatchets.length)) {
+      let added = false;
+      [...heightGroups.keys()].sort((a, b) => a - b).forEach((height) => {
+        const part = heightGroups.get(height)[ratchetDepth];
+        if (part && ratchets.length < 15) { ratchets.push(part); added = true; }
+      });
+      if (!added) break;
+      ratchetDepth += 1;
+    }
     const bits = (byCategory.bit || []).slice().sort((a, b) => a.name.localeCompare(b.name));
-    (byCategory.blade || []).forEach((blade) => {
-      const rankedBits = bits.slice().sort((a, b) => roleCompatibility(blade.role, b.role) - roleCompatibility(blade.role, a.role)).slice(0, 8);
-      ratchets.forEach((ratchet) => rankedBits.forEach((bit) => push({ system: 'basic', blade: blade.id, ratchet: ratchet.id, bit: bit.id }, blade.role, bit.role, 'balance', 'basic')));
+    const roleBalancedParts = (parts, topRole, limit) => {
+      const sorted = parts.slice().sort((a, b) => roleCompatibility(topRole, b.role, 'balance') - roleCompatibility(topRole, a.role, 'balance') || a.name.localeCompare(b.name));
+      const selected = [];
+      ['attack','stamina','defense','balance'].forEach((role) => {
+        sorted.filter((part) => part.role === role).slice(0, 2).forEach((part) => { if (!selected.includes(part) && selected.length < limit) selected.push(part); });
+      });
+      sorted.forEach((part) => { if (!selected.includes(part) && selected.length < limit) selected.push(part); });
+      return selected;
+    };
+
+    (byCategory.blade || []).forEach((blade, bladeIndex) => {
+      const rankedBits = roleBalancedParts(bits, blade.role, 8);
+      rankedBits.forEach((bit, bitIndex) => {
+        const variants = Math.min(3, ratchets.length);
+        for (let variant = 0; variant < variants; variant += 1) {
+          const ratchet = ratchets[(bladeIndex + bitIndex * 3 + variant * 5) % ratchets.length];
+          if (ratchet) push({ system: 'basic', blade: blade.id, ratchet: ratchet.id, bit: bit.id }, blade.role, bit.role, 'balance', 'basic');
+        }
+      });
     });
     (byCategory.ratchetIntegratedBlade || []).forEach((blade) => {
-      bits.slice().sort((a, b) => roleCompatibility(blade.role, b.role) - roleCompatibility(blade.role, a.role)).slice(0, 10)
-        .forEach((bit) => push({ system: 'integrated', ratchetIntegratedBlade: blade.id, bit: bit.id }, blade.role, bit.role, 'balance', 'integrated'));
+      roleBalancedParts(bits, blade.role, 10).forEach((bit) => push({ system: 'integrated', ratchetIntegratedBlade: blade.id, bit: bit.id }, blade.role, bit.role, 'balance', 'integrated'));
     });
 
-    const locks = (byCategory.lockChip || []).slice(0, 12);
+    const locks = (byCategory.lockChip || []).slice().sort((a, b) => a.name.localeCompare(b.name)).slice(0, 8);
     const assists = (byCategory.assistBlade || []);
     const integratedBits = (byCategory.integratedBit || []);
     const mains = byCategory.mainBlade || [];
-    mains.forEach((main) => {
-      const rankedAssists = assists.slice().sort((a, b) => roleCompatibility(main.role, main.role, b.role) - roleCompatibility(main.role, main.role, a.role)).slice(0, 5);
-      const rankedBits = bits.slice().sort((a, b) => roleCompatibility(main.role, b.role) - roleCompatibility(main.role, a.role)).slice(0, 6);
-      locks.forEach((lock) => rankedAssists.forEach((assist) => {
-        ratchets.slice(0, 10).forEach((ratchet) => rankedBits.forEach((bit) => push({ system: 'custom', customArchitecture: 'main', customDrive: 'standard', lockChip: lock.id, mainBlade: main.id, assistBlade: assist.id, ratchet: ratchet.id, bit: bit.id }, main.role, bit.role, assist.role, 'custom-main')));
-        integratedBits.forEach((integratedBit) => push({ system: 'custom', customArchitecture: 'main', customDrive: 'integrated', lockChip: lock.id, mainBlade: main.id, assistBlade: assist.id, integratedBit: integratedBit.id }, main.role, integratedBit.role, assist.role, 'custom-main-integrated'));
+    mains.forEach((main, mainIndex) => {
+      const rankedAssists = roleBalancedParts(assists, main.role, 5);
+      const rankedBits = roleBalancedParts(bits, main.role, 6);
+      rankedAssists.forEach((assist, assistIndex) => rankedBits.forEach((bit, bitIndex) => {
+        const comboIndex = assistIndex * rankedBits.length + bitIndex;
+        for (let variant = 0; variant < Math.min(2, ratchets.length); variant += 1) {
+          const ratchet = ratchets[(mainIndex + comboIndex * 3 + variant * 7) % ratchets.length];
+          const lock = locks[(mainIndex + comboIndex + variant) % locks.length];
+          if (lock && ratchet) push({ system: 'custom', customArchitecture: 'main', customDrive: 'standard', lockChip: lock.id, mainBlade: main.id, assistBlade: assist.id, ratchet: ratchet.id, bit: bit.id }, main.role, bit.role, assist.role, 'custom-main');
+        }
+      }));
+      rankedAssists.forEach((assist, assistIndex) => integratedBits.forEach((integratedBit, bitIndex) => {
+        for (let variant = 0; variant < Math.min(2, locks.length); variant += 1) {
+          const lock = locks[(mainIndex + assistIndex + bitIndex + variant) % locks.length];
+          if (lock) push({ system: 'custom', customArchitecture: 'main', customDrive: 'integrated', lockChip: lock.id, mainBlade: main.id, assistBlade: assist.id, integratedBit: integratedBit.id }, main.role, integratedBit.role, assist.role, 'custom-main-integrated');
+        }
       }));
     });
 
     const metals = byCategory.metalBlade || [];
     const overs = byCategory.overBlade || [];
-    metals.forEach((metal) => overs.slice(0, 6).forEach((over) => {
+    metals.forEach((metal, metalIndex) => overs.forEach((over, overIndex) => {
       const topRole = metal.role === over.role ? metal.role : 'balance';
-      const rankedAssists = assists.slice().sort((a, b) => roleCompatibility(topRole, topRole, b.role) - roleCompatibility(topRole, topRole, a.role)).slice(0, 4);
-      const rankedBits = bits.slice().sort((a, b) => roleCompatibility(topRole, b.role) - roleCompatibility(topRole, a.role)).slice(0, 5);
-      locks.forEach((lock) => rankedAssists.forEach((assist) => ratchets.slice(0, 8).forEach((ratchet) => rankedBits.forEach((bit) => push({ system: 'custom', customArchitecture: 'expanded', customDrive: 'standard', lockChip: lock.id, metalBlade: metal.id, overBlade: over.id, assistBlade: assist.id, ratchet: ratchet.id, bit: bit.id }, topRole, bit.role, assist.role, 'custom-expanded')))));
+      const rankedAssists = roleBalancedParts(assists, topRole, 4);
+      const rankedBits = roleBalancedParts(bits, topRole, 5);
+      rankedAssists.forEach((assist, assistIndex) => rankedBits.forEach((bit, bitIndex) => {
+        const comboIndex = assistIndex * rankedBits.length + bitIndex;
+        for (let variant = 0; variant < Math.min(2, ratchets.length); variant += 1) {
+          const ratchet = ratchets[(metalIndex * 3 + overIndex * 5 + comboIndex * 2 + variant * 7) % ratchets.length];
+          const lock = locks[(metalIndex + overIndex + comboIndex + variant) % locks.length];
+          if (lock && ratchet) push({ system: 'custom', customArchitecture: 'expanded', customDrive: 'standard', lockChip: lock.id, metalBlade: metal.id, overBlade: over.id, assistBlade: assist.id, ratchet: ratchet.id, bit: bit.id }, topRole, bit.role, assist.role, 'custom-expanded');
+        }
+      }));
     }));
 
-    return candidates.sort((a, b) => b.heuristic - a.heuristic || a.signature.localeCompare(b.signature)).slice(0, maxCandidates);
+    const ranked = candidates.sort((a, b) => b.heuristic - a.heuristic || a.signature.localeCompare(b.signature));
+    if (ranked.length <= maxCandidates) return ranked;
+    const familyKey = (candidate) => candidate.bey.blade || candidate.bey.ratchetIntegratedBlade || candidate.bey.mainBlade || `${candidate.bey.metalBlade || ''}+${candidate.bey.overBlade || ''}` || candidate.signature;
+    const families = new Map();
+    ranked.forEach((candidate) => {
+      const key = familyKey(candidate);
+      if (!families.has(key)) families.set(key, []);
+      families.get(key).push(candidate);
+    });
+    const selected = [];
+    const selectedIds = new Set();
+    const ratchetUse = {};
+    const bitUse = {};
+    const roleUse = { attack: 0, stamina: 0, defense: 0, balance: 0 };
+    const take = (candidate) => {
+      selected.push(candidate);
+      selectedIds.add(candidate.signature);
+      const ratchet = candidate.bey.ratchet || 'integrated';
+      const bit = bitIdFromBey(candidate.bey) || 'none';
+      ratchetUse[ratchet] = (ratchetUse[ratchet] || 0) + 1;
+      bitUse[bit] = (bitUse[bit] || 0) + 1;
+      roleUse[candidate.engineering.bitRole] = (roleUse[candidate.engineering.bitRole] || 0) + 1;
+    };
+    const adjusted = (candidate) => {
+      const ratchet = candidate.bey.ratchet || 'integrated';
+      const bit = bitIdFromBey(candidate.bey) || 'none';
+      const role = candidate.engineering.bitRole;
+      const roleDeficit = Math.max(...Object.values(roleUse)) - (roleUse[role] || 0);
+      return candidate.heuristic - 0.22 * (ratchetUse[ratchet] || 0) - 0.25 * (bitUse[bit] || 0) + 0.08 * roleDeficit;
+    };
+    const familyOrder = [...families.entries()].sort((a, b) => b[1][0].heuristic - a[1][0].heuristic);
+    familyOrder.forEach(([, family]) => {
+      if (selected.length >= maxCandidates) return;
+      const best = family.slice(0, 50).sort((a, b) => adjusted(b) - adjusted(a))[0];
+      if (best) take(best);
+    });
+    while (selected.length < maxCandidates) {
+      let best = null;
+      let bestScore = -Infinity;
+      ranked.forEach((candidate) => {
+        if (selectedIds.has(candidate.signature)) return;
+        const score = adjusted(candidate);
+        if (score > bestScore) { best = candidate; bestScore = score; }
+      });
+      if (!best) break;
+      take(best);
+    }
+    return selected;
   }
 
-  function suggestDecks({ inventory, partMap, profile, includeAnnounced, battles = [], settings = {}, limit = 5 }) {
+  function suggestDecks({ inventory, partMap, profile, includeAnnounced, battles = [], metaProfiles = [], settings = {}, limit = 5 }) {
     const requestedPool = clamp(Math.floor(Number(settings.candidatePool || 36)), 12, 120);
     const poolSizes = unique([requestedPool, Math.max(requestedPool, 48), Math.max(requestedPool, 72), 120]).sort((a, b) => a - b);
 
@@ -554,14 +884,20 @@
             const legality = legalityCheck(deck, profile, partMap, { includeAnnounced });
             if (!legality.legal || !inventoryCapacityCheck(deck, inventory, partMap).valid) continue;
             const roles = selected.map((candidate) => candidate.role);
-            const diversity = unique(roles).length;
-            const attackRoutes = roles.filter((role) => role === 'attack' || role === 'balance').length;
+            const engineering = engineeringDeckAssessment(deck, partMap, metaArchetypeWeights(metaProfiles));
             const evidenceBonus = sum(selected.map((candidate) => {
               const summary = summarizeBattles((battles || []).filter((battle) => battle.ownSignature === candidate.signature), {});
-              return Math.min(4, summary.effective / 3) + summary.interval.low * 2;
+              return Math.min(3, summary.effective / 4) + summary.interval.low * 1.5;
             }));
-            const score = sum(selected.map((candidate) => candidate.heuristic)) + diversity * 5 + attackRoutes * 1.2 + evidenceBonus;
-            suggestions.push({ deck, score: round(score, 2), roles, legality, note: 'Structural shortlist from owned parts. Roles and existing logs rank candidates; physical performance still requires controlled testing.' });
+            const score = engineering.score + evidenceBonus * 1.5;
+            suggestions.push({
+              deck,
+              score: round(score, 2),
+              roles,
+              legality,
+              engineering,
+              note: `Physics-informed shortlist from owned parts. It maximizes the weakest modeled matchup (${engineering.weakestMatchup} ${engineering.weakestRating}/100), controls self-KO risk, and then uses existing logs as a secondary signal.`
+            });
             if (suggestions.length > 500) suggestions.sort((a, b) => b.score - a.score).splice(250);
           }
         }
@@ -586,6 +922,7 @@
       if (ids.has(part.id)) issues.push(`Duplicate part ID: ${part.id}`);
       ids.add(part.id);
       if (!['attack','stamina','defense','balance'].includes(part.role)) warnings.push(`${part.id} has an unrecognized role.`);
+      if (part.engineering && Object.values(part.engineering).some((value) => !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 1)) issues.push(`${part.id} has an engineering override outside 0–1.`);
       if (part.status === 'announced' && !part.notes) warnings.push(`${part.id} is announced without a release note.`);
     });
     (data.products || []).forEach((product) => (product.parts || []).forEach((id) => { if (!ids.has(id)) issues.push(`${product.id} references missing part ${id}.`); }));
@@ -605,7 +942,20 @@
   function migrateState(raw) {
     const now = new Date().toISOString();
     if (!raw || typeof raw !== 'object') return null;
-    if (Number(raw.schemaVersion) >= SCHEMA_VERSION && Array.isArray(raw.decks)) return raw;
+    if (Array.isArray(raw.decks)) {
+      return {
+        ...raw,
+        schemaVersion: SCHEMA_VERSION,
+        decks: raw.decks.map((deck) => ({ ...deck, beys: Array.isArray(deck.beys) ? deck.beys : [] })),
+        inventory: raw.inventory && typeof raw.inventory === 'object' ? raw.inventory : {},
+        battles: Array.isArray(raw.battles) ? raw.battles : [],
+        metaProfiles: Array.isArray(raw.metaProfiles) ? raw.metaProfiles : [],
+        customProfiles: Array.isArray(raw.customProfiles) ? raw.customProfiles : [],
+        customParts: Array.isArray(raw.customParts) ? raw.customParts : [],
+        settings: { ...(raw.settings || {}) },
+        updatedAt: raw.updatedAt || now
+      };
+    }
     const inventory = {};
     Object.entries(raw.inventory || {}).forEach(([id, value]) => {
       const qty = value && typeof value === 'object' ? Number(value.qty) : Number(value);
@@ -638,6 +988,7 @@
 
   const api = {
     SCHEMA_VERSION,
+    ENGINEERING_MODEL_VERSION,
     PART_SLOTS,
     CORE_ARCHETYPES,
     clamp,
@@ -650,9 +1001,19 @@
     nameForBey,
     inventoryQuantity,
     inventoryCapacityCheck,
+    inventoryCapacityForBattle,
     legalityCheck,
     inferBeyRole,
     roleDiversity,
+    bitIdFromBey,
+    bitRoleForBey,
+    isLeftSpinBey,
+    ratchetHeightForBey,
+    engineeringProfileForBey,
+    engineeringRoleFit,
+    engineeringMatchupRatings,
+    engineeringDeckAssessment,
+    opponentArchetypeForBey,
     relevantBattlesForDeck,
     normalizeBattle,
     summarizeBattles,
@@ -660,6 +1021,7 @@
     readinessAssessment,
     metaArchetypeWeights,
     buildTestPlan,
+    generateOwnedOpponentCandidates,
     permutations,
     matchupEstimate,
     optimizeDeckOrder,

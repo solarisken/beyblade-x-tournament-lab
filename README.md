@@ -1,150 +1,128 @@
-# X Deck Lab 2.0.0
+# X Deck Lab 2.1.0
 
-X Deck Lab is a mobile-first, offline-capable Beyblade X tournament-preparation platform designed for direct deployment from the root of a GitHub Pages repository. It combines physical inventory control, legal deck construction, owned-parts optimization, controlled battle logging, adaptive test planning, opponent-meta modeling, deck-order analysis, and uncertainty-aware tournament-readiness assessment.
+X Deck Lab is a root-only, mobile-first GitHub Pages PWA for Beyblade X inventory management, legal three-Bey deck construction, physics-informed candidate ranking, controlled battle testing, opponent-meta planning, and empirical tournament-readiness analysis.
 
-It is an empirical decision-support tool. It does not claim to reproduce Beyblade physics or guarantee tournament outcomes.
+The application runs entirely in the browser. It has no build step, server, account requirement, or external runtime dependency.
+
+## What changed in 2.1.0
+
+### Owned-opponent testing
+
+Generated test opponents are now complete Bey combinations assembled from the recorded inventory. Before an opponent is offered, the engine reserves both the selected test Bey and the opponent and verifies that their combined part quantities can exist simultaneously.
+
+The test record stores the exact opponent combination and signature, not only a broad archetype label. Evidence can therefore be analyzed by:
+
+- your Bey;
+- opponent archetype;
+- exact opponent combination;
+- finish route;
+- launch technique and position;
+- contamination or launch-error status.
+
+### Attack-bit mirror exclusion
+
+When **Exclude attack-bit vs attack-bit from generated tests** is enabled, the restriction is hard-enforced in:
+
+- adaptive test-plan generation;
+- opponent selector population;
+- battle submission validation.
+
+The setting is enabled by default but may be disabled for deliberate mirror research.
+
+### Physics-informed deck optimizer
+
+Owned-part candidates are ranked through a transparent dimensionless engineering model. It considers qualitative proxies for:
+
+- contact aggression and impact potential;
+- radial mass distribution and rotational inertia;
+- spin retention;
+- stability and control;
+- KO and burst resistance;
+- X-Dash potential;
+- recoil and self-KO risk;
+- ratchet nominal height and inferred center-of-mass effect;
+- mechanical and bit-role diversity;
+- modeled coverage against attack, stamina, defense, balance, and left-spin opponents.
+
+A diversity-preserving bounded search prevents one mechanically similar family from crowding the candidate pool. Final recommendations must still pass tournament construction rules and owned-inventory capacity checks.
+
+This is not a rigid-body or finite-element simulator. The catalog does not contain measured mass distribution, launch RPM, coefficients of friction, deformation, wear, mold variation, or stadium-condition data. The model ranks hypotheses; controlled battle evidence determines readiness.
+
+## Main workflow
+
+1. **Inventory** — Add known products and loose parts, including quantities and condition.
+2. **Deck** — Build manually or generate engineering-ranked legal decks from owned parts.
+3. **Test** — Follow the adaptive plan and select an exact inventory-valid opponent.
+4. **Record** — Log result, finish route, stadium, launch position, technique, contamination, and notes.
+5. **Results** — Review Wilson confidence intervals, evidence coverage, engineering proxies, order analysis, and empirical forecasts.
+6. **More** — Maintain meta profiles, custom tournament rules, readiness thresholds, catalog patches, and backups.
+
+## Readiness policy
+
+A deck cannot receive tournament-ready status solely from its engineering score. The readiness engine separately evaluates:
+
+- construction legality;
+- owned-part capacity;
+- total decided-battle evidence;
+- evidence per Bey and archetype;
+- Bey × archetype coverage;
+- lower 95% Wilson win-rate bound;
+- contamination rate;
+- multi-point finish evidence, when required.
+
+Contaminated trials and relaunches remain in history but do not count as decided evidence.
 
 ## Deploy on GitHub Pages
 
-There are no source, public, assets, or build folders. All deployment files remain in the repository root.
-
-1. Extract the release ZIP.
-2. Upload every extracted file directly to the root of a GitHub repository.
-3. Open **Settings → Pages**.
-4. Select **Deploy from a branch**.
-5. Select the deployment branch and **/ (root)**.
-6. Save and wait for GitHub Pages to publish `index.html`.
-
-The application has no server-side dependency. After the first successful online load, its service worker caches the production shell for offline use.
-
-## Platform functions
-
-### Inventory and catalog
-
-- Quantity-based inventory of individual physical parts.
-- One-tap addition of cataloged products and stock combinations.
-- Category-dependent loose-part picker.
-- Condition and notes for each inventory entry.
-- Separate released, announced, and locally patched records.
-- Announced-part theorycrafting is opt-in and disabled for ordinary legality checks.
-- Catalog patches reject duplicate part IDs, duplicate product IDs, and missing part references.
-- Seed catalog: 217 parts and 46 products, verified through 2026-07-19.
-
-### Deck laboratory
-
-- Versioned multi-deck library with create, select, rename, clone, and delete operations.
-- Basic/Unique construction.
-- Ratchet-integrated blade construction.
-- Custom Line using Lock Chip + Main Blade + Assist Blade.
-- Expanded Custom Line using Lock Chip + Metal Blade + Over Blade + Assist Blade.
-- Standard Ratchet + Bit and ratchet-integrated bit architectures.
-- Full assist-blade names in selectors.
-- Functional-part duplicate validation independent of recolor.
-- Physical inventory-capacity validation as a separate hard gate.
-- Takara Tomy Regulation v12 preset, conservative WBO presets, and custom event profiles.
-
-### Owned-parts intelligence
-
-- Ranked legal and inventory-supplyable three-Bey recommendations.
-- Structural role spread and finish-route heuristics.
-- Existing battle evidence incorporated when available.
-- Progressive candidate-pool expansion so larger inventories do not crowd out valid decks.
-- Recommendation output is explicitly distinguished from tournament proof.
-
-### Controlled testing
-
-- Adaptive test queue prioritizing missing and weak Bey × opponent-archetype cells.
-- Configurable de-prioritization of attack-versus-attack testing.
-- Battle records for own Bey, opponent, archetype, result, finish, stadium, launch position, technique, notes, and contamination status.
-- Relaunches, voids, and contaminated trials can be retained without inflating decided evidence.
-- Per-deck history and deletion controls.
-
-### Tournament analysis
-
-- Wilson 95% confidence intervals rather than raw win rate alone.
-- Overall, per-Bey, per-archetype, and Bey × archetype summaries.
-- Point differential and finish-route evidence.
-- Matchup-coverage matrix.
-- Configurable evidence thresholds and readiness gates.
-- Analysis of all six 3-on-3 order permutations.
-- Weighted opponent-meta lineups.
-- Deterministic empirical tournament forecast with explicit low-evidence status.
-
-### Integrity and portability
-
-- Browser-local data only; no analytics endpoint or application server.
-- Schema-versioned state with migration from the earlier v1 format.
-- Complete JSON backup with checksum.
-- Backup import rejects checksum mismatches, then normalizes and migrates valid state.
-- Catalog and state diagnostics, including orphan-battle and unknown-inventory detection.
-- PWA manifest, SVG icon, PNG install icons, Apple touch icon, and offline service worker.
-
-## Readiness model
-
-Tournament readiness is gated by:
-
-- construction legality;
-- sufficient physical inventory;
-- minimum decided battle count;
-- minimum evidence per Bey;
-- minimum evidence per core opponent archetype;
-- Bey × matchup coverage;
-- lower Wilson confidence-bound target;
-- maximum contamination rate;
-- optional evidence that each Bey can produce a two- or three-point finish;
-- structural role spread.
-
-The score remains a decision aid. Part wear, mold variation, launcher condition, launch execution, stadium condition, opponent skill, and actual event composition remain physical variables.
+1. Create or open a GitHub repository.
+2. Upload every release file directly to the repository root.
+3. Do not place the files in `src`, `public`, `dist`, or another wrapper folder.
+4. In **Settings → Pages**, deploy from the branch root.
+5. Open the published URL once online so the service worker can cache the application shell.
 
 ## Local verification
 
-Requires Node.js 20 or later:
+Node.js is required only for the release tests, not to run the app.
 
 ```bash
 npm run check
 ```
 
-Final automated result:
+Current certified result:
 
 ```text
-18 tests
-18 passed
+24 tests
+24 passed
 0 failed
 ```
 
-The release also passed a Chromium mobile workflow audit at 390 × 844:
-
-```text
-52 checks
-52 passed
-0 failed
-```
-
-The browser harness is included as `browser-audit.py`. It requires Python Playwright and Chromium. The machine-readable result is `browser-audit-result.json`.
-
-For ordinary local use:
+Run the Chromium mobile workflow audit with:
 
 ```bash
-python3 -m http.server 8080
+python browser-audit.py
 ```
 
-Then open `http://localhost:8080`.
+Current certified result:
 
-## Catalog and rules maintenance
+```text
+57 checks
+57 passed
+0 failed
+```
 
-The seed catalog records a verification-through date of **2026-07-19**. Released entries are enabled by default; announced entries remain blocked unless theorycrafting is explicitly enabled. A static catalog cannot remain current indefinitely, so future additions should be applied through reviewed catalog patches or a new verified release.
+## Data maintenance
 
-The event organizer's published rules always supersede application presets.
+- Released parts are enabled by default.
+- Announced parts remain blocked unless theorycrafting is enabled.
+- Catalog patches can add parts and products without rebuilding the application.
+- Imported backups are checksum-verified before state replacement.
+- Schema migration preserves existing v2 deck libraries while upgrading to schema 4.
 
-Primary reference classes used for this release:
+The bundled catalog was verified through **2026-07-19**. Recheck official rules and product status before events held after that date.
 
-- Takara Tomy official Beyblade X regulation and official product lineup.
-- World Beyblade Organization Beyblade X rules and format guidance.
-- Secondary community part references only where official architecture naming was incomplete, with status kept separate from official rule claims.
+## Root files
 
-## Release files
-
-Runtime:
+Production runtime:
 
 - `index.html`
 - `styles.css`
@@ -168,8 +146,12 @@ Verification and documentation:
 - `package.json`
 - `LICENSE`
 
+External audit artifact (not required for deployment and distributed separately):
+
+- `mobile-v2.1-engineering-final.png`
+
 ## Privacy, license, and trademarks
 
-Inventory, decks, settings, meta profiles, and battle records stay in browser local storage. Export a backup before clearing browser data, moving browsers, or changing devices.
+Inventory, decks, settings, meta profiles, and battle records remain in browser local storage. Export a backup before clearing browser data or changing devices.
 
 Application code is provided under the MIT License. Beyblade and Beyblade X are trademarks of their respective owners. X Deck Lab is independent and unofficial and contains no copyrighted product imagery.

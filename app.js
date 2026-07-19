@@ -103,6 +103,7 @@
   let toastTimer = null;
   let lastForecast = null;
   let smartSuggestions = [];
+  let opponentOptions = [];
 
   function saveState() {
     state.updatedAt = nowIso();
@@ -166,10 +167,18 @@
   function badge(text, kind = 'info') { return `<span class="badge ${kind}">${escapeHtml(text)}</span>`; }
   function emptyState(message) { return `<div class="empty-state">${escapeHtml(message)}</div>`; }
 
+  function metricLabel(key) {
+    return ({ impactPotential: 'Impact', rotationalInertia: 'Rotational inertia', spinRetention: 'Spin retention', stability: 'Stability', koResistance: 'KO resistance', burstResistance: 'Burst resistance', xDashPotential: 'X-Dash', control: 'Control', recoilRisk: 'Recoil risk', selfKoRisk: 'Self-KO risk' })[key] || key;
+  }
+
+  function engineeringBars(profile, keys = ['impactPotential','spinRetention','stability','koResistance','control','selfKoRisk']) {
+    return `<div class="engineering-bars">${keys.map((key) => `<div class="engineering-row"><span>${escapeHtml(metricLabel(key))}</span><div class="engineering-track"><i style="width:${Math.max(0, Math.min(100, Number(profile.metrics[key]) || 0))}%"></i></div><strong>${escapeHtml(profile.metrics[key])}</strong></div>`).join('')}</div>`;
+  }
+
   function renderDashboard() {
     const deck = activeDeck();
     const assessment = currentAssessment();
-    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 4 });
+    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 4 });
     const hero = $('#dashboardHero');
     hero.style.setProperty('--score-angle', `${assessment.score * 3.6}deg`);
     hero.innerHTML = `
@@ -187,7 +196,7 @@
     ].map(([label, value, note]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><span>${escapeHtml(note)}</span></div>`).join('');
 
     $('#dashboardPlan').innerHTML = plan.length ? plan.map((task, index) => `
-      <div class="list-card compact"><div class="list-card-header"><div><strong>${index + 1}. ${escapeHtml(task.ownName)} vs ${escapeHtml(labelForArchetype(task.opponentArchetype))}</strong><p>${escapeHtml(task.completed)} of ${escapeHtml(task.target)} controlled results. ${escapeHtml(task.rationale)}</p></div>${badge(`${task.deficit} needed`, 'warn')}</div></div>`).join('') : emptyState('Complete the deck or the configured evidence matrix is already filled.');
+      <div class="list-card compact"><div class="list-card-header"><div><strong>${index + 1}. ${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><p>Owned ${escapeHtml(labelForArchetype(task.opponentArchetype))} benchmark · ${escapeHtml(task.opponentBitRole)} bit · ${escapeHtml(task.completed)}/${escapeHtml(task.target)} exact-opponent results. ${escapeHtml(task.rationale)}</p></div>${badge(`${task.deficit} needed`, 'warn')}</div></div>`).join('') : emptyState('No inventory-valid opponent test is available. Add owned parts, complete the deck, or relax the attack-bit mirror exclusion.');
 
     $('#dashboardBlockers').innerHTML = assessment.blockers.length ? assessment.blockers.slice(0, 6).map((gate) => `
       <div class="list-card compact"><div class="list-card-header"><div><strong>${escapeHtml(gate.label)}</strong><p>${escapeHtml(gate.detail)}</p></div>${badge('Open', 'fail')}</div></div>`).join('') : `<div class="list-card compact"><div class="list-card-header"><div><strong>All gates pass</strong><p>Continue monitoring new matchups, wear, and event-rule changes.</p></div>${badge('Pass', 'pass')}</div></div>`;
@@ -342,7 +351,8 @@
           fields += fieldSelect(index, 'bit', 'Bit', 'bit', bey.bit, deck.includeAnnounced);
         }
       }
-      return `<article class="bey-card"><div class="bey-card-header"><span class="bey-number">${index + 1}</span><div class="bey-title"><strong>${escapeHtml(Core.nameForBey(bey, map))}</strong><small>${Core.beyIsComplete(bey) ? `${escapeHtml(role)} role · ${escapeHtml(bey.system)}` : 'Incomplete combination'}</small></div><button class="icon-button" type="button" data-clear-bey="${index}" aria-label="Clear Bey ${index + 1}">×</button></div><div class="bey-fields">${fields}</div></article>`;
+      const engineering = Core.beyIsComplete(bey) ? Core.engineeringProfileForBey(bey, map) : null;
+      return `<article class="bey-card"><div class="bey-card-header"><span class="bey-number">${index + 1}</span><div class="bey-title"><strong>${escapeHtml(Core.nameForBey(bey, map))}</strong><small>${engineering ? `${escapeHtml(role)} role · ${escapeHtml(engineering.bitRole)} bit · engineering fit ${escapeHtml(engineering.roleFit)}/100` : 'Incomplete combination'}</small></div><button class="icon-button" type="button" data-clear-bey="${index}" aria-label="Clear Bey ${index + 1}">×</button></div><div class="bey-fields">${fields}</div>${engineering ? `<div class="bey-engineering"><span>Impact ${engineering.metrics.impactPotential}</span><span>Spin ${engineering.metrics.spinRetention}</span><span>Stability ${engineering.metrics.stability}</span><span>Self-KO ${engineering.metrics.selfKoRisk}</span></div>` : ''}</article>`;
     }).join('');
   }
 
@@ -357,7 +367,7 @@
 
   function renderSmartSuggestions() {
     $('#smartBuildResults').innerHTML = smartSuggestions.length ? smartSuggestions.map((suggestion, index) => `
-      <div class="list-card"><div class="list-card-header"><div><strong>#${index + 1} · ${suggestion.roles.map((role) => escapeHtml(role)).join(' / ')}</strong><p>${suggestion.deck.map((bey, beyIndex) => `${beyIndex + 1}. ${escapeHtml(Core.nameForBey(bey, partMap()))}`).join('<br>')}</p><p>${escapeHtml(suggestion.note)}</p></div><button class="button primary compact" type="button" data-apply-suggestion="${index}">Use deck</button></div></div>`).join('') : '';
+      <div class="list-card engineering-suggestion"><div class="list-card-header"><div><strong>#${index + 1} · engineering ${escapeHtml(suggestion.engineering.score)}/100</strong><p>${suggestion.deck.map((bey, beyIndex) => `${beyIndex + 1}. ${escapeHtml(Core.nameForBey(bey, partMap()))}`).join('<br>')}</p><div class="suggestion-metrics"><span>Weakest: ${escapeHtml(labelForArchetype(suggestion.engineering.weakestMatchup))} ${escapeHtml(suggestion.engineering.weakestRating)}</span><span>Modeled average: ${escapeHtml(suggestion.engineering.weightedAverage)}</span><span>Self-KO risk: ${escapeHtml(suggestion.engineering.averageSelfKoRisk)}</span><span>Bit roles: ${escapeHtml(suggestion.engineering.bitRoleSpread)}/3</span></div><p>${escapeHtml(suggestion.note)}</p></div><button class="button primary compact" type="button" data-apply-suggestion="${index}">Use deck</button></div></div>`).join('') : '';
   }
 
   function resetBeyForSystem(system) {
@@ -371,7 +381,7 @@
     $('#smartBuildButton').textContent = 'Ranking…';
     setTimeout(() => {
       try {
-        smartSuggestions = Core.suggestDecks({ inventory: state.inventory, partMap: partMap(), profile: currentProfile(), includeAnnounced: activeDeck().includeAnnounced, battles: state.battles, settings: state.settings, limit: 5 });
+        smartSuggestions = Core.suggestDecks({ inventory: state.inventory, partMap: partMap(), profile: currentProfile(), includeAnnounced: activeDeck().includeAnnounced, battles: state.battles, metaProfiles: state.metaProfiles, settings: state.settings, limit: 5 });
         renderSmartSuggestions();
         toast(smartSuggestions.length ? `${smartSuggestions.length} legal deck shortlists generated.` : 'No three-Bey legal deck can be built from the current inventory.');
       } catch (error) {
@@ -379,7 +389,7 @@
         toast('Optimizer failed. Run diagnostics and verify catalog data.');
       } finally {
         $('#smartBuildButton').disabled = false;
-        $('#smartBuildButton').textContent = 'Generate ranked decks';
+        $('#smartBuildButton').textContent = 'Generate engineering decks';
       }
     }, 20);
   }
@@ -392,20 +402,57 @@
 
   function renderTestPlan() {
     const deck = activeDeck();
-    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 12 });
+    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 12 });
     const assessment = currentAssessment();
     $('#planProgress').textContent = `${assessment.analytics.overall.effective} decided battles`;
     $('#testPlanList').innerHTML = plan.length ? plan.map((task, index) => `
-      <button class="test-task" type="button" data-plan-bey="${task.beyIndex}" data-plan-archetype="${escapeHtml(task.opponentArchetype)}"><div><strong>${escapeHtml(task.ownName)} vs ${escapeHtml(labelForArchetype(task.opponentArchetype))}</strong><small>${escapeHtml(task.rationale)}</small><progress max="${task.target}" value="${task.completed}"></progress><small>${task.completed}/${task.target} valid results</small></div><span class="task-rank">${index + 1}</span></button>`).join('') : emptyState('No adaptive task is available. Complete the deck or raise evidence targets in Platform controls.');
+      <button class="test-task" type="button" data-plan-bey="${task.beyIndex}" data-plan-opponent="${escapeHtml(task.opponentSignature)}"><div><strong>${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><small>${escapeHtml(labelForArchetype(task.opponentArchetype))} · ${escapeHtml(task.opponentBitRole)} bit · owned and concurrently constructible</small><small>${escapeHtml(task.rationale)}</small><progress max="${task.target}" value="${task.completed}"></progress><small>${task.completed}/${task.target} exact-opponent results · archetype ${task.archetypeCompleted}/${task.archetypeTarget}</small></div><span class="task-rank">${index + 1}</span></button>`).join('') : emptyState('No owned, concurrently constructible opponent remains under the current policy. Add inventory or disable attack-bit mirror exclusion only when that matchup is specifically needed.');
   }
 
   function renderBattleFormOptions() {
     const deck = activeDeck();
     $('#battleOwnBey').innerHTML = deck.beys.map((bey, index) => `<option value="${index}" ${Core.beyIsComplete(bey) ? '' : 'disabled'}>${index + 1}. ${escapeHtml(Core.nameForBey(bey, partMap()))}</option>`).join('');
-    if (!$('#battleArchetype').options.length) DATA.archetypes.forEach((entry) => $('#battleArchetype').add(new Option(entry.name, entry.id)));
     if (!$('#battleStadium').options.length) DATA.stadiums.forEach((entry) => $('#battleStadium').add(new Option(entry, entry)));
     if (!$('#battlePosition').options.length) DATA.launchPositions.forEach((entry) => $('#battlePosition').add(new Option(entry, entry)));
     if (!$('#battleTechnique').options.length) DATA.launchTechniques.forEach((entry) => $('#battleTechnique').add(new Option(entry, entry)));
+    renderOwnedOpponentOptions();
+  }
+
+  function renderOwnedOpponentOptions(preferredSignature = '') {
+    const deck = activeDeck();
+    const ownIndex = Number($('#battleOwnBey').value || 0);
+    const ownBey = deck.beys[ownIndex];
+    opponentOptions = Core.generateOwnedOpponentCandidates({
+      inventory: state.inventory,
+      ownBey,
+      partMap: partMap(),
+      includeAnnounced: deck.includeAnnounced,
+      avoidAttackMirrors: state.settings.avoidAttackMirrors !== false,
+      maxCandidates: Number(state.settings.opponentPoolSize || 90)
+    });
+    const select = $('#battleOpponent');
+    select.innerHTML = opponentOptions.length ? opponentOptions.map((candidate) => `<option value="${escapeHtml(candidate.signature)}">${escapeHtml(Core.nameForBey(candidate.bey, partMap()))} · ${escapeHtml(labelForArchetype(candidate.opponentArchetype))} · ${escapeHtml(candidate.engineering.bitRole)} bit</option>`).join('') : '<option value="">No valid owned opponent</option>';
+    if (preferredSignature && opponentOptions.some((candidate) => candidate.signature === preferredSignature)) select.value = preferredSignature;
+    select.disabled = !opponentOptions.length;
+    const submit = $('#battleForm button[type="submit"]');
+    if (submit) submit.disabled = !opponentOptions.length;
+    renderOpponentPreview();
+  }
+
+  function renderOpponentPreview() {
+    const candidate = opponentOptions.find((entry) => entry.signature === $('#battleOpponent').value);
+    if (!candidate) {
+      $('#battleArchetype').value = '';
+      $('#battleArchetypeDisplay').value = '';
+      $('#battleOpponentBitRole').value = '';
+      $('#opponentEngineering').innerHTML = emptyState('No inventory-valid opponent can be built beside the selected Bey.');
+      return;
+    }
+    $('#battleArchetype').value = candidate.opponentArchetype;
+    $('#battleArchetypeDisplay').value = labelForArchetype(candidate.opponentArchetype);
+    $('#battleOpponentBitRole').value = candidate.engineering.bitRole;
+    const e = candidate.engineering;
+    $('#opponentEngineering').innerHTML = `<div class="opponent-preview-head"><div><strong>${escapeHtml(Core.nameForBey(candidate.bey, partMap()))}</strong><small>Owned capacity verified · engineering model v${escapeHtml(e.modelVersion)} · confidence ${fmtPct(e.confidence, 0)}</small></div>${badge(`${escapeHtml(candidate.opponentArchetype)} benchmark`, 'info')}</div>${engineeringBars(e, ['impactPotential','spinRetention','stability','koResistance','control','selfKoRisk'])}<p class="muted">The test planner reserves the selected Bey and this opponent simultaneously. Parts from inactive deck slots may be borrowed because only two Beys are launched in this controlled test.</p>`;
   }
 
   function renderBattleHistory() {
@@ -413,7 +460,7 @@
     const battles = state.battles.filter((battle) => battle.deckId === deck.id).sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp))).slice(0, 40);
     $('#battleHistory').innerHTML = battles.length ? battles.map((battle) => {
       const normalized = Core.normalizeBattle(battle, DATA.scoring);
-      return `<div class="history-item ${escapeHtml(normalized.result)} ${normalized.contaminated ? 'contaminated' : ''}"><div class="history-top"><div><strong>${escapeHtml(battle.ownName || 'Deck Bey')} · ${escapeHtml(normalized.result.toUpperCase())}</strong><p>${escapeHtml(labelForArchetype(battle.opponentArchetype))}${battle.opponentName ? ` · ${escapeHtml(battle.opponentName)}` : ''} · ${escapeHtml(normalized.finish)} finish · ${normalized.points} point${normalized.points === 1 ? '' : 's'}</p></div><button class="icon-button" type="button" data-delete-battle="${escapeHtml(battle.id)}" aria-label="Delete battle">×</button></div><p>${escapeHtml(fmtDate(battle.timestamp))}${normalized.contaminated ? ' · excluded from decided evidence' : ''}${battle.notes ? ` · ${escapeHtml(battle.notes)}` : ''}</p></div>`;
+      return `<div class="history-item ${escapeHtml(normalized.result)} ${normalized.contaminated ? 'contaminated' : ''}"><div class="history-top"><div><strong>${escapeHtml(battle.ownName || 'Deck Bey')} · ${escapeHtml(normalized.result.toUpperCase())}</strong><p>${battle.opponentName ? escapeHtml(battle.opponentName) : escapeHtml(labelForArchetype(battle.opponentArchetype))}${battle.opponentBitRole ? ` · ${escapeHtml(battle.opponentBitRole)} bit` : ''} · ${escapeHtml(normalized.finish)} finish · ${normalized.points} point${normalized.points === 1 ? '' : 's'}</p></div><button class="icon-button" type="button" data-delete-battle="${escapeHtml(battle.id)}" aria-label="Delete battle">×</button></div><p>${escapeHtml(fmtDate(battle.timestamp))}${normalized.contaminated ? ' · excluded from decided evidence' : ''}${battle.notes ? ` · ${escapeHtml(battle.notes)}` : ''}</p></div>`;
     }).join('') : emptyState('No battles are logged for the active deck.');
   }
 
@@ -423,6 +470,12 @@
     const ownBeyIndex = Number(data.get('ownBeyIndex'));
     const bey = deck.beys[ownBeyIndex];
     if (!Core.beyIsComplete(bey)) return toast('Select a complete Bey.');
+    const opponentSignature = String(data.get('opponentSignature') || '');
+    const opponent = opponentOptions.find((entry) => entry.signature === opponentSignature);
+    if (!opponent) return toast('Select an inventory-valid owned opponent.');
+    const capacity = Core.inventoryCapacityForBattle(bey, opponent.bey, state.inventory, partMap());
+    if (!capacity.valid) return toast('The selected Bey and opponent cannot be assembled simultaneously from owned quantities.');
+    if (state.settings.avoidAttackMirrors !== false && Core.bitRoleForBey(bey, partMap()) === 'attack' && opponent.engineering.bitRole === 'attack') return toast('Attack-bit mirror testing is excluded by policy.');
     let result = String(data.get('result'));
     let finish = String(data.get('finish'));
     if (result === 'draw') finish = 'draw';
@@ -434,8 +487,12 @@
       ownBeyIndex,
       ownSignature: Core.beySignature(bey),
       ownName: Core.nameForBey(bey, partMap()),
-      opponentArchetype: String(data.get('opponentArchetype')),
-      opponentName: String(data.get('opponentName') || '').trim(),
+      opponentArchetype: opponent.opponentArchetype,
+      opponentSignature: opponent.signature,
+      opponentBey: opponent.bey,
+      opponentName: Core.nameForBey(opponent.bey, partMap()),
+      opponentBitRole: opponent.engineering.bitRole,
+      opponentEngineeringVersion: Core.ENGINEERING_MODEL_VERSION,
       result,
       finish,
       stadium: String(data.get('stadium') || ''),
@@ -460,10 +517,20 @@
     hero.style.setProperty('--score-angle', `${assessment.score * 3.6}deg`);
     hero.innerHTML = `<div class="hero-top"><div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${escapeHtml(assessment.label)}</h3><p>Win rate ${fmtPct(assessment.analytics.overall.winRate, 1)}; Wilson 95% interval ${fmtPct(assessment.analytics.overall.interval.low, 1)}–${fmtPct(assessment.analytics.overall.interval.high, 1)} from ${assessment.analytics.overall.effective} decided battles.</p></div><div class="hero-score"><strong>${assessment.score}</strong></div></div><div class="hero-footer">${assessment.tournamentReady ? badge('Ready under configured policy', 'pass') : badge(`${assessment.blockers.length} gates open`, 'fail')}${badge(`Catalog checked ${DATA.meta.verifiedThrough}`, 'info')}</div>`;
     $('#analysisComponents').innerHTML = Object.entries(assessment.components).map(([name, value]) => `<div class="metric"><span>${escapeHtml(name)}</span><strong>${escapeHtml(value)}</strong><span>component points</span></div>`).join('');
+    renderEngineeringAnalysis();
     $('#readinessGates').innerHTML = assessment.gates.map((gate) => `<div class="gate-row"><span class="gate-icon ${gate.pass ? 'pass' : 'fail'}">${gate.pass ? '✓' : '!'}</span><div><strong>${escapeHtml(gate.label)}</strong><small>${escapeHtml(gate.detail)}</small></div></div>`).join('');
     renderCoverageMatrix(assessment);
     renderOrderAnalysis();
     renderForecast();
+  }
+
+  function renderEngineeringAnalysis() {
+    const deck = activeDeck();
+    const analysis = Core.engineeringDeckAssessment(deck.beys, partMap(), Core.metaArchetypeWeights(state.metaProfiles));
+    if (!analysis.profiles.length) return $('#engineeringAnalysis').innerHTML = emptyState('Complete at least one Bey to calculate engineering proxies.');
+    const matchupRows = Core.CORE_ARCHETYPES.map((archetype) => `<div class="engineering-row"><span>vs ${escapeHtml(labelForArchetype(archetype))}</span><div class="engineering-track"><i style="width:${analysis.matchups[archetype]}%"></i></div><strong>${analysis.matchups[archetype]}</strong></div>`).join('');
+    const cards = analysis.profiles.map((profile) => `<article class="engineering-card"><div class="engineering-card-head"><div><strong>${profile.deckIndex + 1}. ${escapeHtml(Core.nameForBey(profile.bey, partMap()))}</strong><small>${escapeHtml(profile.inferredRole)} · ${escapeHtml(profile.bitRole)} bit · ${profile.ratchetHeight} height proxy · confidence ${fmtPct(profile.confidence, 0)}</small></div>${badge(`fit ${profile.roleFit}`, 'info')}</div>${engineeringBars(profile)}</article>`).join('');
+    $('#engineeringAnalysis').innerHTML = `<div class="engineering-summary"><div class="metric"><span>Deck engineering score</span><strong>${analysis.score}</strong><span>physics-informed proxy</span></div><div class="metric"><span>Weakest modeled matchup</span><strong>${escapeHtml(labelForArchetype(analysis.weakestMatchup))}</strong><span>${analysis.weakestRating}/100 coverage</span></div><div class="metric"><span>Average self-KO risk</span><strong>${analysis.averageSelfKoRisk}</strong><span>lower is better</span></div><div class="metric"><span>Mechanical diversity</span><strong>${analysis.roleSpread}/${analysis.bitRoleSpread}</strong><span>roles / bit roles</span></div></div><div class="engineering-deck-matchups"><h4>Modeled deck coverage</h4>${matchupRows}</div><div class="engineering-grid">${cards}</div><p class="model-warning">This model is for candidate ranking and test design. It does not know measured mass, exact radial mass distribution, launch RPM, friction coefficients, mold variation, wear, or stadium condition. Controlled battle evidence remains the readiness authority.</p>`;
   }
 
   function renderCoverageMatrix(assessment) {
@@ -548,6 +615,7 @@
     const diagnostics = {
       appVersion: DATA.meta.version,
       schemaVersion: state.schemaVersion,
+      engineeringModelVersion: Core.ENGINEERING_MODEL_VERSION,
       verifiedThrough: DATA.meta.verifiedThrough,
       parts: allParts().length,
       products: allProducts().length,
@@ -692,7 +760,7 @@
       const task = event.target.closest('[data-plan-bey]');
       if (task) {
         $('#battleOwnBey').value = task.dataset.planBey;
-        $('#battleArchetype').value = task.dataset.planArchetype;
+        renderOwnedOpponentOptions(task.dataset.planOpponent);
         $('#battleForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
@@ -768,6 +836,8 @@
       saveState(); $('#nameDialog').close(); renderDeckView();
     });
 
+    $('#battleOwnBey').addEventListener('change', () => renderOwnedOpponentOptions());
+    $('#battleOpponent').addEventListener('change', renderOpponentPreview);
     $('#battleForm').addEventListener('submit', (event) => { event.preventDefault(); recordBattle(event.currentTarget); });
     $('#refreshPlanButton').addEventListener('click', renderTestPlan);
     $('#clearBattlesButton').addEventListener('click', () => {
@@ -794,7 +864,7 @@
     });
     $('#settingsForm').addEventListener('submit', (event) => {
       event.preventDefault(); const data = new FormData(event.currentTarget);
-      ['minimumBattles','minimumPerBey','minimumPerArchetype','targetPerCell'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
+      ['minimumBattles','minimumPerBey','minimumPerArchetype','targetPerCell','targetPerOpponent','opponentPoolSize','candidatePool'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
       ['lowerBoundTarget','maxContaminationRate'].forEach((name) => { state.settings[name] = Number(data.get(name)); });
       state.settings.requireMultiPointFinish = data.get('requireMultiPointFinish') === 'on';
       state.settings.avoidAttackMirrors = data.get('avoidAttackMirrors') === 'on';
@@ -823,7 +893,7 @@
     $('#runAuditButton').addEventListener('click', () => { renderDiagnostics(); toast('Diagnostics refreshed.'); });
     $('#resetAppButton').addEventListener('click', () => {
       if (!confirm('Reset all X Deck Lab local data? This cannot be undone.')) return;
-      localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_KEY); state = defaultState(); saveState(); smartSuggestions = []; lastForecast = null; renderAll(); navigate('dashboard'); toast('Local data reset.');
+      localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_KEY); state = defaultState(); saveState(); smartSuggestions = []; opponentOptions = []; lastForecast = null; renderAll(); navigate('dashboard'); toast('Local data reset.');
     });
 
     window.addEventListener('online', renderConnectionStatus);

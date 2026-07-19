@@ -1,7 +1,7 @@
 {
   "name": "X Deck Lab",
   "short_name": "X Deck Lab",
-  "description": "Empirical Beyblade X deck construction, adaptive testing, meta planning, and tournament-readiness analysis.",
+  "description": "Physics-informed Beyblade X deck optimization, owned-opponent adaptive testing, meta planning, and empirical tournament-readiness analysis.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

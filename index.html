@@ -81,8 +81,8 @@
       </article>
       <div id="deckEditor" class="deck-editor"></div>
       <article class="panel action-panel">
-        <div><p class="eyebrow">Owned-parts optimizer</p><h3>Build structural shortlists</h3><p class="muted">Uses legal construction, inventory quantities, role spread, and existing battle evidence. It does not claim to simulate physics.</p></div>
-        <button id="smartBuildButton" class="button primary" type="button">Generate ranked decks</button>
+        <div><p class="eyebrow">Physics-informed optimizer</p><h3>Generate engineering-ranked decks</h3><p class="muted">Uses owned quantities, legal construction, center-of-mass and contact proxies, rotational-inertia and spin-retention estimates, self-KO risk, matchup coverage, and existing controlled evidence. Scores are transparent engineering proxies—not measured mass or RPM simulations.</p></div>
+        <button id="smartBuildButton" class="button primary" type="button">Generate engineering decks</button>
       </article>
       <div id="smartBuildResults" class="stack-list"></div>
       <article class="panel">
@@ -104,8 +104,11 @@
         <div class="panel-heading"><div><p class="eyebrow">Battle record</p><h3>Log how the battle was decided</h3></div></div>
         <form id="battleForm" class="form-grid">
           <label class="field"><span>Your Bey</span><select id="battleOwnBey" name="ownBeyIndex" required></select></label>
-          <label class="field"><span>Opponent archetype</span><select id="battleArchetype" name="opponentArchetype" required></select></label>
-          <label class="field full"><span>Opponent combination or identifier</span><input name="opponentName" maxlength="120" placeholder="Optional but useful for repeat testing"></label>
+          <label class="field"><span>Owned opponent build</span><select id="battleOpponent" name="opponentSignature" required></select></label>
+          <input id="battleArchetype" name="opponentArchetype" type="hidden">
+          <label class="field"><span>Opponent archetype</span><input id="battleArchetypeDisplay" type="text" readonly></label>
+          <label class="field"><span>Opponent bit role</span><input id="battleOpponentBitRole" type="text" readonly></label>
+          <div id="opponentEngineering" class="opponent-preview full" aria-live="polite"></div>
           <label class="field"><span>Result</span><select name="result" required><option value="win">Win</option><option value="loss">Loss</option><option value="draw">Draw / no decision</option><option value="relaunch">Relaunch / void</option></select></label>
           <label class="field"><span>Finish</span><select name="finish" required><option value="spin">Spin Finish</option><option value="over">Over Finish</option><option value="burst">Burst Finish</option><option value="xtreme">Xtreme Finish</option><option value="draw">Draw</option><option value="relaunch">Relaunch / void</option></select></label>
           <label class="field"><span>Stadium</span><select id="battleStadium" name="stadium"></select></label>
@@ -130,6 +133,10 @@
       <div id="analysisHero" class="hero-card"></div>
       <div id="analysisComponents" class="metric-grid"></div>
       <article class="panel">
+        <div class="panel-heading"><div><p class="eyebrow">Physics-informed engineering</p><h3>Deck mechanics and modeled coverage</h3></div><span class="muted">Proxy model v1</span></div>
+        <div id="engineeringAnalysis"></div>
+      </article>
+      <article class="panel">
         <div class="panel-heading"><div><p class="eyebrow">Quality gates</p><h3>Readiness evidence</h3></div></div>
         <div id="readinessGates" class="gate-list"></div>
       </article>
@@ -151,7 +158,7 @@
       <div class="section-heading"><div><p class="eyebrow">Configuration and integrity</p><h2 id="more-title">Platform controls</h2></div></div>
       <article class="panel">
         <div class="panel-heading"><div><p class="eyebrow">Opponent model</p><h3>Meta lineups</h3></div><button id="addMetaButton" class="button secondary compact" type="button">Add lineup</button></div>
-        <p class="muted">Each lineup represents the expected archetype in positions 1–3. Weight controls how often it appears in planning and forecasts.</p>
+        <p class="muted">Each lineup represents the expected archetype in positions 1–3. Weight controls engineering matchup weighting, planning priority, and empirical forecasts.</p>
         <div id="metaProfileList" class="stack-list"></div>
       </article>
       <article class="panel">
@@ -165,11 +172,14 @@
           <label class="field"><span>Minimum decided battles</span><input name="minimumBattles" type="number" min="6" max="300" step="1"></label>
           <label class="field"><span>Minimum per Bey</span><input name="minimumPerBey" type="number" min="2" max="100" step="1"></label>
           <label class="field"><span>Minimum per core archetype</span><input name="minimumPerArchetype" type="number" min="1" max="100" step="1"></label>
-          <label class="field"><span>Target per Bey × matchup cell</span><input name="targetPerCell" type="number" min="1" max="30" step="1"></label>
+          <label class="field"><span>Target per Bey × archetype</span><input name="targetPerCell" type="number" min="1" max="30" step="1"></label>
+          <label class="field"><span>Target per exact owned opponent</span><input name="targetPerOpponent" type="number" min="1" max="12" step="1"></label>
+          <label class="field"><span>Opponent candidate pool</span><input name="opponentPoolSize" type="number" min="20" max="160" step="5"></label>
+          <label class="field"><span>Engineering deck candidate pool</span><input name="candidatePool" type="number" min="12" max="120" step="4"></label>
           <label class="field"><span>Required lower 95% win-rate bound</span><input name="lowerBoundTarget" type="number" min="0.3" max="0.8" step="0.01"></label>
           <label class="field"><span>Maximum contamination rate</span><input name="maxContaminationRate" type="number" min="0" max="0.5" step="0.01"></label>
           <label class="toggle-row"><input name="requireMultiPointFinish" type="checkbox"><span>Require every Bey to demonstrate a 2- or 3-point finish</span></label>
-          <label class="toggle-row"><input name="avoidAttackMirrors" type="checkbox"><span>De-prioritize attack-vs-attack testing</span></label>
+          <label class="toggle-row"><input name="avoidAttackMirrors" type="checkbox"><span>Exclude attack-bit vs attack-bit from generated tests</span></label>
           <button class="button primary full" type="submit">Save policy</button>
         </form>
       </article>

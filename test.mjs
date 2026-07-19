@@ -17,6 +17,7 @@ const validDeck = [
   basic('blade-leon-crest','ratchet-7-60','bit-gear-needle')
 ];
 const inventoryFor = (deck) => Object.fromEntries(deck.flatMap(Core.partIdsFromBey).map((id) => [id, { qty: 1, condition: 'good', notes: '' }]));
+const broadInventory = Object.fromEntries(DATA.parts.filter((part) => part.status === 'released' && !part.banned).map((part) => [part.id, { qty: 2, condition: 'good', notes: '' }]));
 
 function battle({ deckId = 'deck-1', bey, archetype, result = 'win', finish = 'spin', contaminated = false, index = 0 }) {
   return { id: `battle-${archetype}-${index}-${result}-${finish}`, deckId, ownSignature: Core.beySignature(bey), opponentArchetype: archetype, result, finish, contaminated, timestamp: new Date(2026, 6, 1, 0, index).toISOString() };
@@ -101,13 +102,72 @@ test('readiness requires legality, coverage, confidence, and multi-point evidenc
   assert.ok(assessment.score >= 75);
 });
 
-test('adaptive planner prioritizes missing cells and de-prioritizes attack mirrors', () => {
+test('adaptive planner uses concurrently owned opponents and hard-excludes attack-bit mirrors', () => {
   const deck = [validDeck[0], validDeck[1], validDeck[2]];
-  const plan = Core.buildTestPlan({ deck, deckId: 'deck-1', partMap: map, battles: [], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings: { ...DATA.testDefaults, avoidAttackMirrors: true }, limit: 20 });
-  const attackMirror = plan.find((item) => item.beyIndex === 0 && item.opponentArchetype === 'attack');
-  const attackVsStamina = plan.find((item) => item.beyIndex === 0 && item.opponentArchetype === 'stamina');
-  assert.ok(attackMirror && attackVsStamina);
-  assert.ok(attackMirror.priority < attackVsStamina.priority);
+  const plan = Core.buildTestPlan({ deck, deckId: 'deck-1', partMap: map, inventory: broadInventory, battles: [], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings: { ...DATA.testDefaults, avoidAttackMirrors: true }, limit: 20 });
+  assert.ok(plan.length > 0);
+  plan.forEach((item) => {
+    assert.ok(item.opponentBey);
+    assert.ok(item.opponentSignature);
+    assert.equal(Core.inventoryCapacityForBattle(deck[item.beyIndex], item.opponentBey, broadInventory, map).valid, true);
+    assert.equal(item.ownBitRole === 'attack' && item.opponentBitRole === 'attack', false);
+  });
+});
+
+test('engineering profiles rank attack and stamina mechanisms in the expected directions', () => {
+  const attack = basic('blade-impact-drake','ratchet-9-60','bit-low-rush');
+  const stamina = basic('blade-wizard-rod','ratchet-5-70','bit-disk-ball');
+  const attackProfile = Core.engineeringProfileForBey(attack, map);
+  const staminaProfile = Core.engineeringProfileForBey(stamina, map);
+  assert.ok(attackProfile.metrics.impactPotential > staminaProfile.metrics.impactPotential);
+  assert.ok(attackProfile.metrics.xDashPotential > staminaProfile.metrics.xDashPotential);
+  assert.ok(staminaProfile.metrics.spinRetention > attackProfile.metrics.spinRetention);
+  assert.ok(staminaProfile.metrics.stability > attackProfile.metrics.stability);
+});
+
+test('engineering metrics are bounded proxies and preserve deck positions', () => {
+  const partial = [validDeck[0], {}, validDeck[2]];
+  const analysis = Core.engineeringDeckAssessment(partial, map, Core.metaArchetypeWeights(DATA.defaultMetaProfiles));
+  assert.deepEqual(analysis.profiles.map((profile) => profile.deckIndex), [0,2]);
+  analysis.profiles.forEach((profile) => Object.values(profile.metrics).forEach((value) => assert.ok(value >= 0 && value <= 100)));
+  assert.equal(Core.ratchetHeightForBey(basic('blade-dran-sword','ratchet-1-50','bit-flat'), map), 50);
+  assert.equal(Core.ratchetHeightForBey(basic('blade-dran-sword','ratchet-3-80','bit-flat'), map), 80);
+});
+
+test('owned opponent generator respects simultaneous inventory capacity', () => {
+  const own = validDeck[0];
+  const limited = inventoryFor([own, validDeck[1]]);
+  const opponents = Core.generateOwnedOpponentCandidates({ inventory: limited, ownBey: own, partMap: map, avoidAttackMirrors: true, maxCandidates: 20 });
+  assert.ok(opponents.length > 0);
+  opponents.forEach((candidate) => assert.equal(Core.inventoryCapacityForBattle(own, candidate.bey, limited, map).valid, true));
+});
+
+test('attack-bit mirror policy is reversible but enabled by default for generated tests', () => {
+  const own = basic('blade-impact-drake','ratchet-9-60','bit-low-rush');
+  const excluded = Core.generateOwnedOpponentCandidates({ inventory: broadInventory, ownBey: own, partMap: map, avoidAttackMirrors: true, maxCandidates: 90 });
+  const allowed = Core.generateOwnedOpponentCandidates({ inventory: broadInventory, ownBey: own, partMap: map, avoidAttackMirrors: false, maxCandidates: 90 });
+  assert.equal(excluded.some((candidate) => candidate.engineering.bitRole === 'attack'), false);
+  assert.equal(allowed.some((candidate) => candidate.engineering.bitRole === 'attack'), true);
+});
+
+test('engineering-ranked deck suggestions are legal, owned, and expose modeled coverage', () => {
+  const suggestions = Core.suggestDecks({ inventory: broadInventory, partMap: map, profile: DATA.profiles.tt3on3, includeAnnounced: false, battles: [], metaProfiles: DATA.defaultMetaProfiles, settings: { ...DATA.testDefaults, candidatePool: 48 }, limit: 3 });
+  assert.ok(suggestions.length > 0);
+  suggestions.forEach((suggestion) => {
+    assert.equal(Core.legalityCheck(suggestion.deck, DATA.profiles.tt3on3, map).legal, true);
+    assert.equal(Core.inventoryCapacityCheck(suggestion.deck, broadInventory, map).valid, true);
+    assert.ok(suggestion.engineering.score >= 0 && suggestion.engineering.score <= 100);
+    assert.ok(Core.CORE_ARCHETYPES.every((archetype) => Number.isFinite(suggestion.engineering.matchups[archetype])));
+  });
+});
+
+test('schema v3 deck-library migration preserves decks, battles, and settings', () => {
+  const raw = { schemaVersion: 3, inventory: inventoryFor(validDeck), decks: [{ id: 'd3', name: 'Existing', beys: validDeck, profileId: 'tt3on3' }], activeDeckId: 'd3', battles: [{ id: 'b3', deckId: 'd3' }], settings: { avoidAttackMirrors: true }, metaProfiles: DATA.defaultMetaProfiles };
+  const migrated = Core.migrateState(raw);
+  assert.equal(migrated.schemaVersion, Core.SCHEMA_VERSION);
+  assert.equal(migrated.decks[0].id, 'd3');
+  assert.equal(migrated.battles[0].id, 'b3');
+  assert.equal(migrated.settings.avoidAttackMirrors, true);
 });
 
 test('order optimizer ranks permutations from position-specific meta evidence', () => {
@@ -175,7 +235,7 @@ test('service worker lifecycle caches every production root asset and clears old
   const source = fs.readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8');
   const listeners = {};
   const cache = { addAll: async (assets) => { cache.assets = assets; }, put: async () => {} };
-  const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.0.0'], delete: async (key) => key === 'old-cache', match: async () => null };
+  const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.1.0'], delete: async (key) => key === 'old-cache', match: async () => null };
   const self = { location: { origin: 'https://example.test' }, clients: { claim: async () => true }, skipWaiting: async () => true, addEventListener: (type, fn) => { listeners[type] = fn; } };
   vm.runInNewContext(source, { self, caches: cachesMock, fetch: async () => ({ status: 200, type: 'basic', clone() { return this; } }), URL, Promise });
   let installPromise; listeners.install({ waitUntil: (promise) => { installPromise = promise; } }); await installPromise;

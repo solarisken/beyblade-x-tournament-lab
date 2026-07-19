@@ -1,46 +1,64 @@
-# X Deck Lab 2.0.0 — Final Release Audit
+# X Deck Lab 2.1.0 — Engineering and Testing Release Audit
 
-- Release target: **2.0.0**
-- State schema: **3**
+- Release target: **2.1.0**
+- State schema: **4**
+- Engineering model: **1**
 - Catalog verification-through date: **2026-07-19**
-- Final audit date: **2026-07-19**
+- Audit date: **2026-07-19**
 - Deployment architecture: **static, root-only GitHub Pages PWA**
 
 ## Release decision
 
 **PASS — approved for deployment.**
 
-- Automated syntax and engine suite: **18 passed, 0 failed**.
-- Chromium mobile regression at 390 × 844: **52 passed, 0 failed**.
+- Syntax and automated engine suite: **24 passed, 0 failed**.
+- Chromium mobile workflow at 390 × 844: **57 passed, 0 failed**.
 - Normal-workflow console errors: **0**.
 - Uncaught page errors: **0**.
-- Root-only package validation: performed after documentation freeze and recorded in the release-validation artifact and checksum.
+- Final visible buttons below the 44-pixel target: **0**.
+- Initial and final horizontal overflow: **none**.
 
-## Audit scope
+## User-requested controls verified
 
-The release was checked for:
+### 1. Every generated opponent uses owned parts
 
-- application boot and six-screen navigation;
-- mobile-width containment and bottom-navigation usability;
-- accessible names for visible controls;
-- unique document IDs;
-- 44-pixel minimum visible button targets in the final management workflow;
-- inventory search, product entry, loose-part entry, quantity, condition, and notes;
-- owned-parts recommendation generation and application;
-- legal construction and inventory-capacity gates;
-- deck rename, clone, and safe deletion;
-- adaptive test-plan generation;
-- battle recording, finish scoring, and contamination exclusion;
-- analysis, matchup coverage, order analysis, and empirical forecast completion;
-- opponent-meta profiles and custom tournament rules;
-- readiness-policy persistence;
-- state and catalog diagnostics;
-- backup export, checksum verification, tamper rejection, valid restoration, and migration;
-- duplicate product rejection inside one catalog patch;
-- valid catalog-patch import;
-- fresh-instance restoration of deck, inventory, and battle state;
-- service-worker install, activate, cache cleanup, and production-shell coverage;
-- root-only runtime references.
+The test planner no longer emits an archetype-only placeholder. Each task contains a complete opponent Bey and functional signature. The same exact combination is offered in the battle form and stored with the record.
+
+### 2. The two test Beys can be assembled simultaneously
+
+Owned status alone is insufficient. `inventoryCapacityForBattle` combines the selected test Bey and opponent requirements and compares them with recorded quantities. A shared one-copy part therefore cannot appear on both sides of the same test.
+
+This control is enforced during:
+
+- opponent candidate generation;
+- adaptive-plan generation;
+- opponent selection;
+- final battle submission.
+
+### 3. Attack-bit versus attack-bit testing is excluded by default
+
+When the policy is active, attack-bit mirrors are filtered before plan creation and opponent rendering. Submission contains a second hard guard. Automated tests also verify that disabling the policy deliberately restores attack-bit opponent availability.
+
+### 4. Decks are optimized using explicit engineering proxies
+
+The model evaluates each complete Bey across ten bounded 0–100 metrics:
+
+- impact potential;
+- rotational inertia;
+- spin retention;
+- stability;
+- KO resistance;
+- burst resistance;
+- X-Dash potential;
+- control;
+- recoil risk;
+- self-KO risk.
+
+Deck ranking combines meta-weighted matchup coverage, weakest-matchup strength, self-KO control, and mechanical diversity. Logged battle evidence is a secondary signal rather than a substitute for legality or supply.
+
+### 5. Candidate search preserves mechanical diversity
+
+The previous globally sorted candidate pool could overselect mechanically similar low-risk combinations. Version 2.1 uses bounded variant sampling and diversity-aware selection across top families, ratchets, bits, and bit roles. This prevents attack candidates and legal three-Bey assemblies from being crowded out while keeping mobile computation bounded.
 
 ## Automated suite
 
@@ -50,32 +68,38 @@ Run:
 npm run check
 ```
 
-The 18 Node test cases verify:
+The 24 tests cover:
 
 1. official finish-point values;
-2. valid three-Bey Takara Tomy construction;
-3. duplicate physical-part rejection and the Regulation v12 ordinary-lock-chip exception;
-4. expanded Custom Line and ratchet-integrated architectures;
-5. announced-part blocking unless theorycrafting is enabled;
-6. inventory capacity as an independent hard gate;
-7. Wilson interval behavior and contaminated-battle exclusion;
-8. readiness legality, evidence, coverage, confidence, and finish-route gates;
-9. adaptive test-plan priorities and attack-mirror de-prioritization;
-10. all six order permutations against position-specific meta evidence;
-11. deterministic empirical forecasting for a fixed seed;
-12. legal and supplyable owned-parts recommendations;
-13. migration from v1 state into the schema-3 deck library;
-14. seed-catalog integrity and released/announced status separation;
-15. root-only runtime references and all six primary views;
-16. service-worker cache manifest, lifecycle, and old-cache cleanup;
-17. candidate-pool expansion when a larger inventory crowds the initial shortlist;
-18. presence of backup-checksum and catalog-product-uniqueness import guards.
+2. legal three-Bey construction;
+3. duplicate-part rejection and ordinary Regulation v12 lock-chip handling;
+4. expanded Custom Line and integrated architectures;
+5. announced-part gating;
+6. deck inventory capacity;
+7. Wilson intervals and contaminated-trial exclusion;
+8. readiness evidence and finish-route gates;
+9. exact owned-opponent adaptive planning;
+10. hard attack-bit mirror exclusion;
+11. expected engineering direction for attack and stamina mechanisms;
+12. bounded engineering metrics and correct deck-position retention;
+13. simultaneous two-Bey inventory capacity;
+14. reversible attack-mirror policy;
+15. legal engineering-ranked deck recommendations;
+16. schema-3 deck-library preservation during schema-4 migration;
+17. position-specific order optimization;
+18. deterministic empirical forecasting;
+19. baseline owned-parts recommendations;
+20. legacy v1 migration;
+21. catalog integrity and release-status separation;
+22. root-only runtime references;
+23. service-worker cache lifecycle;
+24. backup checksum and catalog-patch uniqueness guards.
 
 Result:
 
 ```text
-18 tests
-18 passed
+24 tests
+24 passed
 0 failed
 ```
 
@@ -88,86 +112,66 @@ The unchanged production HTML, CSS, and JavaScript were rendered in Chromium wit
 - mobile mode: **enabled**;
 - touch mode: **enabled**.
 
-The release environment blocks browser navigation to loopback HTTP, HTTPS test origins, and `file://`. The harness therefore injects the unchanged production files into an isolated Chromium document context and provides a deterministic local-storage shim. This tests the actual application code and rendered interface. Service-worker behavior is independently executed by the Node lifecycle test.
+The execution environment blocks direct navigation to test URL schemes, so the harness injects the unchanged root production files into an isolated Chromium document and provides deterministic local storage. Service-worker behavior is executed separately in the Node suite.
 
-The 52 browser checks include positive workflow coverage and negative integrity cases. Material results include:
+Material results include:
 
-- every primary view opened successfully;
-- the previously reported More/management navigation stall was not reproduced;
-- asynchronous forecasting completed before subsequent navigation;
-- no initial or final horizontal overflow;
-- mobile searches retained focus;
-- inventory and loose-part state persisted;
-- a ranked owned-only deck was generated, applied, and passed construction and capacity gates;
-- deck clone and deletion preserved a valid active deck;
-- one decided battle and one contaminated battle were stored, with only the decided battle counted as evidence;
-- analysis, coverage, order, and forecast actions completed without uncaught errors;
-- backup checksum matched on export;
-- tampered backup data was rejected;
-- a correctly recomputed backup checksum restored normalized state;
-- duplicate product IDs in one patch were rejected;
-- a valid patch imported successfully;
-- a fresh application instance restored the deck library, inventory, and battle records;
-- all visible final-workflow buttons met the 44-pixel target;
-- visible controls across all primary views had accessible names;
-- document IDs were unique.
+- all six primary views navigated normally;
+- inventory entry and loose-part quantities persisted;
+- the engineering optimizer generated and applied a complete legal owned deck;
+- an adaptive plan displayed exact owned opponents;
+- the selected opponent passed simultaneous capacity verification;
+- attack-bit mirror exclusion was verified;
+- the opponent engineering preview rendered;
+- exact opponent Bey data persisted in battle history;
+- contaminated evidence was retained but excluded from decided analysis;
+- engineering deck analysis, coverage, order analysis, and forecast rendered;
+- engineering-search and readiness settings persisted;
+- backup tamper detection and valid restoration passed;
+- catalog duplicate rejection and valid patch import passed;
+- a fresh application instance restored decks, inventory, and battles;
+- no normal console or uncaught page errors occurred.
 
 Result:
 
 ```text
-52 checks
-52 passed
+57 checks
+57 passed
 0 failed
 ```
 
-See `browser-audit-result.json` for the complete machine-readable record and `mobile-v2-final.png` for the final mobile screenshot retained outside the deployment archive.
+See `browser-audit-result.json`. The mobile screenshot is distributed separately as `mobile-v2.1-engineering-final.png` and is not required for deployment.
 
-## Corrective actions closed in the final pass
+## Engineering basis and limits
 
-### Backup integrity
+The model uses dimensionless proxies, not fabricated physical measurements. The assumptions are consistent with standard rotating-body mechanics: radial mass distribution affects moment of inertia; angular momentum and contact forces influence stability and energy loss; tip contact, friction, precession, and nutation govern real top behavior.
 
-Earlier behavior normalized imported state but did not compare the supplied checksum with the imported state. Import now recomputes the checksum and rejects a mismatch before changing local data.
+The following measurements are unavailable and are therefore not simulated as facts:
 
-### Catalog-patch product uniqueness
+- exact part mass and radial mass distribution;
+- launch angular velocity and launcher calibration;
+- coefficient of friction and material deformation;
+- impact restitution and contact geometry at collision time;
+- mold variation, wear, assembly condition, stadium condition, and player execution.
 
-Earlier validation rejected IDs already present in the catalog but did not reject the same new product ID appearing twice within a single patch. Each incoming patch now maintains its own product-ID set and rejects duplicates before state mutation.
-
-### Forecast/navigation synchronization
-
-The regression harness initially moved away from Analysis before the asynchronous 6,000-run forecast had completed. It now waits for the forecast action to finish, then verifies the management view. This removed a harness race and confirmed that management navigation remains functional.
-
-### Mobile installation assets
-
-The final release adds 192-pixel and 512-pixel PNG manifest icons plus a 180-pixel Apple touch icon. These are cached with the rest of the root application shell.
+Accordingly, engineering scores rank testable hypotheses. They do not certify tournament performance. Controlled, representative battle evidence and conservative confidence gates remain the readiness authority.
 
 ## Risk controls
 
 | Risk | Control |
 |---|---|
-| Forecast is mistaken for a physics simulator | Forecast is labeled empirical and prior-based; low-evidence status is explicit. |
-| Raw win rate produces false certainty | Wilson 95% interval and configurable lower-bound gate. |
-| One favorable matchup inflates readiness | Per-archetype and Bey × archetype coverage requirements. |
-| One Bey carries the deck | Minimum evidence per Bey and optional multi-point-finish requirement. |
-| Invalid trials pollute the evidence | Void/relaunch handling and contamination exclusion. |
-| Illegal or unowned deck receives approval | Legality and inventory capacity are separate hard gates. |
-| Recolors bypass duplicate rules | Functional part IDs, not color names, drive duplicate checks. |
-| Announced product is treated as released | Announced records are blocked by default. |
-| Large inventory hides a legal recommendation | Progressive candidate-pool expansion. |
-| Static data becomes stale | Verification date, status separation, patch import, and diagnostics. |
-| Upgrade/import corrupts data | Schema migration, backup checksum, normalization, and negative tamper test. |
-| Local event rules differ | Custom scoring, duplicate policy, lock-chip policy, bans, and notes. |
-
-## Domain boundaries
-
-These are constraints of the subject matter, not unfinished software items:
-
-- A static catalog requires maintenance after new announcements and releases.
-- Event-specific rules may supersede presets.
-- Part-role values are transparent heuristics rather than universal laboratory measurements.
-- Forecast quality depends on representative, controlled, correctly classified battle data.
-- Mold variation, wear, launcher condition, player execution, stadium condition, opponent skill, and field composition cannot be fully digitized by this platform.
-- The application does not provide automatic battle sensing, computer vision, or physical simulation.
+| An unowned opponent enters the plan | Exact opponent generation requires positive recorded inventory. |
+| One physical part is needed on both sides | Combined two-Bey capacity check rejects the pairing. |
+| Attack mirror tests waste the default test budget | Hard filter and submission guard when the policy is active. |
+| Similar candidates crowd out viable decks | Diversity-aware bounded candidate selection. |
+| Physics score is mistaken for measured simulation | Explicit proxy labeling, confidence, assumptions, and model warning. |
+| A high model score bypasses evidence | Readiness remains gated by empirical coverage and Wilson confidence. |
+| Invalid launches inflate results | Contamination and relaunch exclusion. |
+| Illegal or unsupplyable decks are recommended | Construction and inventory capacity are independent hard gates. |
+| Upgrade loses existing decks | Schema-3 deck-library migration test. |
+| Imported data is altered | Backup checksum verification before mutation. |
+| Static rules become stale | Verification date, announced/released separation, custom profiles, and catalog patches. |
 
 ## Final approval
 
-All identified software release blockers are closed. X Deck Lab 2.0.0 is approved as the finished root-only platform within the requested static GitHub Pages architecture and the stated empirical limits.
+The requested testing and engineering changes are complete. X Deck Lab 2.1.0 is approved as the current root-only release, subject to catalog and rules maintenance after the stated verification date and the documented limits of qualitative physical modeling.

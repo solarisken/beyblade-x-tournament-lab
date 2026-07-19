@@ -1,7 +1,7 @@
 {
   "application": "X Deck Lab",
-  "version": "2.0.0",
-  "timestampUtc": "2026-07-19T07:59:47.870916+00:00",
+  "version": "2.1.0",
+  "timestampUtc": "2026-07-19T09:19:40.314995+00:00",
   "viewport": {
     "width": 390,
     "height": 844,
@@ -10,17 +10,17 @@
     "touch": true
   },
   "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 15.828,
+  "durationSeconds": 17.779,
   "summary": {
-    "checks": 52,
-    "passed": 52,
+    "checks": 57,
+    "passed": 57,
     "failed": 0
   },
   "normalConsoleErrors": [],
   "uncaughtPageErrors": [],
   "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected d2943fc5, calculated 4fcc6975.\n    at HTMLInputElement.<anonymous> (<anonymous>:811:58)",
-    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:650:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:649:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:821:13)"
+    "Error: Backup checksum mismatch: expected 282ea0ef, calculated 6ebbed6f.\n    at HTMLInputElement.<anonymous> (<anonymous>:881:58)",
+    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:718:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:717:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:891:13)"
   ],
   "checks": [
     {
@@ -136,7 +136,7 @@
     {
       "name": "Optimizer applies three complete Beys",
       "passed": true,
-      "detail": "attack role · basic | attack role · basic | attack role · basic"
+      "detail": "stamina role · stamina bit · engineering fit 78.4/100 | balance role · attack bit · engineering fit 61.5/100 | attack role · stamina bit · engineering fit 55/100"
     },
     {
       "name": "Applied deck passes rules and inventory gates",
@@ -154,19 +154,39 @@
       "detail": ""
     },
     {
-      "name": "Adaptive test plan renders",
+      "name": "Adaptive test plan renders exact owned opponents",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Battle logging persists result and finish",
+      "name": "Battle form offers an owned opponent build",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Selected opponent is simultaneously constructible from owned quantities",
+      "passed": true,
+      "detail": "{\"found\": true, \"capacity\": true, \"attackMirror\": false}"
+    },
+    {
+      "name": "Attack-bit mirror exclusion is enforced",
+      "passed": true,
+      "detail": "{\"found\": true, \"capacity\": true, \"attackMirror\": false}"
+    },
+    {
+      "name": "Opponent engineering preview renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Battle logging persists exact owned opponent and finish",
       "passed": true,
       "detail": ""
     },
     {
       "name": "Xtreme Finish receives three points",
       "passed": true,
-      "detail": "DranStrike 1-60 Free Flat · WIN\n\nStamina · Audit opponent · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 7:59 AM · Controlled launch"
+      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 9:19 AM · Controlled launch"
     },
     {
       "name": "Contaminated battle is retained but marked for exclusion",
@@ -184,6 +204,11 @@
       "detail": ""
     },
     {
+      "name": "Engineering deck analysis renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
       "name": "Order analysis renders without failure",
       "passed": true,
       "detail": ""
@@ -191,7 +216,7 @@
     {
       "name": "Forecast action completes",
       "passed": true,
-      "detail": "Estimated match win rate\n41.6%\n95% simulation interval 40.3%–42.8%\nAverage score\n2.34–2.89\n6,000 simulated matches\nEmpirical evidence\n1\nrelevant decided battles\nModel status\nPrior-heavy\nnot a physics simulation\n\nForecast is prior-heavy because fewer than 30 relevant decided battles are available."
+      "detail": "Estimated match win rate\n41.2%\n95% simulation interval 39.9%–42.4%\nAverage score\n2.35–2.91\n6,000 simulated matches\nEmpirical evidence\n1\nrelevant decided battles\nModel status\nPrior-heavy\nnot a physics simulation\n\nForecast is prior-heavy because fewer than 30 relevant decided battles are available."
     },
     {
       "name": "Meta-profile management saves weighted lineup",
@@ -204,7 +229,7 @@
       "detail": ""
     },
     {
-      "name": "Readiness policy persists",
+      "name": "Readiness and engineering-search policy persists",
       "passed": true,
       "detail": ""
     },

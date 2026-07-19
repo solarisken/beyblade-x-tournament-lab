@@ -10,18 +10,19 @@
     role: extra.role || 'balance',
     code: extra.code || '',
     source: extra.source || 'catalog',
-    notes: extra.notes || ''
+    notes: extra.notes || '',
+    engineering: extra.engineering || null
   });
 
   const data = {
     meta: {
       appName: 'X Deck Lab',
-      version: '2.0.0',
+      version: '2.1.0',
       verifiedThrough: '2026-07-19',
-      schemaVersion: 3,
+      schemaVersion: 4,
       rulesVersion: 'Takara Tomy Regulation v12 / WBO rules checked 2026-07-19',
       catalogPolicy: 'Released parts are enabled by default. Announced parts remain opt-in until their release date is reached and the catalog is reverified.',
-      disclaimer: 'Independent empirical tournament-preparation tool. It does not simulate physics or guarantee tournament outcomes.'
+      disclaimer: 'Independent tournament-preparation tool. Engineering scores are qualitative proxies derived from part type, geometry descriptors, ratchet height, and bit behavior; they are not measured mass/RPM simulations and cannot guarantee outcomes.'
     },
 
     categories: [
@@ -116,7 +117,18 @@
       maxContaminationRate: 0.10,
       requireMultiPointFinish: true,
       avoidAttackMirrors: true,
-      candidatePool: 36
+      candidatePool: 48,
+      targetPerOpponent: 3,
+      opponentPoolSize: 90
+    },
+
+    engineeringModel: {
+      version: 1,
+      method: 'Dimensionless physics-informed proxy model',
+      metrics: ['impactPotential','rotationalInertia','spinRetention','stability','koResistance','burstResistance','xDashPotential','control','recoilRisk','selfKoRisk'],
+      measuredInputs: [],
+      proxyInputs: ['official type classification','catalog geometry descriptors','ratchet nominal height','bit contact-profile descriptors','spin direction'],
+      limitations: ['No measured part mass or mass distribution','No launch RPM','No material friction coefficient','No mold, wear, stadium, or launcher calibration']
     },
 
     launchPositions: ['Left position', 'Right position', 'Center position', 'Not recorded'],
@@ -332,7 +344,9 @@
       { label: 'Takara Tomy — official product lineup', kind: 'catalog', url: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/', note: 'Release dates checked through 2026-07-19.' },
       { label: 'World Beyblade Organization — Beyblade X rules', kind: 'rules', url: 'https://worldbeyblade.org/Thread-Beyblade-X-Rules', note: 'Used for optional WBO profiles; event-specific rules still control.' },
       { label: 'Beyblade Wiki — Basic, Unique, and Custom Line part lists', kind: 'catalog', note: 'Secondary catalog cross-check; official sources take precedence.' },
-      { label: 'Beyblade Planner — part list cross-check', kind: 'catalog', note: 'Secondary cross-check for legacy part coverage.' }
+      { label: 'Beyblade Planner — part list cross-check', kind: 'catalog', note: 'Secondary cross-check for legacy part coverage.' },
+      { label: 'A. C. Or — The Dynamics of a Tippe Top', kind: 'engineering', url: 'https://hal.science/hal-01975393v1/file/Or93.pdf', note: 'Contact friction and rotational dynamics inform the model boundaries.' },
+      { label: 'SIAM News — Spinning Tops in Spinning Frames', kind: 'engineering', url: 'https://www.siam.org/publications/siam-news/articles/spinning-tops-in-spinning-frames/', note: 'Classical top stability, precession, and nutation background.' }
     ]
   };
 

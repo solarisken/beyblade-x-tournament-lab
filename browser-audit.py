@@ -22,7 +22,7 @@ from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parent
 RESULT_PATH = ROOT / "browser-audit-result.json"
-SCREENSHOT_PATH = ROOT / "mobile-v2-final.png"
+SCREENSHOT_PATH = ROOT / "mobile-v2.1-engineering-final.png"
 VIEWPORT = {"width": 390, "height": 844}
 DEVICE_SCALE_FACTOR = 3
 
@@ -225,16 +225,33 @@ def run() -> dict[str, Any]:
         audit.record("Deck library deletes selected version safely", len(state["decks"]) == 1 and state["decks"][0]["name"] == "Certified Tournament Deck")
 
         nav(page, "test")
-        audit.record("Adaptive test plan renders", page.locator("#testPlanList .test-task").count() >= 1)
-        page.locator("#battleArchetype").select_option("stamina")
-        page.locator('#battleForm input[name="opponentName"]').fill("Audit opponent")
+        audit.record("Adaptive test plan renders exact owned opponents", page.locator("#testPlanList .test-task").count() >= 1 and "Owned opponent" in page.locator("#view-test").inner_text())
+        audit.record("Battle form offers an owned opponent build", page.locator("#battleOpponent option").count() >= 1 and page.locator("#battleOpponent").input_value() != "")
+        pair_policy = page.evaluate("""() => {
+          const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
+          const deck = state.decks.find((entry) => entry.id === state.activeDeckId);
+          const ownIndex = Number(document.querySelector('#battleOwnBey').value || 0);
+          const own = deck.beys[ownIndex];
+          const signature = document.querySelector('#battleOpponent').value;
+          const partMap = Object.fromEntries([...window.XDATA.parts, ...(state.customParts || [])].map((part) => [part.id, part]));
+          const candidates = window.XCore.generateOwnedOpponentCandidates({ inventory: state.inventory, ownBey: own, partMap, includeAnnounced: deck.includeAnnounced, avoidAttackMirrors: state.settings.avoidAttackMirrors !== false, maxCandidates: state.settings.opponentPoolSize || 90 });
+          const opponent = candidates.find((entry) => entry.signature === signature);
+          return {
+            found: Boolean(opponent),
+            capacity: opponent ? window.XCore.inventoryCapacityForBattle(own, opponent.bey, state.inventory, partMap).valid : false,
+            attackMirror: opponent ? window.XCore.bitRoleForBey(own, partMap) === 'attack' && opponent.engineering.bitRole === 'attack' : true
+          };
+        }""")
+        audit.record("Selected opponent is simultaneously constructible from owned quantities", pair_policy["found"] and pair_policy["capacity"], json.dumps(pair_policy))
+        audit.record("Attack-bit mirror exclusion is enforced", not pair_policy["attackMirror"], json.dumps(pair_policy))
+        audit.record("Opponent engineering preview renders", "Owned capacity verified" in page.locator("#opponentEngineering").inner_text())
         page.locator('#battleForm select[name="result"]').select_option("win")
         page.locator('#battleForm select[name="finish"]').select_option("xtreme")
         page.locator('#battleForm textarea[name="notes"]').fill("Controlled launch")
         page.locator("#battleForm").evaluate("form => form.requestSubmit()")
         history_text = page.locator("#battleHistory").inner_text()
         state = state_snapshot(page)
-        audit.record("Battle logging persists result and finish", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme")
+        audit.record("Battle logging persists exact owned opponent and finish", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme" and bool(state["battles"][0].get("opponentBey")) and bool(state["battles"][0].get("opponentSignature")))
         audit.record("Xtreme Finish receives three points", "3 points" in history_text, history_text[:400])
 
         page.locator('#battleForm select[name="result"]').select_option("loss")
@@ -247,6 +264,7 @@ def run() -> dict[str, Any]:
         nav(page, "results")
         audit.record("Analysis reports decided evidence", "1 decided battles" in page.locator("#analysisHero").inner_text())
         audit.record("Coverage matrix renders", page.locator("#coverageMatrix table").count() == 1)
+        audit.record("Engineering deck analysis renders", "Deck engineering score" in page.locator("#engineeringAnalysis").inner_text() and page.locator("#engineeringAnalysis .engineering-card").count() == 3)
         audit.record("Order analysis renders without failure", bool(page.locator("#orderAnalysis").inner_text().strip()))
         page.locator("#runForecastButton").click()
         page.wait_for_function("document.querySelector('#runForecastButton').disabled === false && document.querySelector('#runForecastButton').textContent === 'Run forecast'", timeout=30000)
@@ -282,9 +300,12 @@ def run() -> dict[str, Any]:
         settings = page.locator("#settingsForm")
         settings.locator('input[name="minimumBattles"]').fill("42")
         settings.locator('input[name="targetPerCell"]').fill("6")
+        settings.locator('input[name="targetPerOpponent"]').fill("4")
+        settings.locator('input[name="opponentPoolSize"]').fill("80")
+        settings.locator('input[name="candidatePool"]').fill("52")
         settings.evaluate("form => form.requestSubmit()")
         state = state_snapshot(page)
-        audit.record("Readiness policy persists", state["settings"]["minimumBattles"] == 42 and state["settings"]["targetPerCell"] == 6)
+        audit.record("Readiness and engineering-search policy persists", state["settings"]["minimumBattles"] == 42 and state["settings"]["targetPerCell"] == 6 and state["settings"]["targetPerOpponent"] == 4 and state["settings"]["opponentPoolSize"] == 80 and state["settings"]["candidatePool"] == 52)
 
         page.locator("#runAuditButton").click()
         diagnostics = page.locator("#diagnostics").inner_text()
@@ -295,7 +316,7 @@ def run() -> dict[str, Any]:
         backup = json.loads(backup_text)
         checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
         audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 3 and backup["appVersion"] == "2.0.0")
+        audit.record("Backup export uses current schema", backup["schemaVersion"] == 4 and backup["appVersion"] == "2.1.0")
 
         normal_error_count = len(audit.normal_console_errors)
         audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
@@ -372,7 +393,7 @@ def run() -> dict[str, Any]:
     failed = len(audit.checks) - passed
     result = {
         "application": "X Deck Lab",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
         "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
