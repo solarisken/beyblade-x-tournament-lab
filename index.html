@@ -20,6 +20,7 @@
     </div>
     <div class="header-actions">
       <span id="connectionStatus" class="status-pill" aria-live="polite">Local</span>
+      <button id="modeButton" class="button ghost compact" type="button" aria-label="Switch experience mode">Player mode</button>
       <button id="guideButton" class="button ghost compact" type="button">How to use</button>
       <button id="installButton" class="button ghost compact" type="button" hidden>Install</button>
     </div>
@@ -36,6 +37,7 @@
         <div id="guideSteps" class="guide-steps"></div>
       </article>
       <div id="dashboardHero" class="hero-card"></div>
+      <article id="coachRoadmap" class="panel roadmap-panel"></article>
       <div id="dashboardMetrics" class="metric-grid"></div>
       <article class="panel">
         <div class="panel-heading"><div><p class="eyebrow">What to do next</p><h3>Next guided tests</h3></div><button class="text-button" type="button" data-nav-target="test">Run tests</button></div>
@@ -153,36 +155,40 @@
 
     <section id="view-results" class="view" data-view="results" aria-labelledby="results-title" hidden>
       <div class="section-heading">
-        <div><p class="eyebrow">Your results</p><h2 id="results-title">Tournament readiness</h2></div>
-        <button id="runForecastButton" class="button secondary compact" type="button">Run forecast</button>
+        <div><p class="eyebrow">Your deck coach</p><h2 id="results-title">What to do next</h2></div>
+        <button id="coachNextTestButton" class="button primary compact" type="button">Generate next test</button>
       </div>
-      <div class="guide-strip" data-guide-panel><span class="step-dot">4</span><div><strong>Check what is ready</strong><small>Green checks show what passed. Open items tell you exactly what to test next.</small></div></div>
+      <div class="guide-strip" data-guide-panel><span class="step-dot">4</span><div><strong>Your coach turns results into a simple plan</strong><small>Open this after testing. It shows what is strong, what needs work, and the single best next battle.</small></div></div>
       <div id="analysisHero" class="hero-card"></div>
-      <div id="analysisComponents" class="metric-grid"></div>
+      <article id="coachMission" class="panel coach-mission"></article>
       <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Physics-informed engineering</p><h3>Deck mechanics and modeled coverage</h3></div><span class="muted">Proxy model v2</span></div>
-        <div id="engineeringAnalysis"></div>
+        <div class="panel-heading"><div><p class="eyebrow">Training progress</p><h3>How close is your evidence?</h3></div></div>
+        <div id="coachProgress" class="coach-progress"></div>
       </article>
+      <div class="coach-two-column">
+        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">Deck strengths</p><h3>What is working</h3></div></div><div id="coachStrengths" class="coach-list"></div></article>
+        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">Needs attention</p><h3>What to improve</h3></div></div><div id="coachWeaknesses" class="coach-list"></div></article>
+      </div>
       <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Quality gates</p><h3>Readiness evidence</h3></div></div>
-        <div id="readinessGates" class="gate-list"></div>
-      </article>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Staying in the stadium</p><h3>Simple self-KO check</h3></div><span class="muted">Yes or No</span></div>
-        <div id="selfKoAnalysis"></div>
-      </article>
-      <article class="panel table-panel">
-        <div class="panel-heading"><div><p class="eyebrow">Coverage matrix</p><h3>Bey × opponent archetype</h3></div></div>
-        <div id="coverageMatrix" class="table-scroll"></div>
+        <div class="panel-heading"><div><p class="eyebrow">What your battles are teaching</p><h3>Patterns and coaching notes</h3></div></div>
+        <div id="coachPatterns" class="coach-list"></div>
       </article>
       <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Deck order</p><h3>Position optimization</h3></div></div>
-        <div id="orderAnalysis"></div>
+        <div class="panel-heading"><div><p class="eyebrow">How your deck behaves</p><h3>Simple engineering view</h3></div><span class="muted">Guide only</span></div>
+        <div id="coachPhysics" class="coach-physics"></div>
       </article>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Empirical forecast</p><h3>Tournament match estimate</h3></div></div>
-        <div id="forecastResults"></div>
-      </article>
+      <details id="coachAdvancedDetails" class="panel advanced-details coach-advanced">
+        <summary>Advanced analysis and technical details</summary>
+        <div class="advanced-details-body">
+          <div id="analysisComponents" class="metric-grid"></div>
+          <article class="subpanel"><div class="panel-heading"><div><p class="eyebrow">Physics-informed engineering</p><h3>Deck mechanics and modeled coverage</h3></div><span class="muted">Proxy model v2</span></div><div id="engineeringAnalysis"></div></article>
+          <article class="subpanel"><div class="panel-heading"><div><p class="eyebrow">Quality gates</p><h3>Readiness evidence</h3></div></div><div id="readinessGates" class="gate-list"></div></article>
+          <article class="subpanel"><div class="panel-heading"><div><p class="eyebrow">Staying in the stadium</p><h3>Simple self-KO check</h3></div><span class="muted">Yes or No</span></div><div id="selfKoAnalysis"></div></article>
+          <article class="subpanel table-panel"><div class="panel-heading"><div><p class="eyebrow">Coverage matrix</p><h3>Bey × opponent type</h3></div></div><div id="coverageMatrix" class="table-scroll"></div></article>
+          <article class="subpanel"><div class="panel-heading"><div><p class="eyebrow">Deck order</p><h3>Position optimization</h3></div></div><div id="orderAnalysis"></div></article>
+          <article class="subpanel"><div class="panel-heading"><div><p class="eyebrow">Empirical forecast</p><h3>Tournament match estimate</h3></div><button id="runForecastButton" class="button secondary compact" type="button">Run forecast</button></div><div id="forecastResults"></div></article>
+        </div>
+      </details>
     </section>
 
     <section id="view-more" class="view" data-view="more" aria-labelledby="more-title" hidden>
@@ -214,6 +220,7 @@
           <label class="toggle-row"><input name="requireMultiPointFinish" type="checkbox"><span>Require every Bey to demonstrate a 2- or 3-point finish</span></label>
           <label class="toggle-row"><input name="avoidAttackMirrors" type="checkbox"><span>Exclude attack-bit vs attack-bit from generated tests</span></label>
           <label class="toggle-row"><input name="showGuide" type="checkbox"><span>Show step-by-step guide cards</span></label>
+          <label class="field"><span>Experience mode</span><select name="experienceMode"><option value="player">Player mode — guided and simple</option><option value="advanced">Advanced mode — technical details open</option></select></label>
           <button class="button primary full" type="submit">Save settings</button>
         </form>
       </article>
@@ -243,7 +250,7 @@
     <button type="button" data-nav="inventory"><span aria-hidden="true">◇</span><small>Parts</small></button>
     <button type="button" data-nav="deck"><span aria-hidden="true">Ⅲ</span><small>Decks</small></button>
     <button type="button" data-nav="test"><span aria-hidden="true">＋</span><small>Test</small></button>
-    <button type="button" data-nav="results"><span aria-hidden="true">▥</span><small>Analysis</small></button>
+    <button type="button" data-nav="results"><span aria-hidden="true">★</span><small>Coach</small></button>
     <button type="button" data-nav="more"><span aria-hidden="true">•••</span><small>More</small></button>
   </nav>
 
@@ -304,9 +311,9 @@
         <li><span>1</span><div><strong>Add your parts</strong><p>Open <b>Parts</b>. Add boxed products or loose parts you really own.</p></div></li>
         <li><span>2</span><div><strong>Build a deck</strong><p>Open <b>Decks</b>. Choose three Beys, or let the app suggest legal decks from your parts.</p></div></li>
         <li><span>3</span><div><strong>Run the next test</strong><p>Open <b>Test</b>. Tap the first card. Build the shown opponent, battle once, and save the result.</p></div></li>
-        <li><span>4</span><div><strong>Check readiness</strong><p>Open <b>Analysis</b>. Green checks are passed. Open checks explain what to do next.</p></div></li>
+        <li><span>4</span><div><strong>Check readiness</strong><p>Open <b>Coach</b>. It gives you one next mission, shows progress, and explains what needs work.</p></div></li>
       </ol>
-      <div class="kid-note"><strong>Self-KO means:</strong> your own Bey jumps or runs out mostly by itself. Just answer Yes or No—no special cause is needed.</div><p class="muted"><strong>For younger players:</strong> the main path is Parts → Decks → Test → Analysis. The More screen contains advanced settings and backup tools; ask an adult for help there.</p>
+      <div class="kid-note"><strong>Self-KO means:</strong> your own Bey jumps or runs out mostly by itself. Just answer Yes or No—no special cause is needed.</div><p class="muted"><strong>For younger players:</strong> the main path is Parts → Decks → Test → Coach. The More screen contains advanced settings and backup tools; ask an adult for help there.</p>
       <div class="glossary"><h3>Quick words</h3><p><b>Owned:</b> You have the part. <b>Deck:</b> Your three Beys. <b>Opponent:</b> The Bey you test against. <b>Finish:</b> Spin, Over, Burst, or Xtreme.</p></div>
       <button class="button primary" type="button" data-guide-start>Start with Parts</button>
     </div>

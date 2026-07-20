@@ -84,6 +84,7 @@
     delete importedSettings.minimumStabilityPerBey;
     delete importedSettings.maxSelfKoUpperBound;
     state.settings = { ...DATA.testDefaults, ...importedSettings };
+    if (!['player','advanced'].includes(state.settings.experienceMode)) state.settings.experienceMode = 'player';
     return state;
   }
 
@@ -190,7 +191,7 @@
       { step: 1, title: 'Add your parts', note: ownedUnits ? `${ownedUnits} owned part${ownedUnits === 1 ? '' : 's'} recorded` : 'Add a boxed product or loose part', done: ownedUnits > 0, view: 'inventory', action: ownedUnits ? 'View parts' : 'Add parts' },
       { step: 2, title: 'Build three Beys', note: assessment.legality.legal && assessment.capacity.valid ? 'Legal and buildable from owned parts' : 'Complete a legal owned deck', done: assessment.legality.legal && assessment.capacity.valid, view: 'deck', action: 'Open decks' },
       { step: 3, title: 'Run guided tests', note: relevantBattles ? `${relevantBattles} battle${relevantBattles === 1 ? '' : 's'} saved` : 'Tap the first test card and battle once', done: relevantBattles > 0, view: 'test', action: 'Open tests' },
-      { step: 4, title: 'Check readiness', note: assessment.tournamentReady ? 'Tournament-readiness checks pass' : `${assessment.blockers.length} check${assessment.blockers.length === 1 ? '' : 's'} still open`, done: assessment.tournamentReady, view: 'results', action: 'View analysis' }
+      { step: 4, title: 'Open your deck coach', note: assessment.tournamentReady ? 'Your coach says the deck is ready' : `${assessment.blockers.length} improvement${assessment.blockers.length === 1 ? '' : 's'} to work on`, done: assessment.tournamentReady, view: 'results', action: 'Open coach' }
     ];
   }
 
@@ -200,6 +201,56 @@
     const container = $('#guideSteps');
     if (!container) return;
     container.innerHTML = guideProgress().map((item) => `<button class="guide-step ${item.done ? 'done' : ''}" type="button" data-nav-target="${item.view}"><span class="guide-step-number">${item.done ? '✓' : item.step}</span><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.note)}</small><em>${escapeHtml(item.action)} →</em></span></button>`).join('');
+  }
+
+  function experienceMode() { return state.settings.experienceMode === 'advanced' ? 'advanced' : 'player'; }
+
+  function renderModeState() {
+    const advanced = experienceMode() === 'advanced';
+    document.body.classList.toggle('advanced-mode', advanced);
+    const button = $('#modeButton');
+    if (button) {
+      button.textContent = advanced ? 'Advanced mode' : 'Player mode';
+      button.setAttribute('aria-pressed', advanced ? 'true' : 'false');
+    }
+    const details = $('#coachAdvancedDetails');
+    if (details) details.open = advanced;
+  }
+
+  function coachPatterns(assessment) {
+    const deck = activeDeck();
+    const battles = state.battles.filter((battle) => battle.deckId === deck.id && !battle.contaminated && ['win','loss'].includes(battle.result));
+    if (!battles.length) return [{ kind: 'neutral', text: 'No battle pattern yet. Complete the mission so the coach can learn from real results.' }];
+    const notes = [];
+    const byBey = new Map();
+    battles.forEach((battle) => {
+      const key = battle.ownSignature || `bey-${battle.ownBeyIndex}`;
+      const entry = byBey.get(key) || { total: 0, wins: 0, selfKos: 0, losses: 0, name: battle.ownName || 'This Bey' };
+      entry.total += 1; entry.wins += battle.result === 'win' ? 1 : 0; entry.losses += battle.result === 'loss' ? 1 : 0; entry.selfKos += battle.selfKo ? 1 : 0;
+      byBey.set(key, entry);
+    });
+    [...byBey.values()].filter((entry) => entry.total >= 3).sort((a,b) => (a.wins/a.total)-(b.wins/b.total)).slice(0,1).forEach((entry) => notes.push({ kind: 'warning', text: `${entry.name} is the least proven Bey so far: ${entry.wins}/${entry.total} wins. Give it the next controlled matchup test.` }));
+    const selfKoBattles = battles.filter((battle) => battle.selfKo);
+    if (selfKoBattles.length >= 2) notes.push({ kind: 'warning', text: `${selfKoBattles.length} recorded self-KOs are reducing confidence. Use a controlled launch and keep the same setup for the next three tests.` });
+    const archetypes = {};
+    battles.forEach((battle) => { const key = battle.opponentArchetype || 'unknown'; const e = archetypes[key] || { total:0,wins:0 }; e.total++; e.wins += battle.result==='win'?1:0; archetypes[key]=e; });
+    Object.entries(archetypes).filter(([,e])=>e.total>=3).sort((a,b)=>(a[1].wins/a[1].total)-(b[1].wins/b[1].total)).slice(0,1).forEach(([type,e]) => notes.push({ kind: 'warning', text: `The weakest observed opponent type is ${labelForArchetype(type)}: ${e.wins}/${e.total} wins. The planner will prioritize this uncertainty.` }));
+    if (assessment.analytics.overall.effective >= Number(state.settings.minimumBattles || 36)) notes.push({ kind: 'positive', text: 'You have reached the overall battle target. New missions now focus on weak or uncertain matchups instead of raw battle count.' });
+    return notes.length ? notes.slice(0,4) : [{ kind: 'positive', text: 'Results are balanced so far. Continue the highest-information mission to strengthen confidence.' }];
+  }
+
+  function suggestionExplanation(suggestion) {
+    const current = activeDeck().beys;
+    const suggestedNames = suggestion.deck.map((bey) => Core.nameForBey(bey, partMap()));
+    const currentNames = current.map((bey) => Core.nameForBey(bey, partMap()));
+    const changed = suggestedNames.filter((name, index) => name !== currentNames[index]).length;
+    const e = suggestion.engineering;
+    const reasons = [];
+    if (e.bitRoleSpread >= 3) reasons.push('covers three different bit jobs');
+    if (e.roleSpread >= 3) reasons.push('spreads deck roles');
+    if (e.averageSelfKoRisk <= 35) reasons.push('keeps modeled self-KO risk controlled');
+    reasons.push(`protects the weakest matchup at ${e.weakestRating}/100`);
+    return `${changed ? `Changes ${changed} of 3 Bey slots and ` : 'Keeps the current structure and '} ${reasons.join(', ')}. Real tests still decide whether the change is better.`;
   }
 
   function renderDashboard() {
@@ -213,7 +264,7 @@
         <div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${escapeHtml(assessment.label)}</h3><p>${assessment.tournamentReady ? 'All configured evidence gates pass.' : `${assessment.blockers.length} readiness gate${assessment.blockers.length === 1 ? '' : 's'} remain open.`}</p></div>
         <div class="hero-score" aria-label="Readiness score ${assessment.score} out of 100"><strong>${assessment.score}</strong></div>
       </div>
-      <div class="hero-footer">${assessment.legality.legal ? badge('Legal', 'pass') : badge('Illegal', 'fail')}${assessment.capacity.valid ? badge('Owned', 'pass') : badge('Part shortage', 'fail')}${badge(`${assessment.analytics.overall.effective} decided battles`, 'info')}</div>`;
+      <div class="hero-footer"><div>${assessment.legality.legal ? badge('Legal', 'pass') : badge('Illegal', 'fail')}${assessment.capacity.valid ? badge('Owned', 'pass') : badge('Part shortage', 'fail')}${badge(`${assessment.analytics.overall.effective} decided battles`, 'info')}</div><button class="button primary compact" type="button" data-nav-target="results">Open deck coach</button></div>`;
 
     renderGuidePanels();
     $('#dashboardMetrics').innerHTML = [
@@ -227,6 +278,10 @@
 
     $('#dashboardPlan').innerHTML = plan.length ? plan.map((task, index) => `
       <div class="list-card compact"><div class="list-card-header"><div><strong>${index + 1}. ${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><p>${escapeHtml(task.testType === 'stability' ? 'Self-KO check' : 'Matchup test')} · use the shown owned ${escapeHtml(labelForArchetype(task.opponentArchetype))} opponent · ${escapeHtml(task.completed)}/${escapeHtml(task.target)} saved results. ${escapeHtml(task.rationale)}</p></div>${badge(`${task.deficit} needed`, 'warn')}</div></div>`).join('') : emptyState('No inventory-valid opponent test is available. Add owned parts, complete the deck, or relax the attack-bit mirror exclusion.');
+
+    const roadmap = guideProgress();
+    const currentStep = roadmap.find((item) => !item.done) || roadmap[roadmap.length - 1];
+    $('#coachRoadmap').innerHTML = `<div class="panel-heading"><div><p class="eyebrow">Coach roadmap</p><h3>${assessment.tournamentReady ? 'Tournament-ready loop' : `Step ${currentStep.step}: ${escapeHtml(currentStep.title)}`}</h3></div>${badge(assessment.tournamentReady ? 'Monitor' : `${roadmap.filter((item)=>item.done).length}/4 complete`, assessment.tournamentReady ? 'pass' : 'info')}</div><p>${assessment.tournamentReady ? 'The setup path is complete. Keep the deck current by following one new mission after changes to parts, launches, or expected opponents.' : escapeHtml(currentStep.note)}</p><button class="button primary" type="button" data-nav-target="${currentStep.view}">${escapeHtml(currentStep.action)}</button>`;
 
     $('#dashboardBlockers').innerHTML = assessment.blockers.length ? assessment.blockers.slice(0, 6).map((gate) => `
       <div class="list-card compact"><div class="list-card-header"><div><strong>${escapeHtml(gate.label)}</strong><p>${escapeHtml(gate.detail)}</p></div>${badge('Open', 'fail')}</div></div>`).join('') : `<div class="list-card compact"><div class="list-card-header"><div><strong>All gates pass</strong><p>Continue monitoring new matchups, wear, and event-rule changes.</p></div>${badge('Pass', 'pass')}</div></div>`;
@@ -402,7 +457,7 @@
 
   function renderSmartSuggestions() {
     $('#smartBuildResults').innerHTML = smartSuggestions.length ? smartSuggestions.map((suggestion, index) => `
-      <div class="list-card engineering-suggestion"><div class="list-card-header"><div><strong>#${index + 1} · engineering ${escapeHtml(suggestion.engineering.score)}/100</strong><p>${suggestion.deck.map((bey, beyIndex) => `${beyIndex + 1}. ${escapeHtml(Core.nameForBey(bey, partMap()))}`).join('<br>')}</p><div class="suggestion-metrics"><span>Weakest: ${escapeHtml(labelForArchetype(suggestion.engineering.weakestMatchup))} ${escapeHtml(suggestion.engineering.weakestRating)}</span><span>Modeled average: ${escapeHtml(suggestion.engineering.weightedAverage)}</span><span>Self-KO risk: ${escapeHtml(suggestion.engineering.averageSelfKoRisk)}</span><span>Bit roles: ${escapeHtml(suggestion.engineering.bitRoleSpread)}/3</span></div><p>${escapeHtml(suggestion.note)}</p></div><button class="button primary compact" type="button" data-apply-suggestion="${index}">Use deck</button></div></div>`).join('') : '';
+      <div class="list-card engineering-suggestion"><div class="list-card-header"><div><strong>#${index + 1} · engineering ${escapeHtml(suggestion.engineering.score)}/100</strong><p>${suggestion.deck.map((bey, beyIndex) => `${beyIndex + 1}. ${escapeHtml(Core.nameForBey(bey, partMap()))}`).join('<br>')}</p><div class="suggestion-metrics"><span>Weakest: ${escapeHtml(labelForArchetype(suggestion.engineering.weakestMatchup))} ${escapeHtml(suggestion.engineering.weakestRating)}</span><span>Modeled average: ${escapeHtml(suggestion.engineering.weightedAverage)}</span><span>Self-KO risk: ${escapeHtml(suggestion.engineering.averageSelfKoRisk)}</span><span>Bit roles: ${escapeHtml(suggestion.engineering.bitRoleSpread)}/3</span></div><p>${escapeHtml(suggestionExplanation(suggestion))}</p><small>${escapeHtml(suggestion.note)}</small></div><button class="button primary compact" type="button" data-apply-suggestion="${index}">Use deck</button></div></div>`).join('') : '';
   }
 
   function resetBeyForSystem(system) {
@@ -441,7 +496,7 @@
     const assessment = currentAssessment();
     $('#planProgress').textContent = `${assessment.analytics.overall.effective} decided battles`;
     $('#testPlanList').innerHTML = plan.length ? plan.map((task, index) => `
-      <button class="test-task" type="button" data-plan-bey="${task.beyIndex}" data-plan-opponent="${escapeHtml(task.opponentSignature)}"><div><strong>${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><small>${escapeHtml(task.testType === 'stability' ? 'SELF-KO CHECK' : 'MATCHUP TEST')} · ${escapeHtml(labelForArchetype(task.opponentArchetype))} · you own all needed parts</small><small>${escapeHtml(task.rationale)}</small><small>${escapeHtml(task.launchProtocol || '')}</small><progress max="${task.target}" value="${task.completed}"></progress><small>${task.completed}/${task.target} results against this Bey · ${task.archetypeCompleted}/${task.archetypeTarget} against this type</small></div><span class="task-rank">${index + 1}</span></button>`).join('') : emptyState('No owned, concurrently constructible opponent remains under the current policy. Add inventory or disable attack-bit mirror exclusion only when that matchup is specifically needed.');
+      <button class="test-task" type="button" data-plan-bey="${task.beyIndex}" data-plan-opponent="${escapeHtml(task.opponentSignature)}"><div><strong>${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><small>${escapeHtml(task.testType === 'stability' ? 'SELF-KO CHECK' : 'MATCHUP TEST')} · ${escapeHtml(labelForArchetype(task.opponentArchetype))} · information value ${escapeHtml(Math.round(task.informationGain || 0))}/100 · you own all needed parts</small><small>${escapeHtml(task.rationale)}</small><small>${escapeHtml(task.launchProtocol || '')}</small><progress max="${task.target}" value="${task.completed}"></progress><small>${task.completed}/${task.target} results against this Bey · ${task.archetypeCompleted}/${task.archetypeTarget} against this type</small></div><span class="task-rank">${index + 1}</span></button>`).join('') : emptyState('No owned, concurrently constructible opponent remains under the current policy. Add inventory or disable attack-bit mirror exclusion only when that matchup is specifically needed.');
   }
 
   function renderBattleFormOptions() {
@@ -554,10 +609,69 @@
   function renderAnalysisView() {
     const assessment = currentAssessment();
     const deck = activeDeck();
+    const map = partMap();
+    const engineering = Core.engineeringDeckAssessment(deck.beys, map, Core.metaArchetypeWeights(state.metaProfiles));
+    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: map, inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 4 });
+    const firstTask = plan[0];
     const hero = $('#analysisHero');
     hero.style.setProperty('--score-angle', `${assessment.score * 3.6}deg`);
-    hero.innerHTML = `<div class="hero-top"><div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${escapeHtml(assessment.label)}</h3><p>Win rate ${fmtPct(assessment.analytics.overall.winRate, 1)}; Wilson 95% interval ${fmtPct(assessment.analytics.overall.interval.low, 1)}–${fmtPct(assessment.analytics.overall.interval.high, 1)} from ${assessment.analytics.overall.effective} decided battles.</p></div><div class="hero-score"><strong>${assessment.score}</strong></div></div><div class="hero-footer">${assessment.tournamentReady ? badge('Ready under configured policy', 'pass') : badge(`${assessment.blockers.length} gates open`, 'fail')}${badge(`Catalog checked ${DATA.meta.verifiedThrough}`, 'info')}</div>`;
-    $('#analysisComponents').innerHTML = Object.entries(assessment.components).map(([name, value]) => `<div class="metric"><span>${escapeHtml(name)}</span><strong>${escapeHtml(value)}</strong><span>component points</span></div>`).join('');
+    const coachMessage = assessment.tournamentReady
+      ? 'Your deck passes the configured readiness checks. Keep testing when parts, launches, or the tournament field change.'
+      : firstTask ? `Your best next move is a controlled test: ${firstTask.ownName} against ${firstTask.opponentName}.` : 'Complete the open setup checks before collecting more battle evidence.';
+    hero.innerHTML = `<div class="hero-top"><div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${assessment.tournamentReady ? 'Ready for tournament play' : 'Your coach has a plan'}</h3><p>${escapeHtml(coachMessage)}</p></div><div class="hero-score" aria-label="Readiness score ${assessment.score} out of 100"><strong>${assessment.score}</strong></div></div><div class="hero-footer"><div>${assessment.tournamentReady ? badge('Ready', 'pass') : badge(`${assessment.blockers.length} items open`, 'warn')}${badge(`${assessment.analytics.overall.effective} decided battles`, 'info')}</div><span class="muted">Readiness /100</span></div>`;
+
+    const mission = $('#coachMission');
+    if (firstTask) mission.innerHTML = `<div class="coach-mission-head"><div><p class="eyebrow">Today's mission</p><h3>${escapeHtml(firstTask.ownName)} vs ${escapeHtml(firstTask.opponentName)}</h3><p>${escapeHtml(firstTask.testType === 'stability' ? 'Check whether your Bey can stay in the stadium with a controlled launch.' : firstTask.rationale)}</p></div><span class="mission-count">${Math.round(firstTask.informationGain || 0)}<small>info</small></span></div><div class="mission-actions"><button class="button primary" type="button" data-coach-next-test>Start this test</button><small>You own all needed parts. This is the highest-information legal test now; attack-bit mirrors are avoided by default.</small></div>`;
+    else mission.innerHTML = `<div class="coach-mission-head"><div><p class="eyebrow">Today's mission</p><h3>${assessment.tournamentReady ? 'Keep your deck current' : 'Finish setup first'}</h3><p>${assessment.tournamentReady ? 'Run a new test when you change a part, launch style, or expected opponent.' : 'Add owned parts and complete three legal Beys so the coach can create a test.'}</p></div></div><div class="mission-actions"><button class="button primary" type="button" data-coach-next-test>${assessment.capacity.valid ? 'Open guided tests' : 'Add parts first'}</button></div>`;
+
+    const cfg = state.settings;
+    const totalTarget = Number(cfg.minimumBattles || 36);
+    const perBeyTarget = Number(cfg.minimumPerBey || 10);
+    const archetypeTarget = Number(cfg.minimumPerArchetype || 6);
+    const completedBeys = deck.beys.filter((bey) => {
+      const sum = assessment.analytics.byBey[Core.beySignature(bey)];
+      return sum && sum.effective >= perBeyTarget;
+    }).length;
+    const coveredTypes = Core.CORE_ARCHETYPES.filter((type) => (assessment.analytics.byArchetype[type]?.effective || 0) >= archetypeTarget).length;
+    const progressRows = [
+      ['Battles completed', assessment.analytics.overall.effective, totalTarget, 'Record decided, fair battles.'],
+      ['Each Bey tested', completedBeys, 3, `Aim for at least ${perBeyTarget} decided battles per Bey.`],
+      ['Opponent types tested', coveredTypes, Core.CORE_ARCHETYPES.length, `Aim for ${archetypeTarget} results against each type.`]
+    ];
+    $('#coachProgress').innerHTML = progressRows.map(([label, value, target, note]) => { const pct = Math.min(100, Math.round((Number(value) / Math.max(1, Number(target))) * 100)); return `<div class="coach-progress-row"><div><strong>${escapeHtml(label)}</strong><span>${value}/${target}</span></div><progress max="100" value="${pct}"></progress><small>${escapeHtml(note)}</small></div>`; }).join('');
+
+    const strengths = [];
+    if (assessment.legality.legal) strengths.push('The deck passes the selected construction rules.');
+    if (assessment.capacity.valid) strengths.push('All three Beys can be built from owned parts.');
+    if (engineering.profiles.length) {
+      const avg = (key) => engineering.profiles.reduce((sum, p) => sum + Number(p.metrics[key] || 0), 0) / engineering.profiles.length;
+      const ranked = [['Strong spin retention', avg('spinRetention')], ['Good stability', avg('stability')], ['Strong knockout resistance', avg('koResistance')], ['Good attack potential', avg('impactPotential')]].sort((a,b)=>b[1]-a[1]);
+      ranked.slice(0,2).forEach(([label, score]) => strengths.push(`${label} (${Math.round(score)}/100 modeled).`));
+      if (engineering.roleSpread >= 3) strengths.push('The three Beys cover different jobs.');
+    }
+    $('#coachStrengths').innerHTML = (strengths.length ? strengths.slice(0,5) : ['Complete the deck to reveal strengths.']).map((text) => `<div class="coach-point positive"><span>✓</span><p>${escapeHtml(text)}</p></div>`).join('');
+
+    const weaknesses = assessment.blockers.slice(0,4).map((gate) => `${gate.label}: ${gate.detail}`);
+    if (engineering.profiles.length && engineering.weakestMatchup) weaknesses.push(`Modeled weak matchup: ${labelForArchetype(engineering.weakestMatchup)} (${engineering.weakestRating}/100).`);
+    if (!weaknesses.length) weaknesses.push('No current readiness blocker. Watch for rule, wear, or meta changes.');
+    $('#coachWeaknesses').innerHTML = weaknesses.slice(0,5).map((text) => `<div class="coach-point warning"><span>!</span><p>${escapeHtml(text)}</p></div>`).join('');
+
+    if (engineering.profiles.length) {
+      const avg = (key) => Math.round(engineering.profiles.reduce((sum, p) => sum + Number(p.metrics[key] || 0), 0) / engineering.profiles.length);
+      const simple = [
+        ['Attack', avg('impactPotential'), false],
+        ['Endurance', avg('spinRetention'), false],
+        ['Stability', avg('stability'), false],
+        ['KO resistance', avg('koResistance'), false],
+        ['Self-KO safety', 100 - Math.round(engineering.averageSelfKoRisk), false]
+      ];
+      $('#coachPhysics').innerHTML = simple.map(([label, score]) => `<div class="coach-physics-row"><span>${escapeHtml(label)}</span><div class="coach-stars" aria-label="${score} out of 100">${'★'.repeat(Math.max(1, Math.min(5, Math.round(score/20))))}${'☆'.repeat(5-Math.max(1, Math.min(5, Math.round(score/20))))}</div><strong>${score}</strong></div>`).join('') + '<p class="model-warning">These are engineering estimates used to choose tests. Real battle results decide readiness.</p>';
+    } else $('#coachPhysics').innerHTML = emptyState('Complete three Beys to see the simple behavior guide.');
+
+    $('#coachPatterns').innerHTML = coachPatterns(assessment).map((item) => `<div class="coach-point ${item.kind === 'positive' ? 'positive' : item.kind === 'warning' ? 'warning' : ''}"><span>${item.kind === 'positive' ? '✓' : item.kind === 'warning' ? '!' : '→'}</span><p>${escapeHtml(item.text)}</p></div>`).join('');
+
+    const componentNames = { legality: 'Rules', inventory: 'Owned parts', sample: 'Battle amount', perBey: 'Each Bey tested', matchups: 'Opponent coverage', execution: 'Fair testing', finishes: 'Finish variety', roles: 'Deck role variety', selfKo: 'Self-KO evidence', selfKoPenalty: 'Self-KO adjustment' };
+    $('#analysisComponents').innerHTML = Object.entries(assessment.components).map(([name, value]) => `<div class="metric"><span>${escapeHtml(componentNames[name] || name)}</span><strong>${escapeHtml(value)}</strong><span>readiness points</span></div>`).join('');
     renderEngineeringAnalysis();
     $('#readinessGates').innerHTML = assessment.gates.map((gate) => `<div class="gate-row"><span class="gate-icon ${gate.pass ? 'pass' : 'fail'}">${gate.pass ? '✓' : '!'}</span><div><strong>${escapeHtml(gate.label)}</strong><small>${escapeHtml(gate.detail)}</small></div></div>`).join('');
     renderSelfKoAnalysis(assessment);
@@ -814,6 +928,16 @@
         if (suggestion) { activeDeck().beys = suggestion.deck.map(normalizeBey); touchDeck(); smartSuggestions = []; renderDeckView(); toast('Suggested deck applied.'); }
         return;
       }
+      const coachNext = event.target.closest('[data-coach-next-test]');
+      if (coachNext) {
+        const deck = activeDeck();
+        const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 1 });
+        const first = plan[0];
+        if (!first) { navigate(currentAssessment().capacity.valid ? 'test' : 'inventory'); return; }
+        navigate('test');
+        $('#battleOwnBey').value = first.beyIndex; renderOwnedOpponentOptions(first.opponentSignature); $('#battleForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       const task = event.target.closest('[data-plan-bey]');
       if (task) {
         $('#battleOwnBey').value = task.dataset.planBey;
@@ -854,6 +978,7 @@
       if (event.target.closest('[data-guide-start]')) { $('#guideDialog').close(); navigate('inventory'); }
     });
 
+    $('#modeButton').addEventListener('click', () => { state.settings.experienceMode = experienceMode() === 'advanced' ? 'player' : 'advanced'; saveState(); renderModeState(); renderAnalysisView(); toast(experienceMode() === 'advanced' ? 'Advanced mode enabled.' : 'Player mode enabled.'); });
     $('#inventorySearch').addEventListener('input', renderInventoryList);
     $('#inventoryCategory').addEventListener('change', renderInventoryList);
     $('#productSearch').addEventListener('input', renderProductList);
@@ -910,6 +1035,7 @@
       state.battles = state.battles.filter((battle) => battle.deckId !== deck.id); saveState(); renderTestView(); toast('Active deck battle history cleared.');
     });
     $('#runForecastButton').addEventListener('click', runForecast);
+    $('#coachNextTestButton').addEventListener('click', () => { const button = document.querySelector('[data-coach-next-test]'); if (button) button.click(); else navigate('test'); });
 
     $('#addMetaButton').addEventListener('click', () => openMetaDialog(null));
     $('#metaForm').addEventListener('submit', (event) => {
@@ -932,6 +1058,7 @@
       state.settings.requireMultiPointFinish = data.get('requireMultiPointFinish') === 'on';
       state.settings.avoidAttackMirrors = data.get('avoidAttackMirrors') === 'on';
       state.settings.showGuide = data.get('showGuide') === 'on';
+      state.settings.experienceMode = String(data.get('experienceMode') || 'player');
       saveState(); renderAll(); toast('Settings saved.');
     });
     $('#exportBackupButton').addEventListener('click', exportBackup);
@@ -974,6 +1101,7 @@
   }
 
   function renderAll() {
+    renderModeState();
     renderConnectionStatus();
     renderInventoryControls();
     renderDashboard();

@@ -239,7 +239,7 @@ test('root HTML references only root runtime assets and includes all six primary
 
 test('service worker lifecycle caches every production root asset and clears old versions', async () => {
   const source = fs.readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8');
-  assert.match(source, /x-deck-lab-v2\.3\.1/);
+  assert.match(source, /x-deck-lab-v3\.0\.0/);
   const listeners = {};
   const cache = { addAll: async (assets) => { cache.assets = assets; }, put: async () => {} };
   const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.2.0'], delete: async (key) => key === 'old-cache', match: async () => null };
@@ -411,4 +411,22 @@ test('owned-parts optimizer demotes combinations with repeated observed self-KO'
   const reranked = Core.suggestDecks({ inventory, partMap: map, profile: DATA.profiles.tt3on3, includeAnnounced: false, battles: unstableLogs, metaProfiles: DATA.defaultMetaProfiles, settings, limit: 50 });
   const same = reranked.find((entry) => deckKey(entry.deck) === targetKey);
   assert.ok(!same || same.score < target.score - 5, same ? `${target.score} -> ${same.score}` : 'demoted out of shortlist');
+});
+
+
+test('adaptive planner exposes bounded information-gain scores and prioritizes unknown evidence', () => {
+  const inventory = { ...broadInventory };
+  const plan = Core.buildTestPlan({ deck: validDeck, deckId: 'info-deck', partMap: map, inventory, includeAnnounced: false, battles: [], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings: DATA.testDefaults, limit: 6 });
+  assert.ok(plan.length > 0);
+  assert.ok(plan.every((task) => Number.isFinite(task.informationGain) && task.informationGain >= 0 && task.informationGain <= 100));
+  assert.ok(plan[0].informationGain >= plan.at(-1).informationGain || plan[0].priority >= plan.at(-1).priority);
+});
+
+test('coach-first HTML includes player/advanced modes, roadmap, patterns, and no Analysis tab', () => {
+  const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="modeButton"/);
+  assert.match(html, /id="coachRoadmap"/);
+  assert.match(html, /id="coachPatterns"/);
+  assert.match(html, /<small>Coach<\/small>/);
+  assert.doesNotMatch(html, /<small>Analysis<\/small>/);
 });

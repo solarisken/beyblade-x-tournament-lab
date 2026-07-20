@@ -22,8 +22,8 @@ from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parent
 RESULT_PATH = ROOT / "browser-audit-result.json"
-SCREENSHOT_PATH = ROOT / "mobile-v2.3-guided-final.png"
-HOME_SCREENSHOT_PATH = ROOT / "mobile-v2.3-guided-home.png"
+SCREENSHOT_PATH = ROOT / "mobile-v3.0-coach-final.png"
+HOME_SCREENSHOT_PATH = ROOT / "mobile-v3.0-coach-home.png"
 VIEWPORT = {"width": 390, "height": 844}
 DEVICE_SCALE_FACTOR = 3
 
@@ -162,7 +162,7 @@ def run() -> dict[str, Any]:
         page.locator("#guideButton").click()
         page.locator("#guideDialog").wait_for(state="visible")
         guide_text = page.locator("#guideDialog").inner_text()
-        audit.record("Full player guide has four clear steps", page.locator("#guideDialog .guide-list li").count() == 4 and "Parts" in guide_text and "Decks" in guide_text and "Analysis" in guide_text)
+        audit.record("Full player guide has four clear steps", page.locator("#guideDialog .guide-list li").count() == 4 and "Parts" in guide_text and "Decks" in guide_text and "Coach" in guide_text)
         audit.record("Kid guide explains ordinary Self-KO", "Just answer Yes or No" in guide_text and "ask an adult" in guide_text.lower(), guide_text[:500])
         page.locator('#guideDialog [data-close-dialog]').click()
         page.locator("#guideDialog").wait_for(state="hidden")
@@ -306,9 +306,22 @@ def run() -> dict[str, Any]:
         audit.record("Contaminated battle is retained but marked for exclusion", len(state["battles"]) == 3 and state["battles"][2]["contaminated"] is True)
 
         nav(page, "results")
-        audit.record("Analysis reports decided evidence", "2 decided battles" in page.locator("#analysisHero").inner_text())
-        audit.record("Coverage matrix renders", page.locator("#coverageMatrix table").count() == 1)
-        audit.record("Engineering deck analysis renders", "Deck engineering score" in page.locator("#engineeringAnalysis").inner_text() and page.locator("#engineeringAnalysis .engineering-card").count() == 3)
+        audit.record("Coach tab is clearly named", "Coach" in page.locator('[data-nav="results"]').inner_text())
+        audit.record("Player mode is visible by default", page.locator("#modeButton").inner_text() == "Player mode")
+        audit.record("Coach roadmap is visible on Home", page.locator("#coachRoadmap").count() == 1)
+        audit.record("Coach reports decided evidence", "2 decided battles" in page.locator("#analysisHero").inner_text())
+        audit.record("Coach shows one next mission", "mission" in page.locator("#coachMission").inner_text().lower() and page.locator("#coachMission button").count() == 1)
+        audit.record("Coach mission exposes information value", "info" in page.locator("#coachMission").inner_text().lower())
+        audit.record("Coach patterns render", page.locator("#coachPatterns .coach-point").count() >= 1)
+        page.locator("#modeButton").click()
+        audit.record("Advanced mode opens technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is True and page.locator("#modeButton").inner_text() == "Advanced mode")
+        page.locator("#modeButton").click()
+        audit.record("Player mode restores collapsed technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is False and page.locator("#modeButton").inner_text() == "Player mode")
+        audit.record("Coach shows progress, strengths, weaknesses, and simple behavior", page.locator("#coachProgress progress").count() == 3 and bool(page.locator("#coachStrengths").inner_text().strip()) and bool(page.locator("#coachWeaknesses").inner_text().strip()) and page.locator("#coachPhysics .coach-physics-row").count() == 5)
+        audit.record("Technical analysis is collapsed by default", page.locator(".coach-advanced").evaluate("el => !el.open"))
+        page.locator(".coach-advanced").evaluate("el => el.open = true")
+        audit.record("Coverage matrix renders in advanced analysis", page.locator("#coverageMatrix table").count() == 1)
+        audit.record("Engineering deck analysis renders in advanced analysis", "Deck engineering score" in page.locator("#engineeringAnalysis").inner_text() and page.locator("#engineeringAnalysis .engineering-card").count() == 3)
         selfko_text = page.locator("#selfKoAnalysis").inner_text()
         audit.record("Simple Self-KO analysis renders Yes-or-No totals", "Total self-KOs" in selfko_text and "Yes or No" in selfko_text and "No special cause is needed" in selfko_text, selfko_text[:600])
         audit.record("Detailed Self-KO causes are not shown", "Wilson 95%" not in selfko_text and "rail overshoot" not in selfko_text.lower() and "Over / Xtreme" not in selfko_text, selfko_text[:600])
@@ -375,7 +388,7 @@ def run() -> dict[str, Any]:
         backup = json.loads(backup_text)
         checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
         audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 6 and backup["appVersion"] == "2.3.1")
+        audit.record("Backup export uses current schema", backup["schemaVersion"] == 7 and backup["appVersion"] == "3.0.0")
 
         normal_error_count = len(audit.normal_console_errors)
         audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
@@ -465,7 +478,7 @@ def run() -> dict[str, Any]:
     failed = len(audit.checks) - passed
     result = {
         "application": "X Deck Lab",
-        "version": "2.3.1",
+        "version": "3.0.0",
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
         "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",

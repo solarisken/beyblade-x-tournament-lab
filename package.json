@@ -1,6 +1,6 @@
 {
   "name": "x-deck-lab",
-  "version": "2.3.1",
+  "version": "3.0.0",
   "private": true,
   "description": "Root-only mobile Beyblade X deck builder with guided kid-friendly steps, owned-opponent testing, one ordinary Self-KO Yes/No answer, physics-informed deck ranking, and tournament-readiness analysis.",
   "scripts": {

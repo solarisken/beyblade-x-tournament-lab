@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
 
-  const SCHEMA_VERSION = 6;
+  const SCHEMA_VERSION = 7;
   const ENGINEERING_MODEL_VERSION = 2;
   const PART_SLOTS = ['blade','ratchetIntegratedBlade','lockChip','metalBlade','overBlade','mainBlade','assistBlade','ratchet','bit','integratedBit'];
   const CORE_ARCHETYPES = ['attack','stamina','defense','balance','left-spin'];
@@ -619,10 +619,14 @@
         const stabilityNeed = stabilityBenchmark && (stabilityDeficit > 0 || observedHigh || disagreement >= 0.08);
         if (!archetypeDeficit && !opponentDeficit && !stabilityNeed) return;
         const uncertainty = 1 - Math.min(1, opponentSummary.effective / targetPerOpponent);
+        const confidenceWidth = opponentSummary.effective ? Math.max(0, Number(opponentSummary.interval.high || 1) - Number(opponentSummary.interval.low || 0)) : 1;
+        const novelty = opponentSummary.effective === 0 ? 1 : 0;
+        const beyNeed = Math.max(0, Number(settings.minimumPerBey || 10) - ownSummary.effective) / Math.max(1, Number(settings.minimumPerBey || 10));
+        const informationGain = clamp(0.34 * uncertainty + 0.24 * confidenceWidth + 0.18 * novelty + 0.14 * Math.min(1, archetypeDeficit / Math.max(1, archetypeTarget)) + 0.10 * Math.min(1, beyNeed), 0, 1);
         const metaWeight = weights[archetype] || (archetype === 'left-spin' ? 0.08 : 0.1);
         const benchmark = opponent.benchmarkScore / 100;
         const stabilityBoost = stabilityNeed ? Math.min(14, stabilityDeficit * 2.2 + (observedHigh ? 6 : 0) + (disagreement >= 0.08 ? 4 : 0)) : 0;
-        const priority = archetypeDeficit * 2.4 + opponentDeficit * 2.1 + uncertainty * 3.5 + metaWeight * 9 + benchmark * 2 + stabilityBoost;
+        const priority = archetypeDeficit * 2.0 + opponentDeficit * 1.8 + informationGain * 8 + metaWeight * 8 + benchmark * 1.6 + stabilityBoost;
         const testType = stabilityNeed ? 'stability' : 'matchup';
         let rationale = opponentSummary.effective === 0
           ? `Untested owned benchmark; ${archetypeSummary.effective}/${archetypeTarget} ${archetype} evidence.`
@@ -655,6 +659,8 @@
           target: targetPerOpponent,
           archetypeTarget,
           deficit: Math.max(opponentDeficit, Math.min(archetypeDeficit, targetPerOpponent), stabilityNeed ? Math.min(stabilityDeficit, targetPerOpponent) : 0),
+          informationGain: round(informationGain * 100, 1),
+          uncertainty: round(uncertainty * 100, 1),
           priority: round(priority, 2),
           rationale
         });
@@ -1111,6 +1117,7 @@
           delete settings.minimumStabilityPerBey;
           delete settings.maxSelfKoUpperBound;
           if (settings.showGuide == null) settings.showGuide = true;
+          if (!['player','advanced'].includes(settings.experienceMode)) settings.experienceMode = 'player';
           return settings;
         })(),
         updatedAt: raw.updatedAt || now
@@ -1144,7 +1151,7 @@
       battles: migratedBattles,
       metaProfiles: [],
       customProfiles: [],
-      settings: { minimumSelfKoTestsPerBey: 8, maxObservedSelfKoRate: 0.15, showGuide: true },
+      settings: { minimumSelfKoTestsPerBey: 8, maxObservedSelfKoRate: 0.15, showGuide: true, experienceMode: 'player' },
       createdAt: now,
       updatedAt: now
     };

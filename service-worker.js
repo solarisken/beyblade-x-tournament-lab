@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = 'x-deck-lab-v2.3.1';
+const CACHE_VERSION = 'x-deck-lab-v3.0.0';
 const APP_SHELL = [
   './',
   './index.html',

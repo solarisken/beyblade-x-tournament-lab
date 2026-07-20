@@ -1,7 +1,7 @@
 {
   "application": "X Deck Lab",
-  "version": "2.3.1",
-  "timestampUtc": "2026-07-19T13:54:17.761152+00:00",
+  "version": "3.0.0",
+  "timestampUtc": "2026-07-19T15:41:18.791818+00:00",
   "viewport": {
     "width": 390,
     "height": 844,
@@ -10,17 +10,17 @@
     "touch": true
   },
   "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 23.682,
+  "durationSeconds": 20.164,
   "summary": {
-    "checks": 72,
-    "passed": 72,
+    "checks": 82,
+    "passed": 82,
     "failed": 0
   },
   "normalConsoleErrors": [],
   "uncaughtPageErrors": [],
   "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected c029d8a2, calculated 04092af2.\n    at HTMLInputElement.<anonymous> (<anonymous>:945:58)",
-    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:775:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:774:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:955:13)"
+    "Error: Backup checksum mismatch: expected 182bd92c, calculated 027ef2fc.\n    at HTMLInputElement.<anonymous> (<anonymous>:1072:58)",
+    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:889:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:888:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1082:13)"
   ],
   "checks": [
     {
@@ -61,7 +61,7 @@
     {
       "name": "Kid guide explains ordinary Self-KO",
       "passed": true,
-      "detail": "PLAYER GUIDE\n\nHow to use X Deck Lab\n×\n1\nAdd your parts\n\nOpen Parts. Add boxed products or loose parts you really own.\n\n2\nBuild a deck\n\nOpen Decks. Choose three Beys, or let the app suggest legal decks from your parts.\n\n3\nRun the next test\n\nOpen Test. Tap the first card. Build the shown opponent, battle once, and save the result.\n\n4\nCheck readiness\n\nOpen Analysis. Green checks are passed. Open checks explain what to do next.\n\nSelf-KO means: your own Bey jumps or runs out mostly by itself. Just an"
+      "detail": "PLAYER GUIDE\n\nHow to use X Deck Lab\n×\n1\nAdd your parts\n\nOpen Parts. Add boxed products or loose parts you really own.\n\n2\nBuild a deck\n\nOpen Decks. Choose three Beys, or let the app suggest legal decks from your parts.\n\n3\nRun the next test\n\nOpen Test. Tap the first card. Build the shown opponent, battle once, and save the result.\n\n4\nCheck readiness\n\nOpen Coach. It gives you one next mission, shows progress, and explains what needs work.\n\nSelf-KO means: your own Bey jumps or runs out mostly by its"
     },
     {
       "name": "Small-phone layout has no horizontal overflow",
@@ -221,7 +221,7 @@
     {
       "name": "Xtreme Finish receives three points",
       "passed": true,
-      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 1:54 PM"
+      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 3:41 PM"
     },
     {
       "name": "Impossible Self-KO Yes answer is blocked",
@@ -244,17 +244,67 @@
       "detail": ""
     },
     {
-      "name": "Analysis reports decided evidence",
+      "name": "Coach tab is clearly named",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Coverage matrix renders",
+      "name": "Player mode is visible by default",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Engineering deck analysis renders",
+      "name": "Coach roadmap is visible on Home",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coach reports decided evidence",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coach shows one next mission",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coach mission exposes information value",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coach patterns render",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Advanced mode opens technical details",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Player mode restores collapsed technical details",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coach shows progress, strengths, weaknesses, and simple behavior",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Technical analysis is collapsed by default",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coverage matrix renders in advanced analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Engineering deck analysis renders in advanced analysis",
       "passed": true,
       "detail": ""
     },

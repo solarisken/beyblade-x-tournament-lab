@@ -17,9 +17,9 @@
   const data = {
     meta: {
       appName: 'X Deck Lab',
-      version: '2.3.1',
+      version: '3.0.0',
       verifiedThrough: '2026-07-19',
-      schemaVersion: 6,
+      schemaVersion: 7,
       rulesVersion: 'Takara Tomy Regulation v12 / WBO rules checked 2026-07-19',
       catalogPolicy: 'Released parts are enabled by default. Announced parts remain opt-in until their release date is reached and the catalog is reverified.',
       disclaimer: 'Independent tournament-preparation tool. Engineering scores are qualitative proxies. A self-KO is recorded with one simple yes/no answer. Controlled battle results—not the model—remain the final evidence.'
@@ -122,7 +122,8 @@
       opponentPoolSize: 90,
       minimumSelfKoTestsPerBey: 8,
       maxObservedSelfKoRate: 0.15,
-      showGuide: true
+      showGuide: true,
+      experienceMode: 'player'
     },
 
     engineeringModel: {
