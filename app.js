@@ -28,6 +28,7 @@
     return {
       schemaVersion: SCHEMA_VERSION,
       inventory: {},
+      ownedProducts: {},
       customParts: [],
       customProducts: [],
       decks: [deck],
@@ -62,7 +63,17 @@
       if (qty > 0) state.inventory[id] = { qty: Math.floor(qty), condition: record?.condition || 'good', notes: String(record?.notes || '') };
     });
     state.customParts = Array.isArray(source.customParts) ? source.customParts.filter((part) => part?.id && part?.name && part?.category) : [];
-    state.customProducts = Array.isArray(source.customProducts) ? source.customProducts.filter((product) => product?.id && product?.name) : [];
+    const normalizedPartMap = Object.fromEntries([...DATA.parts, ...state.customParts].map((part) => [part.id, part]));
+    state.customProducts = Array.isArray(source.customProducts)
+      ? source.customProducts.filter((product) => product?.id && product?.name && Core.productContainsBeyParts(product, normalizedPartMap))
+      : [];
+    const allowedProductIds = new Set([...DATA.products, ...state.customProducts].map((product) => product.id));
+    state.ownedProducts = {};
+    Object.entries(source.ownedProducts || {}).forEach(([key, value]) => {
+      const productId = String(key).split('::')[0];
+      const qty = Math.max(0, Math.floor(Number(value) || 0));
+      if (qty && allowedProductIds.has(productId)) state.ownedProducts[key] = qty;
+    });
     state.decks = Array.isArray(source.decks) ? source.decks.map((deck, index) => ({
       ...defaultDeck(`Deck ${index + 1}`),
       ...deck,
@@ -109,6 +120,7 @@
   let toastTimer = null;
   let lastForecast = null;
   let smartSuggestions = [];
+  let lastBattleHandoff = null;
   let opponentOptions = [];
 
   function saveState() {
@@ -130,8 +142,33 @@
   }
 
   function allParts() { return [...DATA.parts, ...state.customParts]; }
-  function allProducts() { return [...DATA.products, ...state.customProducts]; }
   function partMap() { return Object.fromEntries(allParts().map((part) => [part.id, part])); }
+  function allProducts() {
+    const map = partMap();
+    return [...DATA.products, ...state.customProducts].filter((product) => Core.productContainsBeyParts(product, map));
+  }
+  function productBeyCount(product) { return Core.productBeyCount(product, partMap()); }
+  function productBeyPartCount(product) { return Core.productBeyPartCount(product, partMap()); }
+  function productOwnershipKey(productId, variantId = '') { return variantId ? `${productId}::${variantId}` : productId; }
+  function productVariant(product, variantId = '') { return (product?.variants || []).find((variant) => variant.id === variantId) || null; }
+  function ownershipQuantity(productId, variantId = '') { return Math.max(0, Number(state.ownedProducts?.[productOwnershipKey(productId, variantId)]) || 0); }
+  function totalProductOwnership(product) {
+    if (!product) return 0;
+    return ownershipQuantity(product.id) + (product.variants || []).reduce((total, variant) => total + ownershipQuantity(product.id, variant.id), 0);
+  }
+  function releaseDateLabel(value) {
+    if (!value) return 'Release date unavailable';
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+  }
+  function releaseMonthLabel(value) {
+    if (!value) return 'Undated';
+    const date = new Date(`${value}-01T00:00:00`);
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'long' }).format(date);
+  }
+  function productTypeLabel(value) {
+    return ({ starter: 'Starter', booster: 'Booster', set: 'Set', 'deck-set': 'Deck set', 'battle-set': 'Battle set', 'customize-set': 'Customize set', 'double-starter': 'Double starter', 'random-booster': 'Random booster', 'random-select': 'Random select', 'bit-set': 'Bit set', limited: 'Limited release' })[value] || String(value || 'Product').replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  }
   function allProfiles() { return { ...DATA.profiles, ...Object.fromEntries(state.customProfiles.map((profile) => [profile.id, profile])) }; }
   function activeDeck() { return state.decks.find((deck) => deck.id === state.activeDeckId) || state.decks[0]; }
   function currentProfile() { return allProfiles()[activeDeck().profileId] || DATA.profiles.tt3on3; }
@@ -200,7 +237,8 @@
     $$('[data-guide-panel]').forEach((element) => { element.hidden = !show; });
     const container = $('#guideSteps');
     if (!container) return;
-    container.innerHTML = guideProgress().map((item) => `<button class="guide-step ${item.done ? 'done' : ''}" type="button" data-nav-target="${item.view}"><span class="guide-step-number">${item.done ? '✓' : item.step}</span><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.note)}</small><em>${escapeHtml(item.action)} →</em></span></button>`).join('');
+    const shortNames = ['Parts', 'Deck', 'Test', 'Coach'];
+    container.innerHTML = guideProgress().map((item, index) => `<button class="guide-step ${item.done ? 'done' : ''}" type="button" data-nav-target="${item.view}" aria-label="${escapeHtml(item.title)}: ${escapeHtml(item.note)}"><span class="guide-step-number">${item.done ? '✓' : item.step}</span><span class="guide-step-copy"><strong>${shortNames[index]}</strong><small>${item.done ? 'Done' : index === guideProgress().findIndex((step) => !step.done) ? 'Next' : 'Later'}</small></span></button>`).join('');
   }
 
   function experienceMode() { return state.settings.experienceMode === 'advanced' ? 'advanced' : 'player'; }
@@ -210,7 +248,9 @@
     document.body.classList.toggle('advanced-mode', advanced);
     const button = $('#modeButton');
     if (button) {
-      button.textContent = advanced ? 'Advanced mode' : 'Player mode';
+      button.textContent = advanced ? 'Pro' : 'Easy';
+      button.setAttribute('aria-label', advanced ? 'Advanced mode. Switch to Player mode' : 'Player mode. Switch to Advanced mode');
+      button.setAttribute('title', advanced ? 'Advanced mode' : 'Player mode');
       button.setAttribute('aria-pressed', advanced ? 'true' : 'false');
     }
     const details = $('#coachAdvancedDetails');
@@ -256,35 +296,39 @@
   function renderDashboard() {
     const deck = activeDeck();
     const assessment = currentAssessment();
-    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 4 });
+    const plan = Core.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap: partMap(), inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: DATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 1 });
     const hero = $('#dashboardHero');
     hero.style.setProperty('--score-angle', `${assessment.score * 3.6}deg`);
+    const firstTask = plan[0];
     hero.innerHTML = `
       <div class="hero-top">
-        <div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${escapeHtml(assessment.label)}</h3><p>${assessment.tournamentReady ? 'All configured evidence gates pass.' : `${assessment.blockers.length} readiness gate${assessment.blockers.length === 1 ? '' : 's'} remain open.`}</p></div>
+        <div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${assessment.tournamentReady ? 'Tournament ready' : escapeHtml(assessment.label)}</h3><p>${assessment.tournamentReady ? 'All configured readiness checks pass.' : firstTask ? `Coach recommends ${escapeHtml(firstTask.ownName)} vs ${escapeHtml(firstTask.opponentName)} next.` : 'Complete your owned deck so Coach can create a mission.'}</p></div>
         <div class="hero-score" aria-label="Readiness score ${assessment.score} out of 100"><strong>${assessment.score}</strong></div>
       </div>
-      <div class="hero-footer"><div>${assessment.legality.legal ? badge('Legal', 'pass') : badge('Illegal', 'fail')}${assessment.capacity.valid ? badge('Owned', 'pass') : badge('Part shortage', 'fail')}${badge(`${assessment.analytics.overall.effective} decided battles`, 'info')}</div><button class="button primary compact" type="button" data-nav-target="results">Open deck coach</button></div>`;
+      <div class="hero-footer"><div>${assessment.legality.legal ? badge('Legal', 'pass') : badge('Fix deck', 'fail')}${assessment.capacity.valid ? badge('Owned', 'pass') : badge('Parts needed', 'fail')}</div><button class="button primary compact" type="button" data-nav-target="results">Ask Coach</button></div>`;
 
     renderGuidePanels();
+    const cfg = state.settings;
+    const perBeyTarget = Number(cfg.minimumPerBey || 10);
+    const archetypeTarget = Number(cfg.minimumPerArchetype || 6);
+    const completedBeys = deck.beys.filter((bey) => (assessment.analytics.byBey[Core.beySignature(bey)]?.effective || 0) >= perBeyTarget).length;
+    const coveredTypes = Core.CORE_ARCHETYPES.filter((type) => (assessment.analytics.byArchetype[type]?.effective || 0) >= archetypeTarget).length;
     $('#dashboardMetrics').innerHTML = [
-      ['Win rate', fmtPct(assessment.analytics.overall.winRate, 1), `${assessment.analytics.overall.wins} wins in ${assessment.analytics.overall.effective} decided battles`],
-      ['Points', assessment.analytics.overall.pointDifferential > 0 ? `+${assessment.analytics.overall.pointDifferential}` : String(assessment.analytics.overall.pointDifferential), `${assessment.analytics.overall.pointsFor} scored / ${assessment.analytics.overall.pointsAgainst} allowed`],
-      ['Deck roles', `${assessment.diversity.unique}/3`, assessment.diversity.roles.join(' · ') || 'Complete the deck'],
-      ['Fair tests', fmtPct(1 - assessment.analytics.overall.contaminationRate, 0), `${assessment.analytics.overall.contaminated} excluded test${assessment.analytics.overall.contaminated === 1 ? '' : 's'}`],
-      ['Self-KOs', `${assessment.analytics.overall.ownSelfKos}`, `${assessment.analytics.overall.selfKoEvidence} answered tests · ${fmtPct(assessment.analytics.overall.selfKoRate, 1)}`],
-      ['Next action', assessment.tournamentReady ? 'Ready' : `${assessment.blockers.length} open`, assessment.tournamentReady ? 'Keep monitoring new matchups' : 'Follow the first test card']
-    ].map(([label, value, note]) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><span>${escapeHtml(note)}</span></div>`).join('');
+      ['Battles', assessment.analytics.overall.effective, `of ${Number(cfg.minimumBattles || 36)} target`],
+      ['Beys proven', `${completedBeys}/3`, `${perBeyTarget} each`],
+      ['Types covered', `${coveredTypes}/${Core.CORE_ARCHETYPES.length}`, `${archetypeTarget} each`]
+    ].map(([label, value, note]) => `<div class="summary-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(note)}</small></div>`).join('');
 
-    $('#dashboardPlan').innerHTML = plan.length ? plan.map((task, index) => `
-      <div class="list-card compact"><div class="list-card-header"><div><strong>${index + 1}. ${escapeHtml(task.ownName)} vs ${escapeHtml(task.opponentName)}</strong><p>${escapeHtml(task.testType === 'stability' ? 'Self-KO check' : 'Matchup test')} · use the shown owned ${escapeHtml(labelForArchetype(task.opponentArchetype))} opponent · ${escapeHtml(task.completed)}/${escapeHtml(task.target)} saved results. ${escapeHtml(task.rationale)}</p></div>${badge(`${task.deficit} needed`, 'warn')}</div></div>`).join('') : emptyState('No inventory-valid opponent test is available. Add owned parts, complete the deck, or relax the attack-bit mirror exclusion.');
+    $('#dashboardPlan').innerHTML = firstTask ? `<button class="mission-row" type="button" data-nav-target="test"><span class="mission-row-icon">▶</span><span><strong>${escapeHtml(firstTask.ownName)} vs ${escapeHtml(firstTask.opponentName)}</strong><small>${escapeHtml(firstTask.testType === 'stability' ? 'Controlled Self-KO check' : `${labelForArchetype(firstTask.opponentArchetype)} matchup`)} · ${firstTask.completed}/${firstTask.target} saved</small></span><span class="mission-row-arrow">›</span></button>` : emptyState('Add owned parts or complete the deck to unlock a test mission.');
 
     const roadmap = guideProgress();
     const currentStep = roadmap.find((item) => !item.done) || roadmap[roadmap.length - 1];
-    $('#coachRoadmap').innerHTML = `<div class="panel-heading"><div><p class="eyebrow">Coach roadmap</p><h3>${assessment.tournamentReady ? 'Tournament-ready loop' : `Step ${currentStep.step}: ${escapeHtml(currentStep.title)}`}</h3></div>${badge(assessment.tournamentReady ? 'Monitor' : `${roadmap.filter((item)=>item.done).length}/4 complete`, assessment.tournamentReady ? 'pass' : 'info')}</div><p>${assessment.tournamentReady ? 'The setup path is complete. Keep the deck current by following one new mission after changes to parts, launches, or expected opponents.' : escapeHtml(currentStep.note)}</p><button class="button primary" type="button" data-nav-target="${currentStep.view}">${escapeHtml(currentStep.action)}</button>`;
+    const roadmapPanel = $('#coachRoadmap');
+    const setupComplete = currentStep.step === 4;
+    roadmapPanel.hidden = setupComplete;
+    if (!setupComplete) roadmapPanel.innerHTML = `<div class="next-step-content"><span class="next-step-number">${currentStep.step}</span><div><p class="eyebrow">Next step</p><h3>${escapeHtml(currentStep.title)}</h3><p>${escapeHtml(currentStep.note)}</p></div></div><button class="button primary compact" type="button" data-nav-target="${currentStep.view}">${escapeHtml(currentStep.action)}</button>`;
 
-    $('#dashboardBlockers').innerHTML = assessment.blockers.length ? assessment.blockers.slice(0, 6).map((gate) => `
-      <div class="list-card compact"><div class="list-card-header"><div><strong>${escapeHtml(gate.label)}</strong><p>${escapeHtml(gate.detail)}</p></div>${badge('Open', 'fail')}</div></div>`).join('') : `<div class="list-card compact"><div class="list-card-header"><div><strong>All gates pass</strong><p>Continue monitoring new matchups, wear, and event-rule changes.</p></div>${badge('Pass', 'pass')}</div></div>`;
+    $('#dashboardBlockers').innerHTML = assessment.blockers.length ? assessment.blockers.slice(0, 4).map((gate) => `<div class="blocker-row"><span>!</span><div><strong>${escapeHtml(gate.label)}</strong><small>${escapeHtml(gate.detail)}</small></div></div>`).join('') : `<div class="blocker-row pass"><span>✓</span><div><strong>All checks pass</strong><small>Keep monitoring wear, rules, and new matchups.</small></div></div>`;
   }
 
   function renderInventoryControls() {
@@ -294,6 +338,13 @@
     if (!partCategory.options.length) DATA.categories.forEach((category) => partCategory.add(new Option(category.label, category.id)));
     const condition = $('#partCondition');
     if (!condition.options.length) DATA.conditions.forEach((entry) => condition.add(new Option(entry.name, entry.id)));
+
+    const yearSelect = $('#productYear');
+    if (yearSelect && yearSelect.options.length <= 1) [...new Set(allProducts().map((product) => product.releaseYear).filter(Boolean))].sort((a, b) => b.localeCompare(a)).forEach((year) => yearSelect.add(new Option(year, year)));
+    const lineSelect = $('#productLine');
+    if (lineSelect && lineSelect.options.length <= 1) [...new Set(allProducts().map((product) => product.line).filter(Boolean))].sort().forEach((line) => lineSelect.add(new Option(line, line)));
+    const typeSelect = $('#productType');
+    if (typeSelect && typeSelect.options.length <= 1) [...new Set(allProducts().map((product) => product.productType).filter(Boolean))].sort((a, b) => productTypeLabel(a).localeCompare(productTypeLabel(b))).forEach((type) => typeSelect.add(new Option(productTypeLabel(type), type)));
     renderPartDialogOptions();
   }
 
@@ -322,17 +373,113 @@
     }).join('') : emptyState('No owned parts match this filter. Add a known product or a loose part.');
   }
 
+  function productContentsText(product, variant = null) {
+    const ids = variant?.parts || product.parts || [];
+    if (!ids.length) {
+      const count = productBeyCount(product);
+      return product.contentsNote || `${count} ${count === 1 ? 'Bey' : 'Beys'} included. Mark the product owned here, then enter exact loose parts separately when verified.`;
+    }
+    const names = ids.map((id) => partMap()[id]?.name || id);
+    const shown = names.slice(0, 9).join(' · ');
+    return names.length > 9 ? `${shown} · +${names.length - 9} more` : shown;
+  }
+
+  function renderProductCard(product) {
+    const owned = totalProductOwnership(product);
+    const isAnnounced = product.status === 'announced';
+    const variants = product.variants || [];
+    const selectedVariantId = variants.find((variant) => ownershipQuantity(product.id, variant.id) > 0)?.id || variants[0]?.id || '';
+    const selectedVariant = productVariant(product, selectedVariantId);
+    const fixedContents = productContentsText(product);
+    const variantOptions = variants.map((variant) => {
+      const qty = ownershipQuantity(product.id, variant.id);
+      return `<option value="${escapeHtml(variant.id)}" ${variant.id === selectedVariantId ? 'selected' : ''}>${escapeHtml(variant.id)} · ${escapeHtml(variant.name)}${qty ? ` · owned ${qty}` : ''}</option>`;
+    }).join('');
+    const ownershipTags = variants.filter((variant) => ownershipQuantity(product.id, variant.id) > 0).map((variant) => `<span class="tag status-owned">${escapeHtml(variant.id)} ×${ownershipQuantity(product.id, variant.id)}</span>`).join('');
+    const beyCount = productBeyCount(product);
+    const beyPartCount = productBeyPartCount(product);
+    const contentsTag = beyCount > 0 ? `${beyCount} ${beyCount === 1 ? 'Bey' : 'Beys'}` : `${beyPartCount} Bey ${beyPartCount === 1 ? 'part' : 'parts'}`;
+    let actions = '';
+    if (isAnnounced) {
+      actions = `<button class="button ghost" type="button" disabled>Not released yet</button>`;
+    } else if (product.inventoryMode === 'variant' && variants.length) {
+      const selectedOwned = ownershipQuantity(product.id, selectedVariantId);
+      actions = `<div class="catalog-actions variant-actions">
+        <label class="field"><span>Choose your pull</span><select data-product-variant="${escapeHtml(product.id)}">${variantOptions}</select></label>
+        <button class="button secondary" type="button" data-product-action="add" data-product-id="${escapeHtml(product.id)}">Add pull</button>
+        ${owned ? `<button class="text-button catalog-remove" type="button" data-product-action="remove" data-product-id="${escapeHtml(product.id)}" ${selectedOwned ? '' : 'disabled'}>Remove selected pull</button>` : ''}
+      </div>`;
+    } else {
+      actions = `<div class="catalog-actions">
+        <button class="button secondary" type="button" data-product-action="add" data-product-id="${escapeHtml(product.id)}">${product.inventoryMode === 'catalog' ? 'Mark owned' : 'Add owned set'}</button>
+        ${owned ? `<button class="text-button catalog-remove" type="button" data-product-action="remove" data-product-id="${escapeHtml(product.id)}">Remove one</button>` : ''}
+      </div>`;
+    }
+    return `<article class="catalog-card ${owned ? 'owned' : ''} ${isAnnounced ? 'announced' : ''}" data-product-card="${escapeHtml(product.id)}">
+      <div class="catalog-card-head">
+        <div><span class="catalog-code">${escapeHtml(product.catalogCode || product.id)}</span><h4>${escapeHtml(product.name)}</h4><div class="catalog-meta"><span>${escapeHtml(releaseDateLabel(product.releaseDate))}</span><span>•</span><span>${escapeHtml(productTypeLabel(product.productType))}</span><span>•</span><span>${escapeHtml(product.line || 'Other')}</span></div></div>
+        <div class="catalog-owned"><strong>${owned}</strong><small>owned</small></div>
+      </div>
+      <div class="catalog-tags"><span class="tag status-bey-count">${escapeHtml(contentsTag)}</span>${product.limited ? '<span class="tag status-limited">Limited</span>' : ''}${isAnnounced ? '<span class="tag status-announced">Announced</span>' : ''}${owned ? '<span class="tag status-owned">In collection</span>' : ''}${ownershipTags}</div>
+      <div class="catalog-contents"><strong>${product.inventoryMode === 'variant' ? 'Possible pulls' : product.inventoryMode === 'catalog' ? 'Catalog tracking' : 'Box contents'}</strong><span>${escapeHtml(product.inventoryMode === 'variant' ? `${variants.length} selectable variants` : fixedContents)}</span></div>
+      ${product.contentsNote ? `<p class="catalog-note">${escapeHtml(product.contentsNote)}</p>` : ''}
+      ${actions}
+    </article>`;
+  }
+
   function renderProductList() {
-    const query = $('#productSearch').value.trim().toLowerCase();
+    const query = ($('#productSearch')?.value || '').trim().toLowerCase();
+    const year = $('#productYear')?.value || 'all';
+    const line = $('#productLine')?.value || 'all';
+    const type = $('#productType')?.value || 'all';
+    const ownership = $('#productOwnership')?.value || 'all';
+    const status = $('#productStatus')?.value || 'released';
+    const sort = $('#productSort')?.value || 'newest';
+    const activeFilters = [query, year !== 'all', line !== 'all', type !== 'all', ownership !== 'all', status !== 'released', sort !== 'newest'].filter(Boolean).length;
+    if ($('#activeFilterCount')) $('#activeFilterCount').textContent = String(activeFilters);
     const products = allProducts().filter((product) => {
+      const variantText = (product.variants || []).map((variant) => `${variant.name} ${(variant.parts || []).map((id) => partMap()[id]?.name || id).join(' ')}`).join(' ');
       const partNames = (product.parts || []).map((id) => partMap()[id]?.name || id).join(' ');
-      return !query || `${product.id} ${product.name} ${partNames}`.toLowerCase().includes(query);
-    }).sort((a, b) => {
-      const statusOrder = (a.status === 'released' ? 0 : 1) - (b.status === 'released' ? 0 : 1);
-      return statusOrder || String(b.releaseDate || '').localeCompare(String(a.releaseDate || '')) || a.id.localeCompare(b.id);
-    }).slice(0, query ? 80 : 28);
-    $('#productList').innerHTML = products.length ? products.map((product) => `
-      <div class="product-card"><div><strong>${escapeHtml(product.id)} · ${escapeHtml(product.name)}</strong><small>${product.parts?.length || 0} catalog parts${product.releaseDate ? ` · ${escapeHtml(product.releaseDate)}` : ''}${product.status === 'announced' ? ' · announced' : ''}</small></div><button class="button ${product.status === 'announced' ? 'ghost' : 'secondary'} compact" type="button" data-add-product="${escapeHtml(product.id)}" ${product.status === 'announced' ? 'title="Theorycrafting product"' : ''}>Add set</button></div>`).join('') : emptyState('No known product matches this search.');
+      const haystack = `${product.id} ${product.catalogCode || ''} ${product.name} ${product.productType || ''} ${product.line || ''} ${partNames} ${variantText}`.toLowerCase();
+      const owned = totalProductOwnership(product) > 0;
+      return (!query || haystack.includes(query))
+        && (year === 'all' || product.releaseYear === year)
+        && (line === 'all' || product.line === line)
+        && (type === 'all' || product.productType === type)
+        && (ownership === 'all' || (ownership === 'owned' ? owned : !owned))
+        && (status === 'all' || product.status === status);
+    });
+    if (sort === 'code') {
+      products.sort((a, b) => String(a.catalogCode || a.id).localeCompare(String(b.catalogCode || b.id)) || String(a.releaseDate || '').localeCompare(String(b.releaseDate || '')));
+    } else {
+      const direction = sort === 'oldest' ? 1 : -1;
+      products.sort((a, b) => String(a.releaseDate || '').localeCompare(String(b.releaseDate || '')) * direction || String(a.catalogCode || a.id).localeCompare(String(b.catalogCode || b.id)));
+    }
+    const ownedTotal = allProducts().filter((product) => totalProductOwnership(product) > 0).length;
+    const releasedTotal = allProducts().filter((product) => product.status === 'released').length;
+    if ($('#productLibraryStats')) $('#productLibraryStats').innerHTML = `<strong>${ownedTotal}</strong><small>of ${releasedTotal} released products owned</small>`;
+    if ($('#productLibrarySummary')) $('#productLibrarySummary').textContent = `${products.length} products shown · ${allProducts().length} catalog records`;
+    if (!products.length) {
+      $('#productList').innerHTML = emptyState('No products match these filters. Clear the filters or switch availability to include announced releases.');
+      return;
+    }
+    if (sort === 'code') {
+      $('#productList').innerHTML = `<section class="release-group" data-release-order="code">
+        <div class="release-heading"><h3>Product code order</h3><small>${products.length} ${products.length === 1 ? 'product' : 'products'}</small></div>
+        <div class="product-library-grid">${products.map(renderProductCard).join('')}</div>
+      </section>`;
+      return;
+    }
+    const groups = new Map();
+    products.forEach((product) => {
+      const key = String(product.releaseDate || '').slice(0, 7) || 'undated';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(product);
+    });
+    $('#productList').innerHTML = [...groups.entries()].map(([month, entries]) => `<section class="release-group" data-release-month="${escapeHtml(month)}">
+      <div class="release-heading"><h3>${escapeHtml(releaseMonthLabel(month))}</h3><small>${entries.length} ${entries.length === 1 ? 'release' : 'releases'}</small></div>
+      <div class="product-library-grid">${entries.map(renderProductCard).join('')}</div>
+    </section>`).join('');
   }
 
   function renderPartDialogOptions() {
@@ -359,14 +506,32 @@
     saveState();
   }
 
-  function addProduct(productId) {
+  function applyPartsDelta(partIds, delta) {
+    (partIds || []).forEach((id) => {
+      const record = inventoryRecord(id);
+      record.qty = Math.max(0, Math.floor(Number(record.qty || 0) + Number(delta || 0)));
+      if (!record.qty) delete state.inventory[id];
+    });
+  }
+
+  function adjustOwnedProduct(productId, variantId = '', delta = 1) {
     const product = allProducts().find((entry) => entry.id === productId);
     if (!product) return;
-    (product.parts || []).forEach((id) => adjustInventory(id, 1));
+    if (product.status === 'announced') { toast('This product is announced and cannot be marked owned yet.'); return; }
+    const variant = variantId ? productVariant(product, variantId) : null;
+    if (product.inventoryMode === 'variant' && !variant) { toast('Choose the exact random-booster pull first.'); return; }
+    const key = productOwnershipKey(product.id, variant?.id || '');
+    const current = ownershipQuantity(product.id, variant?.id || '');
+    const next = Math.max(0, current + Number(delta || 0));
+    if (delta < 0 && !current) return;
+    if (next) state.ownedProducts[key] = next; else delete state.ownedProducts[key];
+    if (product.inventoryMode !== 'catalog') applyPartsDelta(variant?.parts || product.parts || [], delta > 0 ? 1 : -1);
     saveState();
     renderInventoryList();
     renderProductList();
-    toast(`${product.id} added to inventory.`);
+    renderDeckValidation();
+    const itemName = variant?.name || product.name;
+    toast(delta > 0 ? `${itemName} added to your collection.` : `One ${itemName} removed.`);
   }
 
   function categoryLabel(categoryId) { return DATA.categories.find((category) => category.id === categoryId)?.label || categoryId; }
@@ -488,6 +653,16 @@
     renderTestPlan();
     renderBattleFormOptions();
     renderBattleHistory();
+    renderPostBattleHandoff();
+  }
+
+  function renderPostBattleHandoff() {
+    const panel = $('#postBattleHandoff');
+    if (!panel) return;
+    panel.hidden = !lastBattleHandoff;
+    if (!lastBattleHandoff) { panel.innerHTML = ''; return; }
+    const delta = lastBattleHandoff.after - lastBattleHandoff.before;
+    panel.innerHTML = `<div class="handoff-icon">✓</div><div class="handoff-copy"><p class="eyebrow">Battle saved</p><h3>Coach has updated your plan</h3><p>${delta ? `Readiness moved from ${lastBattleHandoff.before} to ${lastBattleHandoff.after}.` : `Readiness remains ${lastBattleHandoff.after}; this result still improves the evidence record.`}</p></div><div class="handoff-actions"><button class="button primary" type="button" data-nav-target="results">See Coach update</button><button class="button ghost" type="button" data-record-another>Record another</button></div>`;
   }
 
   function renderTestPlan() {
@@ -572,38 +747,26 @@
     if (result === 'relaunch') finish = 'relaunch';
     const selfKo = String(data.get('selfKo') || 'no') === 'yes';
     if (selfKo && (result !== 'loss' || !['over','xtreme'].includes(finish))) return toast('Choose Self-KO = Yes only when your Bey lost by leaving the stadium by itself.');
+    const beforeScore = currentAssessment().score;
     const battle = {
-      id: uid('battle'),
-      deckId: deck.id,
-      deckName: deck.name,
-      ownBeyIndex,
-      ownSignature: Core.beySignature(bey),
-      ownName: Core.nameForBey(bey, partMap()),
-      opponentArchetype: opponent.opponentArchetype,
-      opponentSignature: opponent.signature,
-      opponentBey: opponent.bey,
-      opponentName: Core.nameForBey(opponent.bey, partMap()),
-      opponentBitRole: opponent.engineering.bitRole,
-      opponentEngineeringVersion: Core.ENGINEERING_MODEL_VERSION,
-      result,
-      finish,
-      selfKo,
-      selfKoKnown: true,
-      finishCause: Core.defaultFinishCause(result, finish),
-      selfKoSide: selfKo ? 'own' : '',
-      stadium: String(data.get('stadium') || ''),
-      launchPosition: String(data.get('launchPosition') || ''),
-      technique: String(data.get('technique') || ''),
-      contaminated: data.get('contaminated') === 'on',
-      notes: String(data.get('notes') || '').trim(),
-      timestamp: nowIso()
+      id: uid('battle'), deckId: deck.id, deckName: deck.name, ownBeyIndex,
+      ownSignature: Core.beySignature(bey), ownName: Core.nameForBey(bey, partMap()),
+      opponentArchetype: opponent.opponentArchetype, opponentSignature: opponent.signature,
+      opponentBey: opponent.bey, opponentName: Core.nameForBey(opponent.bey, partMap()),
+      opponentBitRole: opponent.engineering.bitRole, opponentEngineeringVersion: Core.ENGINEERING_MODEL_VERSION,
+      result, finish, selfKo, selfKoKnown: true, finishCause: Core.defaultFinishCause(result, finish), selfKoSide: selfKo ? 'own' : '',
+      stadium: String(data.get('stadium') || ''), launchPosition: String(data.get('launchPosition') || ''), technique: String(data.get('technique') || ''),
+      contaminated: data.get('contaminated') === 'on', notes: String(data.get('notes') || '').trim(), timestamp: nowIso()
     };
     state.battles.push(battle);
     saveState();
+    const afterScore = currentAssessment().score;
+    lastBattleHandoff = { before: beforeScore, after: afterScore, battleId: battle.id };
     form.reset();
     renderTestView();
     renderDashboard();
-    toast(selfKo ? 'Battle saved with Self-KO = Yes.' : 'Battle saved.');
+    $('#postBattleHandoff')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast('Battle saved. Coach updated.');
   }
 
   function renderAnalysisView() {
@@ -615,60 +778,48 @@
     const firstTask = plan[0];
     const hero = $('#analysisHero');
     hero.style.setProperty('--score-angle', `${assessment.score * 3.6}deg`);
-    const coachMessage = assessment.tournamentReady
-      ? 'Your deck passes the configured readiness checks. Keep testing when parts, launches, or the tournament field change.'
-      : firstTask ? `Your best next move is a controlled test: ${firstTask.ownName} against ${firstTask.opponentName}.` : 'Complete the open setup checks before collecting more battle evidence.';
-    hero.innerHTML = `<div class="hero-top"><div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${assessment.tournamentReady ? 'Ready for tournament play' : 'Your coach has a plan'}</h3><p>${escapeHtml(coachMessage)}</p></div><div class="hero-score" aria-label="Readiness score ${assessment.score} out of 100"><strong>${assessment.score}</strong></div></div><div class="hero-footer"><div>${assessment.tournamentReady ? badge('Ready', 'pass') : badge(`${assessment.blockers.length} items open`, 'warn')}${badge(`${assessment.analytics.overall.effective} decided battles`, 'info')}</div><span class="muted">Readiness /100</span></div>`;
+    hero.innerHTML = `<div class="hero-top"><div><p class="eyebrow">${escapeHtml(deck.name)}</p><h3>${assessment.tournamentReady ? 'Ready for tournament play' : 'Coach is building confidence'}</h3><p>${assessment.tournamentReady ? 'All configured checks pass. Test again after meaningful changes.' : `${assessment.blockers.length} readiness item${assessment.blockers.length === 1 ? '' : 's'} remain.`}</p></div><div class="hero-score" aria-label="Readiness score ${assessment.score} out of 100"><strong>${assessment.score}</strong></div></div><div class="hero-footer"><div>${assessment.tournamentReady ? badge('Ready', 'pass') : badge(`${assessment.blockers.length} open`, 'warn')}${badge(`${assessment.analytics.overall.effective} battles`, 'info')}</div><span class="muted">Readiness /100</span></div>`;
 
     const mission = $('#coachMission');
-    if (firstTask) mission.innerHTML = `<div class="coach-mission-head"><div><p class="eyebrow">Today's mission</p><h3>${escapeHtml(firstTask.ownName)} vs ${escapeHtml(firstTask.opponentName)}</h3><p>${escapeHtml(firstTask.testType === 'stability' ? 'Check whether your Bey can stay in the stadium with a controlled launch.' : firstTask.rationale)}</p></div><span class="mission-count">${Math.round(firstTask.informationGain || 0)}<small>info</small></span></div><div class="mission-actions"><button class="button primary" type="button" data-coach-next-test>Start this test</button><small>You own all needed parts. This is the highest-information legal test now; attack-bit mirrors are avoided by default.</small></div>`;
-    else mission.innerHTML = `<div class="coach-mission-head"><div><p class="eyebrow">Today's mission</p><h3>${assessment.tournamentReady ? 'Keep your deck current' : 'Finish setup first'}</h3><p>${assessment.tournamentReady ? 'Run a new test when you change a part, launch style, or expected opponent.' : 'Add owned parts and complete three legal Beys so the coach can create a test.'}</p></div></div><div class="mission-actions"><button class="button primary" type="button" data-coach-next-test>${assessment.capacity.valid ? 'Open guided tests' : 'Add parts first'}</button></div>`;
+    if (firstTask) mission.innerHTML = `<div class="coach-mission-head"><div><p class="eyebrow">Do this next</p><h3>${escapeHtml(firstTask.ownName)} vs ${escapeHtml(firstTask.opponentName)}</h3><p>${escapeHtml(firstTask.testType === 'stability' ? 'Use a controlled launch and check whether your Bey stays in the stadium.' : firstTask.rationale)}</p></div><span class="mission-count">${Math.round(firstTask.informationGain || 0)}<small>value</small></span></div><div class="mission-actions"><button class="button primary" type="button" data-coach-next-test>Start this test</button><small>Owned parts verified · legal pairing · attack-bit mirror avoided</small></div>`;
+    else mission.innerHTML = `<div class="coach-mission-head"><div><p class="eyebrow">Do this next</p><h3>${assessment.tournamentReady ? 'Keep the deck current' : 'Finish setup first'}</h3><p>${assessment.tournamentReady ? 'Run a new mission when something important changes.' : 'Add owned parts and complete three legal Beys.'}</p></div></div><div class="mission-actions"><button class="button primary" type="button" data-coach-next-test>${assessment.capacity.valid ? 'Open Test' : 'Add parts first'}</button></div>`;
 
     const cfg = state.settings;
     const totalTarget = Number(cfg.minimumBattles || 36);
     const perBeyTarget = Number(cfg.minimumPerBey || 10);
     const archetypeTarget = Number(cfg.minimumPerArchetype || 6);
-    const completedBeys = deck.beys.filter((bey) => {
-      const sum = assessment.analytics.byBey[Core.beySignature(bey)];
-      return sum && sum.effective >= perBeyTarget;
-    }).length;
+    const completedBeys = deck.beys.filter((bey) => (assessment.analytics.byBey[Core.beySignature(bey)]?.effective || 0) >= perBeyTarget).length;
     const coveredTypes = Core.CORE_ARCHETYPES.filter((type) => (assessment.analytics.byArchetype[type]?.effective || 0) >= archetypeTarget).length;
     const progressRows = [
-      ['Battles completed', assessment.analytics.overall.effective, totalTarget, 'Record decided, fair battles.'],
-      ['Each Bey tested', completedBeys, 3, `Aim for at least ${perBeyTarget} decided battles per Bey.`],
-      ['Opponent types tested', coveredTypes, Core.CORE_ARCHETYPES.length, `Aim for ${archetypeTarget} results against each type.`]
+      ['Battles', assessment.analytics.overall.effective, totalTarget],
+      ['Beys', completedBeys, 3],
+      ['Opponent types', coveredTypes, Core.CORE_ARCHETYPES.length]
     ];
-    $('#coachProgress').innerHTML = progressRows.map(([label, value, target, note]) => { const pct = Math.min(100, Math.round((Number(value) / Math.max(1, Number(target))) * 100)); return `<div class="coach-progress-row"><div><strong>${escapeHtml(label)}</strong><span>${value}/${target}</span></div><progress max="100" value="${pct}"></progress><small>${escapeHtml(note)}</small></div>`; }).join('');
+    $('#coachProgress').innerHTML = progressRows.map(([label, value, target]) => { const pct = Math.min(100, Math.round((Number(value) / Math.max(1, Number(target))) * 100)); return `<div class="coach-progress-row"><div><strong>${escapeHtml(label)}</strong><span>${value}/${target}</span></div><progress max="100" value="${pct}"></progress></div>`; }).join('');
 
     const strengths = [];
-    if (assessment.legality.legal) strengths.push('The deck passes the selected construction rules.');
-    if (assessment.capacity.valid) strengths.push('All three Beys can be built from owned parts.');
+    if (assessment.legality.legal) strengths.push('Legal under the selected rules.');
+    if (assessment.capacity.valid) strengths.push('All three Beys use owned parts.');
     if (engineering.profiles.length) {
       const avg = (key) => engineering.profiles.reduce((sum, p) => sum + Number(p.metrics[key] || 0), 0) / engineering.profiles.length;
-      const ranked = [['Strong spin retention', avg('spinRetention')], ['Good stability', avg('stability')], ['Strong knockout resistance', avg('koResistance')], ['Good attack potential', avg('impactPotential')]].sort((a,b)=>b[1]-a[1]);
-      ranked.slice(0,2).forEach(([label, score]) => strengths.push(`${label} (${Math.round(score)}/100 modeled).`));
-      if (engineering.roleSpread >= 3) strengths.push('The three Beys cover different jobs.');
+      const ranked = [['Spin retention', avg('spinRetention')], ['Stability', avg('stability')], ['KO resistance', avg('koResistance')], ['Attack potential', avg('impactPotential')]].sort((a,b)=>b[1]-a[1]);
+      ranked.slice(0,1).forEach(([label, score]) => strengths.push(`${label} is the strongest modeled trait (${Math.round(score)}/100).`));
+      if (engineering.roleSpread >= 3) strengths.push('The deck covers three different jobs.');
     }
-    $('#coachStrengths').innerHTML = (strengths.length ? strengths.slice(0,5) : ['Complete the deck to reveal strengths.']).map((text) => `<div class="coach-point positive"><span>✓</span><p>${escapeHtml(text)}</p></div>`).join('');
+    $('#coachStrengths').innerHTML = (strengths.length ? strengths.slice(0,3) : ['Complete the deck to reveal strengths.']).map((text) => `<div class="coach-point positive"><span>✓</span><p>${escapeHtml(text)}</p></div>`).join('');
 
-    const weaknesses = assessment.blockers.slice(0,4).map((gate) => `${gate.label}: ${gate.detail}`);
-    if (engineering.profiles.length && engineering.weakestMatchup) weaknesses.push(`Modeled weak matchup: ${labelForArchetype(engineering.weakestMatchup)} (${engineering.weakestRating}/100).`);
-    if (!weaknesses.length) weaknesses.push('No current readiness blocker. Watch for rule, wear, or meta changes.');
-    $('#coachWeaknesses').innerHTML = weaknesses.slice(0,5).map((text) => `<div class="coach-point warning"><span>!</span><p>${escapeHtml(text)}</p></div>`).join('');
+    const weaknesses = assessment.blockers.slice(0,2).map((gate) => `${gate.label}: ${gate.detail}`);
+    if (engineering.profiles.length && engineering.weakestMatchup) weaknesses.push(`Weakest modeled matchup: ${labelForArchetype(engineering.weakestMatchup)} (${engineering.weakestRating}/100).`);
+    if (!weaknesses.length) weaknesses.push('No current blocker. Watch for rule, wear, or meta changes.');
+    $('#coachWeaknesses').innerHTML = weaknesses.slice(0,3).map((text) => `<div class="coach-point warning"><span>!</span><p>${escapeHtml(text)}</p></div>`).join('');
 
     if (engineering.profiles.length) {
       const avg = (key) => Math.round(engineering.profiles.reduce((sum, p) => sum + Number(p.metrics[key] || 0), 0) / engineering.profiles.length);
-      const simple = [
-        ['Attack', avg('impactPotential'), false],
-        ['Endurance', avg('spinRetention'), false],
-        ['Stability', avg('stability'), false],
-        ['KO resistance', avg('koResistance'), false],
-        ['Self-KO safety', 100 - Math.round(engineering.averageSelfKoRisk), false]
-      ];
-      $('#coachPhysics').innerHTML = simple.map(([label, score]) => `<div class="coach-physics-row"><span>${escapeHtml(label)}</span><div class="coach-stars" aria-label="${score} out of 100">${'★'.repeat(Math.max(1, Math.min(5, Math.round(score/20))))}${'☆'.repeat(5-Math.max(1, Math.min(5, Math.round(score/20))))}</div><strong>${score}</strong></div>`).join('') + '<p class="model-warning">These are engineering estimates used to choose tests. Real battle results decide readiness.</p>';
-    } else $('#coachPhysics').innerHTML = emptyState('Complete three Beys to see the simple behavior guide.');
+      const simple = [['Attack', avg('impactPotential')], ['Endurance', avg('spinRetention')], ['Stability', avg('stability')], ['KO resistance', avg('koResistance')], ['Self-KO safety', 100 - Math.round(engineering.averageSelfKoRisk)]];
+      $('#coachPhysics').innerHTML = simple.map(([label, score]) => `<div class="coach-physics-row"><span>${escapeHtml(label)}</span><div class="simple-meter"><i style="width:${score}%"></i></div><strong>${score}</strong></div>`).join('') + '<p class="model-warning">Engineering guide only. Real battles decide readiness.</p>';
+    } else $('#coachPhysics').innerHTML = emptyState('Complete three Beys to see the behavior guide.');
 
-    $('#coachPatterns').innerHTML = coachPatterns(assessment).map((item) => `<div class="coach-point ${item.kind === 'positive' ? 'positive' : item.kind === 'warning' ? 'warning' : ''}"><span>${item.kind === 'positive' ? '✓' : item.kind === 'warning' ? '!' : '→'}</span><p>${escapeHtml(item.text)}</p></div>`).join('');
+    $('#coachPatterns').innerHTML = coachPatterns(assessment).slice(0,3).map((item) => `<div class="coach-point ${item.kind === 'positive' ? 'positive' : item.kind === 'warning' ? 'warning' : ''}"><span>${item.kind === 'positive' ? '✓' : item.kind === 'warning' ? '!' : '→'}</span><p>${escapeHtml(item.text)}</p></div>`).join('');
 
     const componentNames = { legality: 'Rules', inventory: 'Owned parts', sample: 'Battle amount', perBey: 'Each Bey tested', matchups: 'Opponent coverage', execution: 'Fair testing', finishes: 'Finish variety', roles: 'Deck role variety', selfKo: 'Self-KO evidence', selfKoPenalty: 'Self-KO adjustment' };
     $('#analysisComponents').innerHTML = Object.entries(assessment.components).map(([name, value]) => `<div class="metric"><span>${escapeHtml(componentNames[name] || name)}</span><strong>${escapeHtml(value)}</strong><span>readiness points</span></div>`).join('');
@@ -863,9 +1014,13 @@
     return {
       schemaVersion: 1,
       generatedBy: DATA.meta.appName,
-      instructions: 'Add new parts/products only. IDs must be unique. Custom patches are stored locally and require verification.',
-      parts: [{ id: 'custom-example-blade', name: 'Example Blade', category: 'blade', line: 'Custom', status: 'custom', role: 'balance', code: '', notes: 'Replace or remove this example.' }],
-      products: [{ id: 'CUSTOM-001', name: 'Example Product', status: 'custom', releaseDate: '', parts: ['custom-example-blade'] }]
+      instructions: 'Add new parts and products only. Every product must contain at least one Beyblade performance part. IDs must be unique. Custom patches are stored locally and require verification.',
+      parts: [
+        { id: 'custom-example-blade', name: 'Example Blade', category: 'blade', line: 'Custom', status: 'custom', role: 'balance', code: '', notes: 'Replace or remove this example.' },
+        { id: 'custom-example-ratchet', name: 'Example Ratchet', category: 'ratchet', line: 'Custom', status: 'custom', role: 'balance', code: '', notes: 'Replace or remove this example.' },
+        { id: 'custom-example-bit', name: 'Example Bit', category: 'bit', line: 'Custom', status: 'custom', role: 'balance', code: '', notes: 'Replace or remove this example.' }
+      ],
+      products: [{ id: 'CUSTOM-001', name: 'Example Bey Product', status: 'custom', releaseDate: '', beyCount: 1, parts: ['custom-example-blade', 'custom-example-ratchet', 'custom-example-bit'] }]
     };
   }
 
@@ -884,11 +1039,17 @@
     const validIds = new Set([...existingPartIds, ...incomingIds]);
     const existingProductIds = new Set(allProducts().map((product) => product.id));
     const incomingProductIds = new Set();
+    const mergedPartMap = Object.fromEntries([...allParts(), ...parts].map((part) => [part.id, part]));
     const products = patch.products.map((product) => {
       if (!product?.id || !product?.name || existingProductIds.has(product.id) || incomingProductIds.has(product.id)) throw new Error(`Invalid or duplicate product ID: ${product?.id || 'missing ID'}.`);
       incomingProductIds.add(product.id);
-      (product.parts || []).forEach((id) => { if (!validIds.has(id)) throw new Error(`${product.id} references missing part ${id}.`); });
-      return { ...product, status: 'custom' };
+      const references = [...(product.parts || []), ...(product.variants || []).flatMap((variant) => variant.parts || [])];
+      references.forEach((id) => { if (!validIds.has(id)) throw new Error(`${product.id} references missing part ${id}.`); });
+      const normalized = { ...product, status: 'custom', parts: product.parts || [], variants: product.variants || [] };
+      if (!Core.productContainsBeyParts(normalized, mergedPartMap)) throw new Error(`${product.id} does not contain any Beyblade performance part.`);
+      const beyCount = Core.productBeyCount(normalized, mergedPartMap);
+      const beyPartCount = Core.productBeyPartCount(normalized, mergedPartMap);
+      return { ...normalized, beyCount, beyPartCount, containsBey: beyCount > 0, containsBeyParts: true };
     });
     state.customParts.push(...parts);
     state.customProducts.push(...products);
@@ -905,10 +1066,29 @@
       if (nav) return navigate(nav.dataset.nav);
       const navTarget = event.target.closest('[data-nav-target]');
       if (navTarget) return navigate(navTarget.dataset.navTarget);
+      const collectionTab = event.target.closest('[data-collection-tab]');
+      if (collectionTab) {
+        const tab = collectionTab.dataset.collectionTab;
+        $$('[data-collection-tab]').forEach((button) => {
+          const active = button.dataset.collectionTab === tab;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-selected', String(active));
+        });
+        $('#setLibraryPanel').hidden = tab !== 'sets';
+        $('#loosePartsPanel').hidden = tab !== 'parts';
+        if (tab === 'parts') renderInventoryList(); else renderProductList();
+        return;
+      }
+      const productAction = event.target.closest('[data-product-action]');
+      if (productAction) {
+        const card = productAction.closest('[data-product-card]');
+        const productId = productAction.dataset.productId;
+        const variantId = card?.querySelector('[data-product-variant]')?.value || '';
+        adjustOwnedProduct(productId, variantId, productAction.dataset.productAction === 'remove' ? -1 : 1);
+        return;
+      }
       const close = event.target.closest('[data-close-dialog]');
       if (close) return closeDialog(close);
-      const addProductButton = event.target.closest('[data-add-product]');
-      if (addProductButton) return addProduct(addProductButton.dataset.addProduct);
       const inventoryDelta = event.target.closest('[data-inventory-delta]');
       if (inventoryDelta) {
         const id = inventoryDelta.closest('[data-part-id]').dataset.partId;
@@ -945,6 +1125,8 @@
         $('#battleForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
+      const recordAnother = event.target.closest('[data-record-another]');
+      if (recordAnother) { lastBattleHandoff = null; renderPostBattleHandoff(); $('#battleForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       const deleteBattle = event.target.closest('[data-delete-battle]');
       if (deleteBattle) {
         state.battles = state.battles.filter((battle) => battle.id !== deleteBattle.dataset.deleteBattle);
@@ -982,6 +1164,25 @@
     $('#inventorySearch').addEventListener('input', renderInventoryList);
     $('#inventoryCategory').addEventListener('change', renderInventoryList);
     $('#productSearch').addEventListener('input', renderProductList);
+    ['productYear','productLine','productType','productOwnership','productStatus','productSort'].forEach((id) => $(`#${id}`).addEventListener('change', renderProductList));
+    $('#clearProductFilters').addEventListener('click', () => {
+      $('#productSearch').value = '';
+      $('#productYear').value = 'all';
+      $('#productLine').value = 'all';
+      $('#productType').value = 'all';
+      $('#productOwnership').value = 'all';
+      $('#productStatus').value = 'released';
+      $('#productSort').value = 'newest';
+      renderProductList();
+      $('#productSearch').focus();
+    });
+    $('#productList').addEventListener('change', (event) => {
+      const select = event.target.closest('[data-product-variant]');
+      if (!select) return;
+      const card = select.closest('[data-product-card]');
+      const remove = card?.querySelector('[data-product-action="remove"]');
+      if (remove) remove.disabled = ownershipQuantity(select.dataset.productVariant, select.value) < 1;
+    });
     $('#partCategory').addEventListener('change', renderPartDialogOptions);
     $('#openPartDialog').addEventListener('click', () => { renderInventoryControls(); $('#partDialog').showModal(); });
     $('#partForm').addEventListener('submit', (event) => {
@@ -1096,8 +1297,11 @@
   function renderConnectionStatus() {
     const status = $('#connectionStatus');
     const online = navigator.onLine;
-    status.textContent = online ? 'Local + online' : 'Offline ready';
-    status.className = `status-pill ${online ? 'online' : 'offline'}`;
+    const label = online ? 'Online. Data is stored locally.' : 'Offline. The app remains available locally.';
+    status.textContent = online ? 'Online' : 'Offline';
+    status.className = `status-pill compact-status ${online ? 'online' : 'offline'}`;
+    status.setAttribute('aria-label', label);
+    status.setAttribute('title', label);
   }
 
   function renderAll() {

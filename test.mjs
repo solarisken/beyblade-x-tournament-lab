@@ -230,6 +230,63 @@ test('catalog integrity includes current released and announced architecture ent
   assert.equal(DATA.products.find((product) => product.id === 'UX-21').status, 'announced');
 });
 
+
+test('release library includes every product with Bey parts and excludes accessory-only products', () => {
+  assert.equal(DATA.products.length, 125);
+  assert.equal(DATA.products.some((product) => product.id === 'BX-00-BITSET-GOLD'), true);
+  assert.equal(DATA.products.some((product) => product.id === 'BX-00-BITSET-SILVER'), true);
+  assert.equal(DATA.products.some((product) => ['tool','stadium','launcher','case','sticker'].includes(product.productType)), false);
+  DATA.products.forEach((product) => {
+    assert.equal(product.containsBeyParts, true, `${product.id} containsBeyParts`);
+    assert.ok(Core.productContainsBeyParts(product, map), `${product.id} has no Beyblade performance part`);
+  });
+  ['BX-00-BITSET-GOLD','BX-00-BITSET-SILVER'].forEach((id) => {
+    const product = DATA.products.find((entry) => entry.id === id);
+    assert.equal(Core.productBeyCount(product, map), 0, `${id} should remain a parts-only release`);
+    assert.equal(Core.productBeyPartCount(product, map), 4, `${id} should expose four bits`);
+  });
+});
+
+test('product inclusion helpers distinguish complete Beys from parts-only releases', () => {
+  const bitSet = DATA.products.find((product) => product.id === 'BX-00-BITSET-GOLD');
+  const starter = DATA.products.find((product) => product.id === 'BX-01');
+  const accessoryOnly = { id: 'TOOL-ONLY', name: 'Tool only', parts: [] };
+  assert.equal(Core.productContainsBey(bitSet, map), false);
+  assert.equal(Core.productContainsBeyParts(bitSet, map), true);
+  assert.equal(Core.productContainsBey(starter, map), true);
+  assert.equal(Core.productContainsBeyParts(starter, map), true);
+  assert.equal(Core.productContainsBeyParts(accessoryOnly, map), false);
+});
+
+test('release library is chronological and preserves representative multi-Bey product counts', () => {
+  const dates = DATA.products.map((product) => product.releaseDate);
+  assert.deepEqual(dates, [...dates].sort());
+  const expected = { 'BX-01': 1, 'BX-08': 3, 'BX-14': 1, 'UX-04': 2, 'UX-07': 3, 'UX-10': 3, 'BX-00-25TH': 4, 'UX-15': 3, 'BX-46': 2 };
+  Object.entries(expected).forEach(([id, count]) => assert.equal(Core.productBeyCount(DATA.products.find((product) => product.id === id), map), count, id));
+  const customize = DATA.products.find((product) => product.id === 'UX-10');
+  ['ratchet-3-85','bit-bound-spike'].forEach((id) => assert.ok(customize.parts.includes(id), `UX-10 missing ${id}`));
+});
+
+test('release status follows the verified date and announced products cannot be treated as released', () => {
+  DATA.products.forEach((product) => {
+    if (product.releaseDate <= DATA.meta.verifiedThrough) assert.equal(product.status, 'released', product.id);
+    else assert.equal(product.status, 'announced', product.id);
+  });
+  assert.equal(DATA.products.filter((product) => product.status === 'released').length, 120);
+  assert.equal(DATA.products.filter((product) => product.status === 'announced').length, 5);
+});
+
+test('collection UI exposes chronological filters, ownership controls, and Bey-part inclusion policy', () => {
+  const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  const app = fs.readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  ['productSearch','productYear','productLine','productType','productOwnership','productStatus','productSort','clearProductFilters'].forEach((id) => assert.match(html, new RegExp(`id="${id}"`)));
+  assert.match(html, /Every listed product contains at least one Beyblade performance part/i);
+  assert.match(app, /data-product-action/);
+  assert.match(app, /data-collection-tab/);
+  assert.match(app, /Core\.productContainsBeyParts/);
+  assert.match(app, /does not contain any Beyblade performance part/);
+});
+
 test('root HTML references only root runtime assets and includes all six primary views', () => {
   const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
   ['dashboard','inventory','deck','test','results','more'].forEach((view) => assert.match(html, new RegExp(`data-view="${view}"`)));
@@ -239,7 +296,7 @@ test('root HTML references only root runtime assets and includes all six primary
 
 test('service worker lifecycle caches every production root asset and clears old versions', async () => {
   const source = fs.readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8');
-  assert.match(source, /x-deck-lab-v3\.0\.0/);
+  assert.match(source, /x-deck-lab-v3\.2\.0/);
   const listeners = {};
   const cache = { addAll: async (assets) => { cache.assets = assets; }, put: async () => {} };
   const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.2.0'], delete: async (key) => key === 'old-cache', match: async () => null };
@@ -251,7 +308,7 @@ test('service worker lifecycle caches every production root asset and clears old
 });
 
 test('owned-parts optimizer expands its candidate pool when extra inventory crowds the first shortlist', () => {
-  const productIds = ['BX-50-01', 'BX-50-03', 'BX-50-05', 'BX-50-06'];
+  const productIds = ['BX-08', 'UX-10', 'CX-04', 'BX-46'];
   const inventory = {};
   productIds.forEach((productId) => {
     const product = DATA.products.find((entry) => entry.id === productId);
@@ -281,6 +338,8 @@ test('portable-data imports enforce backup checksums and catalog product uniquen
   assert.match(source, /Backup checksum mismatch/);
   assert.match(source, /incomingProductIds/);
   assert.match(source, /checksum verified/);
+  assert.match(source, /does not contain any Beyblade performance part/);
+  assert.match(source, /allowedProductIds/);
 });
 
 
@@ -429,4 +488,19 @@ test('coach-first HTML includes player/advanced modes, roadmap, patterns, and no
   assert.match(html, /id="coachPatterns"/);
   assert.match(html, /<small>Coach<\/small>/);
   assert.doesNotMatch(html, /<small>Analysis<\/small>/);
+});
+
+
+test('v3.2 UI refinement keeps the coach path compact and continuous', () => {
+  const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  const app = fs.readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('./styles.css', import.meta.url), 'utf8');
+  assert.equal((html.match(/class="bottom-nav"[\s\S]*?<\/nav>/)?.[0].match(/data-nav=/g) || []).length, 5);
+  assert.match(html, /id="postBattleHandoff"/);
+  assert.match(html, /id="productFilterDrawer"/);
+  assert.match(html, /coach-overview-panel/);
+  assert.match(app, /Coach has updated your plan/);
+  assert.match(app, /lastBattleHandoff/);
+  assert.match(css, /library-controls \{ position: sticky/);
+  assert.match(css, /grid-template-columns: repeat\(5,1fr\)/);
 });

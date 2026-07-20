@@ -1,7 +1,7 @@
 {
   "name": "X Deck Lab",
   "short_name": "X Deck Lab",
-  "description": "Guided Beyblade X deck building and owned-parts tournament testing with one simple Self-KO Yes/No answer.",
+  "description": "Guided Beyblade X tournament coach with a release-date library containing products with Beyblade performance parts, loose-part inventory, owned-opponent tests, and simple Self-KO tracking.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

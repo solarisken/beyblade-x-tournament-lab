@@ -1,7 +1,7 @@
 {
   "application": "X Deck Lab",
-  "version": "3.0.0",
-  "timestampUtc": "2026-07-19T15:41:18.791818+00:00",
+  "version": "3.2.0",
+  "timestampUtc": "2026-07-20T04:04:14.696080+00:00",
   "viewport": {
     "width": 390,
     "height": 844,
@@ -10,17 +10,18 @@
     "touch": true
   },
   "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 20.164,
+  "durationSeconds": 20.543,
   "summary": {
-    "checks": 82,
-    "passed": 82,
+    "checks": 109,
+    "passed": 109,
     "failed": 0
   },
   "normalConsoleErrors": [],
   "uncaughtPageErrors": [],
   "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected 182bd92c, calculated 027ef2fc.\n    at HTMLInputElement.<anonymous> (<anonymous>:1072:58)",
-    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:889:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:888:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1082:13)"
+    "Error: Backup checksum mismatch: expected f90925b8, calculated 6b4fa8b0.\n    at HTMLInputElement.<anonymous> (<anonymous>:1273:58)",
+    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:1045:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:1044:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1283:13)",
+    "Error: AUDIT-NO-BEY-PARTS does not contain any Beyblade performance part.\n    at <anonymous>:1050:75\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:1044:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1283:13)"
   ],
   "checks": [
     {
@@ -61,7 +62,7 @@
     {
       "name": "Kid guide explains ordinary Self-KO",
       "passed": true,
-      "detail": "PLAYER GUIDE\n\nHow to use X Deck Lab\n×\n1\nAdd your parts\n\nOpen Parts. Add boxed products or loose parts you really own.\n\n2\nBuild a deck\n\nOpen Decks. Choose three Beys, or let the app suggest legal decks from your parts.\n\n3\nRun the next test\n\nOpen Test. Tap the first card. Build the shown opponent, battle once, and save the result.\n\n4\nCheck readiness\n\nOpen Coach. It gives you one next mission, shows progress, and explains what needs work.\n\nSelf-KO means: your own Bey jumps or runs out mostly by its"
+      "detail": "PLAYER GUIDE\n\nHow to use X Deck Lab\n×\n1\nAdd your parts\n\nOpen Parts. Browse official releases by date, including sets and part packs. Releases with no Beyblade performance parts are excluded.\n\n2\nBuild a deck\n\nOpen Decks. Choose three Beys, or let the app suggest legal decks from your parts.\n\n3\nRun the next test\n\nOpen Test. Tap the first card. Build the shown opponent, battle once, and save the result.\n\n4\nCheck readiness\n\nOpen Coach. It gives you one next mission, shows progress, and explains what"
     },
     {
       "name": "Small-phone layout has no horizontal overflow",
@@ -111,12 +112,67 @@
     {
       "name": "Primary navigation meets 44 px touch target",
       "passed": true,
-      "detail": "[{\"w\": 63, \"h\": 59, \"left\": 6, \"right\": 69, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 69, \"right\": 132, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 132, \"right\": 195, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 195, \"right\": 258, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 258, \"right\": 321, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 321, \"right\": 384, \"bottom\": 837}]"
+      "detail": "[{\"w\": 75.59375, \"h\": 59, \"left\": 6, \"right\": 81.59375, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 81.59375, \"right\": 157.1875, \"bottom\": 837}, {\"w\": 75.609375, \"h\": 59, \"left\": 157.1875, \"right\": 232.796875, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 232.796875, \"right\": 308.390625, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 308.390625, \"right\": 383.984375, \"bottom\": 837}]"
     },
     {
       "name": "Primary navigation stays inside viewport",
       "passed": true,
-      "detail": "[{\"w\": 63, \"h\": 59, \"left\": 6, \"right\": 69, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 69, \"right\": 132, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 132, \"right\": 195, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 195, \"right\": 258, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 258, \"right\": 321, \"bottom\": 837}, {\"w\": 63, \"h\": 59, \"left\": 321, \"right\": 384, \"bottom\": 837}]"
+      "detail": "[{\"w\": 75.59375, \"h\": 59, \"left\": 6, \"right\": 81.59375, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 81.59375, \"right\": 157.1875, \"bottom\": 837}, {\"w\": 75.609375, \"h\": 59, \"left\": 157.1875, \"right\": 232.796875, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 232.796875, \"right\": 308.390625, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 308.390625, \"right\": 383.984375, \"bottom\": 837}]"
+    },
+    {
+      "name": "Bottom navigation is reduced to five core actions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Advanced controls move to the compact header",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Four-step path stays compact on mobile",
+      "passed": true,
+      "detail": "0px"
+    },
+    {
+      "name": "Official release library opens by default",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Release filters are collapsed until requested",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Search and filter controls remain sticky",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Filter drawer opens on demand",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Library includes releases with Bey parts and excludes accessory-only releases",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Parts-only releases with Bey parts are included",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Adding a parts-only release records ownership and loose parts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Removing a parts-only release reverses its parts",
+      "passed": true,
+      "detail": ""
     },
     {
       "name": "Product search retains focus",
@@ -124,14 +180,59 @@
       "detail": ""
     },
     {
-      "name": "Known-products panel remains open",
+      "name": "Product cards show included Bey count",
       "passed": true,
       "detail": ""
     },
     {
+      "name": "Adding a fixed product records ownership and verified loose parts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Removing a fixed product reverses its owned quantity and parts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Random boosters require and store the exact selected pull",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Announced releases with Bey parts can be browsed but not marked owned",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Clear filters restores released newest-first browsing",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Filter counter resets with the controls",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Oldest-first sorting starts with the first release month",
+      "passed": true,
+      "detail": "2023-07"
+    },
+    {
+      "name": "Product-code sorting is alphabetical",
+      "passed": true,
+      "detail": "BX-00 | BX-00 | BX-00 | BX-00 | BX-00 | BX-00 | BX-00 | BX-00"
+    },
+    {
       "name": "Product entry updates inventory",
       "passed": true,
-      "detail": "14 unique parts"
+      "detail": "17 unique parts"
+    },
+    {
+      "name": "Loose-parts tab switches without losing product ownership",
+      "passed": true,
+      "detail": ""
     },
     {
       "name": "Inventory search retains focus",
@@ -156,7 +257,7 @@
     {
       "name": "Optimizer applies three complete Beys",
       "passed": true,
-      "detail": "stamina setup · stamina bit · fit 78/100 | balance setup · attack bit · fit 62/100 | attack setup · stamina bit · fit 55/100"
+      "detail": "attack setup · attack bit · fit 72/100 | stamina setup · stamina bit · fit 82/100 | balance setup · stamina bit · fit 55/100"
     },
     {
       "name": "Each completed Bey uses a four-cell mobile score grid",
@@ -221,7 +322,12 @@
     {
       "name": "Xtreme Finish receives three points",
       "passed": true,
-      "detail": "SilverWolf 9-60 Disk Ball · WIN\n\nWizardRod 3-80 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 19, 2026, 3:41 PM"
+      "detail": "DranStrike 4-50 Free Flat · WIN\n\nWizardRod 1-60 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 20, 2026, 4:04 AM"
+    },
+    {
+      "name": "Saving a battle reveals a Coach handoff",
+      "passed": true,
+      "detail": ""
     },
     {
       "name": "Impossible Self-KO Yes answer is blocked",
@@ -254,7 +360,7 @@
       "detail": ""
     },
     {
-      "name": "Coach roadmap is visible on Home",
+      "name": "Home introduces Coach before the tab is used",
       "passed": true,
       "detail": ""
     },
@@ -265,6 +371,16 @@
     },
     {
       "name": "Coach shows one next mission",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Coach snapshot combines progress and priorities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Engineering explanation is collapsed by default",
       "passed": true,
       "detail": ""
     },
@@ -311,12 +427,12 @@
     {
       "name": "Simple Self-KO analysis renders Yes-or-No totals",
       "passed": true,
-      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. SilverWolf 9-60 Disk Ball\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n1.7%\nengineering estimate\n\n2. WizardRod 1-60 Low Rush\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n9.6%\nengineering estimate\n\n3. PhoenixWing 4-50 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n3.0%\nengineering estimate\n\n"
+      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. DranStrike 4-50 Free Flat\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n13.7%\nengineering estimate\n\n2. WizardRod 9-60 Disk Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n1.5%\nengineering estimate\n\n3. PhoenixWing 5-70 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n4.3%\nengineering estimate"
     },
     {
       "name": "Detailed Self-KO causes are not shown",
       "passed": true,
-      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. SilverWolf 9-60 Disk Ball\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n1.7%\nengineering estimate\n\n2. WizardRod 1-60 Low Rush\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n9.6%\nengineering estimate\n\n3. PhoenixWing 4-50 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n3.0%\nengineering estimate\n\n"
+      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. DranStrike 4-50 Free Flat\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n13.7%\nengineering estimate\n\n2. WizardRod 9-60 Disk Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n1.5%\nengineering estimate\n\n3. PhoenixWing 5-70 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n4.3%\nengineering estimate"
     },
     {
       "name": "Order analysis renders without failure",
@@ -326,7 +442,7 @@
     {
       "name": "Forecast action completes",
       "passed": true,
-      "detail": "Estimated match win rate\n33.2%\nrange 32.1%–34.4%\nAverage score\n2.11–3.12\n6,000 model runs\nBattle evidence\n2\nrelevant decided battles\nEstimated self-KO chance\n9.1%\nuses recorded Yes/No answers\nModel status\nNeeds more tests\nguide only, not a guarantee\n\nForecast is prior-heavy because battle count or self-KO answers are limited; sparse cells use the engineering-informed self-KO estimate."
+      "detail": "Estimated match win rate\n31.9%\nrange 30.8%–33.1%\nAverage score\n2.08–3.18\n6,000 model runs\nBattle evidence\n2\nrelevant decided battles\nEstimated self-KO chance\n8.5%\nuses recorded Yes/No answers\nModel status\nNeeds more tests\nguide only, not a guarantee\n\nForecast is prior-heavy because battle count or self-KO answers are limited; sparse cells use the engineering-informed self-KO estimate."
     },
     {
       "name": "Meta-profile management saves weighted lineup",
@@ -394,7 +510,17 @@
       "detail": ""
     },
     {
-      "name": "Valid catalog patch imports",
+      "name": "Catalog products without Bey parts are rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Catalog products with only Bey parts are accepted",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Complete-Bey catalog patch also imports",
       "passed": true,
       "detail": ""
     },
@@ -430,6 +556,16 @@
     },
     {
       "name": "Fresh application instance restores battles",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Migration preserves ownership records for parts-only Bey releases",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Migration preserves custom products that contain a Bey part",
       "passed": true,
       "detail": ""
     }

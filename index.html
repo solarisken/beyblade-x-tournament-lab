@@ -14,62 +14,87 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="app-header">
-    <div>
-      <p class="eyebrow">Beyblade X deck builder and test guide</p>
-      <h1>X Deck Lab</h1>
+    <div class="app-brand">
+      <span class="brand-mark" aria-hidden="true">X</span>
+      <div><p class="eyebrow">Tournament coach</p><h1>X Deck Lab</h1></div>
     </div>
     <div class="header-actions">
-      <span id="connectionStatus" class="status-pill" aria-live="polite">Local</span>
-      <button id="modeButton" class="button ghost compact" type="button" aria-label="Switch experience mode">Player mode</button>
-      <button id="guideButton" class="button ghost compact" type="button">How to use</button>
-      <button id="installButton" class="button ghost compact" type="button" hidden>Install</button>
+      <span id="connectionStatus" class="status-pill compact-status" aria-live="polite" title="Connection status">Local</span>
+      <button id="guideButton" class="icon-button header-icon" type="button" aria-label="Open player guide" title="How to use">?</button>
+      <button id="modeButton" class="icon-button header-icon" type="button" aria-label="Switch experience mode" title="Player mode">◐</button>
+      <button class="icon-button header-icon" type="button" data-nav="more" aria-label="Open settings and advanced controls" title="More">•••</button>
+      <button id="installButton" class="icon-button header-icon" type="button" aria-label="Install app" title="Install" hidden>↓</button>
     </div>
   </header>
 
   <main id="main" class="app-main" tabindex="-1">
     <section id="view-dashboard" class="view active" data-view="dashboard" aria-labelledby="dashboard-title">
-      <div class="section-heading">
-        <div><p class="eyebrow">Active deck</p><h2 id="dashboard-title">Your tournament path</h2></div>
-        <button class="button secondary compact" type="button" data-nav-target="deck">Open deck</button>
+      <div class="section-heading compact-heading">
+        <div><p class="eyebrow">Active deck</p><h2 id="dashboard-title">Today</h2></div>
+        <button class="button ghost compact" type="button" data-nav-target="deck">Edit deck</button>
       </div>
-      <article id="quickGuide" class="panel guide-panel" data-guide-panel aria-labelledby="quick-guide-title">
-        <div class="panel-heading"><div><p class="eyebrow">Start here</p><h3 id="quick-guide-title">Four easy steps</h3></div><button class="text-button" type="button" data-open-guide>See full guide</button></div>
-        <div id="guideSteps" class="guide-steps"></div>
+      <article id="quickGuide" class="panel guide-panel journey-panel" data-guide-panel aria-labelledby="quick-guide-title">
+        <div class="panel-heading compact-panel-heading"><div><p class="eyebrow">Your path</p><h3 id="quick-guide-title">Four steps to tournament readiness</h3></div><button class="text-button" type="button" data-open-guide>Guide</button></div>
+        <div id="guideSteps" class="guide-steps compact-journey"></div>
       </article>
-      <div id="dashboardHero" class="hero-card"></div>
-      <article id="coachRoadmap" class="panel roadmap-panel"></article>
-      <div id="dashboardMetrics" class="metric-grid"></div>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">What to do next</p><h3>Next guided tests</h3></div><button class="text-button" type="button" data-nav-target="test">Run tests</button></div>
+      <div id="dashboardHero" class="hero-card home-hero"></div>
+      <article id="coachRoadmap" class="panel next-step-panel"></article>
+      <div id="dashboardMetrics" class="summary-strip"></div>
+      <article class="panel mission-preview-panel">
+        <div class="panel-heading compact-panel-heading"><div><p class="eyebrow">Recommended battle</p><h3>Best next test</h3></div><button class="text-button" type="button" data-nav-target="test">Open Test</button></div>
         <div id="dashboardPlan" class="stack-list"></div>
       </article>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Release blockers</p><h3>What prevents readiness</h3></div></div>
-        <div id="dashboardBlockers" class="stack-list"></div>
-      </article>
+      <details class="panel compact-details blocker-details">
+        <summary><span><strong>What still needs work</strong><small>Readiness blockers and missing evidence</small></span></summary>
+        <div id="dashboardBlockers" class="stack-list details-body"></div>
+      </details>
     </section>
 
     <section id="view-inventory" class="view" data-view="inventory" aria-labelledby="inventory-title" hidden>
       <div class="section-heading">
-        <div><p class="eyebrow">Physical collection</p><h2 id="inventory-title">Inventory</h2></div>
-        <button id="openPartDialog" class="button primary compact" type="button">Add part</button>
+        <div><p class="eyebrow">Physical collection</p><h2 id="inventory-title">Your collection</h2></div>
+        <button id="openPartDialog" class="button primary compact" type="button">Add loose part</button>
       </div>
-      <div class="guide-strip" data-guide-panel><span class="step-dot">1</span><div><strong>Add what you own</strong><small>Choose a boxed product or add a loose part. The app only uses the quantities you enter.</small></div></div>
-      <article class="panel filter-panel">
-        <label class="field grow"><span>Search owned parts</span><input id="inventorySearch" type="search" autocomplete="off" placeholder="Blade, ratchet, bit…"></label>
-        <label class="field"><span>Category</span><select id="inventoryCategory"><option value="all">All categories</option></select></label>
-      </article>
-      <details id="knownProductsDetails" class="panel details-panel" open>
-        <summary><span><strong>Known sets with Beys</strong><small>Add verified stock contents to inventory.</small></span></summary>
-        <div class="details-body">
-          <label class="field"><span>Search products</span><input id="productSearch" type="search" autocomplete="off" placeholder="BX-49, DranStrike…"></label>
-          <div id="productList" class="product-grid"></div>
+      <div class="guide-strip" data-guide-panel><span class="step-dot">1</span><div><strong>Add what you own</strong><small>Browse official releases with Beyblade performance parts by date, or record individual loose parts. Accessory-only releases are not shown, and only released products can be marked owned.</small></div></div>
+
+      <div class="collection-tabs" role="tablist" aria-label="Collection entry method">
+        <button class="collection-tab active" type="button" role="tab" aria-selected="true" data-collection-tab="sets">Official releases</button>
+        <button class="collection-tab" type="button" role="tab" aria-selected="false" data-collection-tab="parts">Loose parts</button>
+      </div>
+
+      <section id="setLibraryPanel" class="collection-panel" aria-labelledby="set-library-title">
+        <article class="panel library-intro">
+          <div><p class="eyebrow">Official release library</p><h3 id="set-library-title">Browse Bey and part releases by date</h3><p class="muted">Every listed product contains at least one Beyblade performance part. Accessory-only releases—such as launchers, stadiums, cases, or stickers with no Bey parts—are excluded. Fixed products add verified parts; for random boosters, choose the exact pull.</p></div>
+          <div id="productLibraryStats" class="library-stat"></div>
+        </article>
+        <div class="library-controls">
+          <label class="field filter-search"><span>Search releases</span><input id="productSearch" type="search" autocomplete="off" placeholder="Code, Bey, set, or part…"></label>
+          <details id="productFilterDrawer" class="filter-drawer">
+            <summary><span>Filters and order</span><span id="activeFilterCount" class="filter-count">0</span></summary>
+            <div class="library-filter-grid">
+              <label class="field"><span>Release year</span><select id="productYear"><option value="all">All years</option></select></label>
+              <label class="field"><span>Line</span><select id="productLine"><option value="all">All lines</option></select></label>
+              <label class="field"><span>Product type</span><select id="productType"><option value="all">All types</option></select></label>
+              <label class="field"><span>Ownership</span><select id="productOwnership"><option value="all">All products</option><option value="owned">Owned only</option><option value="not-owned">Not owned</option></select></label>
+              <label class="field"><span>Availability</span><select id="productStatus"><option value="released">Released</option><option value="all">Released + announced</option><option value="announced">Announced only</option></select></label>
+              <label class="field"><span>Order</span><select id="productSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="code">Product code</option></select></label>
+            </div>
+          </details>
+          <div class="library-toolbar"><span id="productLibrarySummary" class="muted"></span><button id="clearProductFilters" class="text-button" type="button">Reset</button></div>
         </div>
-      </details>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Owned quantities</p><h3>Part ledger</h3></div><span id="inventorySummary" class="muted"></span></div>
-        <div id="inventoryList" class="inventory-list"></div>
-      </article>
+        <div id="productList" class="product-library"></div>
+      </section>
+
+      <section id="loosePartsPanel" class="collection-panel" aria-labelledby="loose-parts-title" hidden>
+        <article class="panel filter-panel">
+          <label class="field grow"><span>Search owned loose parts</span><input id="inventorySearch" type="search" autocomplete="off" placeholder="Blade, ratchet, bit…"></label>
+          <label class="field"><span>Category</span><select id="inventoryCategory"><option value="all">All categories</option></select></label>
+        </article>
+        <article class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">Owned quantities</p><h3 id="loose-parts-title">Loose-parts ledger</h3></div><span id="inventorySummary" class="muted"></span></div>
+          <div id="inventoryList" class="inventory-list"></div>
+        </article>
+      </section>
     </section>
 
     <section id="view-deck" class="view" data-view="deck" aria-labelledby="deck-title" hidden>
@@ -147,36 +172,37 @@
           <button class="button primary full" type="submit">Save battle</button>
         </form>
       </article>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Recent evidence</p><h3>Battle history</h3></div><button id="clearBattlesButton" class="text-button danger-text" type="button">Clear active deck history</button></div>
+      <article id="postBattleHandoff" class="panel post-battle-handoff" hidden aria-live="polite"></article>
+      <article class="panel history-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Recent evidence</p><h3>Battle history</h3></div><button id="clearBattlesButton" class="text-button danger-text" type="button">Clear history</button></div>
         <div id="battleHistory" class="history-list"></div>
       </article>
     </section>
 
     <section id="view-results" class="view" data-view="results" aria-labelledby="results-title" hidden>
-      <div class="section-heading">
-        <div><p class="eyebrow">Your deck coach</p><h2 id="results-title">What to do next</h2></div>
-        <button id="coachNextTestButton" class="button primary compact" type="button">Generate next test</button>
+      <div class="section-heading compact-heading">
+        <div><p class="eyebrow">Deck coach</p><h2 id="results-title">Your next move</h2></div>
+        <button id="coachNextTestButton" class="button primary compact" type="button">Start next test</button>
       </div>
-      <div class="guide-strip" data-guide-panel><span class="step-dot">4</span><div><strong>Your coach turns results into a simple plan</strong><small>Open this after testing. It shows what is strong, what needs work, and the single best next battle.</small></div></div>
-      <div id="analysisHero" class="hero-card"></div>
+      <div class="guide-strip compact-guide-strip" data-guide-panel><span class="step-dot">4</span><div><strong>Coach turns battles into one clear action.</strong><small>Come back after each saved result.</small></div></div>
+      <div id="analysisHero" class="hero-card coach-status-card"></div>
       <article id="coachMission" class="panel coach-mission"></article>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Training progress</p><h3>How close is your evidence?</h3></div></div>
-        <div id="coachProgress" class="coach-progress"></div>
+      <article class="panel coach-overview-panel">
+        <div class="panel-heading compact-panel-heading"><div><p class="eyebrow">Deck snapshot</p><h3>Progress, strengths, and gaps</h3></div></div>
+        <div id="coachProgress" class="coach-progress compact-progress"></div>
+        <div class="coach-two-column coach-snapshot">
+          <section><div class="mini-section-heading"><span class="status-dot good"></span><strong>Working</strong></div><div id="coachStrengths" class="coach-list compact-coach-list"></div></section>
+          <section><div class="mini-section-heading"><span class="status-dot warn"></span><strong>Improve next</strong></div><div id="coachWeaknesses" class="coach-list compact-coach-list"></div></section>
+        </div>
       </article>
-      <div class="coach-two-column">
-        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">Deck strengths</p><h3>What is working</h3></div></div><div id="coachStrengths" class="coach-list"></div></article>
-        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">Needs attention</p><h3>What to improve</h3></div></div><div id="coachWeaknesses" class="coach-list"></div></article>
-      </div>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">What your battles are teaching</p><h3>Patterns and coaching notes</h3></div></div>
-        <div id="coachPatterns" class="coach-list"></div>
-      </article>
-      <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">How your deck behaves</p><h3>Simple engineering view</h3></div><span class="muted">Guide only</span></div>
-        <div id="coachPhysics" class="coach-physics"></div>
-      </article>
+      <details class="panel insight-details" open>
+        <summary><span><strong>What Coach learned</strong><small>Patterns from saved battles</small></span></summary>
+        <div id="coachPatterns" class="coach-list details-body"></div>
+      </details>
+      <details class="panel insight-details">
+        <summary><span><strong>How the deck behaves</strong><small>Simple engineering guide</small></span></summary>
+        <div id="coachPhysics" class="coach-physics details-body"></div>
+      </details>
       <details id="coachAdvancedDetails" class="panel advanced-details coach-advanced">
         <summary>Advanced analysis and technical details</summary>
         <div class="advanced-details-body">
@@ -251,7 +277,6 @@
     <button type="button" data-nav="deck"><span aria-hidden="true">Ⅲ</span><small>Decks</small></button>
     <button type="button" data-nav="test"><span aria-hidden="true">＋</span><small>Test</small></button>
     <button type="button" data-nav="results"><span aria-hidden="true">★</span><small>Coach</small></button>
-    <button type="button" data-nav="more"><span aria-hidden="true">•••</span><small>More</small></button>
   </nav>
 
   <dialog id="partDialog">
@@ -308,7 +333,7 @@
     <div class="dialog-form guide-dialog">
       <div class="dialog-heading"><div><p class="eyebrow">Player guide</p><h2>How to use X Deck Lab</h2></div><button class="icon-button" type="button" data-close-dialog aria-label="Close guide">×</button></div>
       <ol class="guide-list">
-        <li><span>1</span><div><strong>Add your parts</strong><p>Open <b>Parts</b>. Add boxed products or loose parts you really own.</p></div></li>
+        <li><span>1</span><div><strong>Add your parts</strong><p>Open <b>Parts</b>. Browse official releases by date, including sets and part packs. Releases with no Beyblade performance parts are excluded.</p></div></li>
         <li><span>2</span><div><strong>Build a deck</strong><p>Open <b>Decks</b>. Choose three Beys, or let the app suggest legal decks from your parts.</p></div></li>
         <li><span>3</span><div><strong>Run the next test</strong><p>Open <b>Test</b>. Tap the first card. Build the shown opponent, battle once, and save the result.</p></div></li>
         <li><span>4</span><div><strong>Check readiness</strong><p>Open <b>Coach</b>. It gives you one next mission, shows progress, and explains what needs work.</p></div></li>

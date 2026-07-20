@@ -22,8 +22,8 @@ from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parent
 RESULT_PATH = ROOT / "browser-audit-result.json"
-SCREENSHOT_PATH = ROOT / "mobile-v3.0-coach-final.png"
-HOME_SCREENSHOT_PATH = ROOT / "mobile-v3.0-coach-home.png"
+SCREENSHOT_PATH = ROOT / "mobile-v3.2-ui-final.png"
+HOME_SCREENSHOT_PATH = ROOT / "mobile-v3.2-ui-home.png"
 VIEWPORT = {"width": 390, "height": 844}
 DEVICE_SCALE_FACTOR = 3
 
@@ -111,10 +111,14 @@ def nav(page: Page, view: str) -> None:
     page.locator(f'#view-{view}').wait_for(state="visible")
 
 
-def add_product(page: Page, product_id: str) -> None:
+def add_product(page: Page, product_id: str, variant_id: str | None = None) -> None:
     search = page.locator("#productSearch")
     search.fill(product_id)
-    page.locator(f'[data-add-product="{product_id}"]').click()
+    card = page.locator(f'[data-product-card="{product_id}"]')
+    card.wait_for(state="visible")
+    if variant_id is not None:
+        card.locator("[data-product-variant]").select_option(variant_id)
+    card.locator('[data-product-action="add"]').click()
 
 
 def temporary_json(payload: Any) -> str:
@@ -187,18 +191,73 @@ def run() -> dict[str, Any]:
         contained = all(rect["left"] >= 0 and rect["right"] <= VIEWPORT["width"] + 0.5 for rect in nav_rects)
         audit.record("Primary navigation meets 44 px touch target", touch_ok, json.dumps(nav_rects))
         audit.record("Primary navigation stays inside viewport", contained, json.dumps(nav_rects))
+        audit.record("Bottom navigation is reduced to five core actions", page.locator(".bottom-nav [data-nav]").count() == 5)
+        audit.record("Advanced controls move to the compact header", page.locator('.app-header [data-nav="more"]').count() == 1 and page.locator('.app-header [data-nav="more"]').is_visible())
+        guide_height = page.locator("#quickGuide").evaluate("el => Math.round(el.getBoundingClientRect().height)")
+        audit.record("Four-step path stays compact on mobile", guide_height <= 190, f"{guide_height}px")
 
         nav(page, "inventory")
+        audit.record("Official release library opens by default", page.locator("#setLibraryPanel").is_visible() and not page.locator("#loosePartsPanel").is_visible())
+        audit.record("Release filters are collapsed until requested", page.locator("#productFilterDrawer").evaluate("el => el.open") is False)
+        audit.record("Search and filter controls remain sticky", page.locator(".library-controls").evaluate("el => getComputedStyle(el).position") == "sticky")
+        page.locator("#productFilterDrawer summary").click()
+        audit.record("Filter drawer opens on demand", page.locator("#productFilterDrawer").evaluate("el => el.open") is True)
+        library_text = page.locator("#setLibraryPanel").inner_text()
+        audit.record("Library includes releases with Bey parts and excludes accessory-only releases", "Every listed product contains at least one Beyblade performance part" in library_text and "Accessory-only releases" in library_text)
+
         product_search = page.locator("#productSearch")
+        product_search.fill("BX-00-BITSET-GOLD")
+        bit_set = page.locator('[data-product-card="BX-00-BITSET-GOLD"]')
+        bit_set.wait_for(state="visible")
+        audit.record("Parts-only releases with Bey parts are included", "4 Bey parts" in bit_set.inner_text() and "Bit Set" in bit_set.inner_text())
+        bit_set.locator('[data-product-action="add"]').click()
+        state = state_snapshot(page)
+        audit.record("Adding a parts-only release records ownership and loose parts", state["ownedProducts"].get("BX-00-BITSET-GOLD") == 1 and all(state["inventory"].get(part_id, {}).get("qty", 0) >= 1 for part_id in ["bit-flat", "bit-taper", "bit-ball", "bit-needle"]))
+        bit_set.locator('[data-product-action="remove"]').click()
+        state = state_snapshot(page)
+        audit.record("Removing a parts-only release reverses its parts", "BX-00-BITSET-GOLD" not in state["ownedProducts"] and all(state["inventory"].get(part_id, {}).get("qty", 0) == 0 for part_id in ["bit-flat", "bit-taper", "bit-ball", "bit-needle"]))
+
         product_search.fill("BX-23")
         audit.record("Product search retains focus", page.evaluate("document.activeElement.id") == "productSearch")
-        page.locator('[data-add-product="BX-23"]').click()
-        audit.record("Known-products panel remains open", page.locator("#knownProductsDetails").get_attribute("open") is not None)
+        bx23 = page.locator('[data-product-card="BX-23"]')
+        bx23.wait_for(state="visible")
+        audit.record("Product cards show included Bey count", "1 Bey" in bx23.inner_text())
+        bx23.locator('[data-product-action="add"]').click()
+        state = state_snapshot(page)
+        audit.record("Adding a fixed product records ownership and verified loose parts", state["ownedProducts"].get("BX-23") == 1 and all(state["inventory"].get(part_id, {}).get("qty", 0) >= 1 for part_id in ["blade-phoenix-wing", "ratchet-9-60", "bit-gear-flat"]))
+        bx23.locator('[data-product-action="remove"]').click()
+        state = state_snapshot(page)
+        audit.record("Removing a fixed product reverses its owned quantity and parts", "BX-23" not in state["ownedProducts"] and all(state["inventory"].get(part_id, {}).get("qty", 0) == 0 for part_id in ["blade-phoenix-wing", "ratchet-9-60", "bit-gear-flat"]))
+        add_product(page, "BX-23")
+
+        add_product(page, "BX-14", "01")
+        state = state_snapshot(page)
+        audit.record("Random boosters require and store the exact selected pull", state["ownedProducts"].get("BX-14::01") == 1 and len(state["inventory"]) >= 6)
+
+        page.locator("#productStatus").select_option("all")
+        product_search.fill("UX-21")
+        ux21 = page.locator('[data-product-card="UX-21"]')
+        ux21.wait_for(state="visible")
+        audit.record("Announced releases with Bey parts can be browsed but not marked owned", ux21.locator('[data-product-action]').count() == 0 and "Not released yet" in ux21.inner_text())
+        page.locator("#clearProductFilters").click()
+        audit.record("Clear filters restores released newest-first browsing", page.locator("#productStatus").input_value() == "released" and page.locator("#productSort").input_value() == "newest")
+        audit.record("Filter counter resets with the controls", page.locator("#activeFilterCount").inner_text() == "0")
+
+        page.locator("#productSort").select_option("oldest")
+        first_month = page.locator("#productList [data-release-month]").first.get_attribute("data-release-month")
+        audit.record("Oldest-first sorting starts with the first release month", first_month == "2023-07", str(first_month))
+        page.locator("#productSort").select_option("code")
+        visible_codes = page.locator("#productList .catalog-code").all_inner_texts()
+        audit.record("Product-code sorting is alphabetical", visible_codes == sorted(visible_codes), " | ".join(visible_codes[:8]))
+        page.locator("#productSort").select_option("newest")
+
         for product_id in ("UX-03", "UX-08", "UX-11", "BX-49"):
             add_product(page, product_id)
         state = state_snapshot(page)
-        audit.record("Product entry updates inventory", len(state["inventory"]) >= 13, f"{len(state['inventory'])} unique parts")
+        audit.record("Product entry updates inventory", len(state["inventory"]) >= 16, f"{len(state['inventory'])} unique parts")
 
+        page.locator('[data-collection-tab="parts"]').click()
+        audit.record("Loose-parts tab switches without losing product ownership", page.locator("#loosePartsPanel").is_visible() and not page.locator("#setLibraryPanel").is_visible() and state["ownedProducts"].get("BX-23") == 1)
         inventory_search = page.locator("#inventorySearch")
         inventory_search.fill("PhoenixWing")
         audit.record("Inventory search retains focus", page.evaluate("document.activeElement.id") == "inventorySearch")
@@ -281,6 +340,7 @@ def run() -> dict[str, Any]:
         state = state_snapshot(page)
         audit.record("Battle logging persists exact opponent, finish, and simple No answer", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme" and state["battles"][0]["selfKo"] is False and state["battles"][0]["selfKoKnown"] is True and bool(state["battles"][0].get("opponentBey")) and bool(state["battles"][0].get("opponentSignature")))
         audit.record("Xtreme Finish receives three points", "3 points" in history_text, history_text[:400])
+        audit.record("Saving a battle reveals a Coach handoff", page.locator("#postBattleHandoff").is_visible() and "See Coach update" in page.locator("#postBattleHandoff").inner_text())
 
         page.locator('#battleForm select[name="result"]').select_option("win")
         page.locator('#battleForm select[name="finish"]').select_option("spin")
@@ -307,16 +367,18 @@ def run() -> dict[str, Any]:
 
         nav(page, "results")
         audit.record("Coach tab is clearly named", "Coach" in page.locator('[data-nav="results"]').inner_text())
-        audit.record("Player mode is visible by default", page.locator("#modeButton").inner_text() == "Player mode")
-        audit.record("Coach roadmap is visible on Home", page.locator("#coachRoadmap").count() == 1)
-        audit.record("Coach reports decided evidence", "2 decided battles" in page.locator("#analysisHero").inner_text())
-        audit.record("Coach shows one next mission", "mission" in page.locator("#coachMission").inner_text().lower() and page.locator("#coachMission button").count() == 1)
-        audit.record("Coach mission exposes information value", "info" in page.locator("#coachMission").inner_text().lower())
+        audit.record("Player mode is visible by default", page.locator("#modeButton").inner_text() == "Easy" and "Player mode" in (page.locator("#modeButton").get_attribute("title") or ""))
+        audit.record("Home introduces Coach before the tab is used", "Coach" in page.locator("#guideSteps").inner_text() and "Ask Coach" in page.locator("#dashboardHero").inner_text())
+        audit.record("Coach reports decided evidence", "2 battles" in page.locator("#analysisHero").inner_text())
+        audit.record("Coach shows one next mission", "do this next" in page.locator("#coachMission").inner_text().lower() and page.locator("#coachMission button").count() == 1)
+        audit.record("Coach snapshot combines progress and priorities", page.locator(".coach-overview-panel").is_visible() and page.locator("#coachProgress .coach-progress-row").count() == 3 and page.locator(".coach-overview-panel .panel").count() == 0)
+        audit.record("Engineering explanation is collapsed by default", page.locator(".insight-details").nth(1).evaluate("el => el.open") is False)
+        audit.record("Coach mission exposes information value", "value" in page.locator("#coachMission").inner_text().lower())
         audit.record("Coach patterns render", page.locator("#coachPatterns .coach-point").count() >= 1)
         page.locator("#modeButton").click()
-        audit.record("Advanced mode opens technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is True and page.locator("#modeButton").inner_text() == "Advanced mode")
+        audit.record("Advanced mode opens technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is True and page.locator("#modeButton").inner_text() == "Pro")
         page.locator("#modeButton").click()
-        audit.record("Player mode restores collapsed technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is False and page.locator("#modeButton").inner_text() == "Player mode")
+        audit.record("Player mode restores collapsed technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is False and page.locator("#modeButton").inner_text() == "Easy")
         audit.record("Coach shows progress, strengths, weaknesses, and simple behavior", page.locator("#coachProgress progress").count() == 3 and bool(page.locator("#coachStrengths").inner_text().strip()) and bool(page.locator("#coachWeaknesses").inner_text().strip()) and page.locator("#coachPhysics .coach-physics-row").count() == 5)
         audit.record("Technical analysis is collapsed by default", page.locator(".coach-advanced").evaluate("el => !el.open"))
         page.locator(".coach-advanced").evaluate("el => el.open = true")
@@ -388,7 +450,7 @@ def run() -> dict[str, Any]:
         backup = json.loads(backup_text)
         checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
         audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 7 and backup["appVersion"] == "3.0.0")
+        audit.record("Backup export uses current schema", backup["schemaVersion"] == 8 and backup["appVersion"] == "3.1.0")
 
         normal_error_count = len(audit.normal_console_errors)
         audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
@@ -415,10 +477,14 @@ def run() -> dict[str, Any]:
 
         duplicate_patch = {
             "schemaVersion": 1,
-            "parts": [{"id": "audit-blade", "name": "Audit Blade", "category": "blade", "role": "balance"}],
+            "parts": [
+                {"id": "audit-blade", "name": "Audit Blade", "category": "blade", "role": "balance"},
+                {"id": "audit-ratchet", "name": "Audit Ratchet", "category": "ratchet", "role": "balance"},
+                {"id": "audit-bit", "name": "Audit Bit", "category": "bit", "role": "balance"},
+            ],
             "products": [
-                {"id": "AUDIT-001", "name": "Audit Product A", "parts": ["audit-blade"]},
-                {"id": "AUDIT-001", "name": "Audit Product B", "parts": ["audit-blade"]},
+                {"id": "AUDIT-001", "name": "Audit Product A", "parts": ["audit-blade", "audit-ratchet", "audit-bit"]},
+                {"id": "AUDIT-001", "name": "Audit Product B", "parts": ["audit-blade", "audit-ratchet", "audit-bit"]},
             ],
         }
         duplicate_path = temporary_json(duplicate_patch)
@@ -429,16 +495,45 @@ def run() -> dict[str, Any]:
         audit.record("Duplicate product IDs in one catalog patch are rejected", before_custom_products == after_custom_products)
         os.unlink(duplicate_path)
 
+        no_parts_patch = {
+            "schemaVersion": 1,
+            "parts": [],
+            "products": [{"id": "AUDIT-NO-BEY-PARTS", "name": "Audit Accessory Only Product", "parts": []}],
+        }
+        no_parts_path = temporary_json(no_parts_patch)
+        before_custom_products = len(state_snapshot(page)["customProducts"])
+        page.locator("#importCatalogInput").set_input_files(no_parts_path)
+        page.wait_for_timeout(100)
+        after_custom_products = len(state_snapshot(page)["customProducts"])
+        audit.record("Catalog products without Bey parts are rejected", before_custom_products == after_custom_products)
+        os.unlink(no_parts_path)
+
+        parts_only_patch = {
+            "schemaVersion": 1,
+            "parts": [{"id": "audit-blade-only", "name": "Audit Blade Only", "category": "blade", "role": "balance"}],
+            "products": [{"id": "AUDIT-PARTS-ONLY", "name": "Audit Parts Only Product", "parts": ["audit-blade-only"]}],
+        }
+        parts_only_path = temporary_json(parts_only_patch)
+        page.locator("#importCatalogInput").set_input_files(parts_only_path)
+        page.wait_for_function("JSON.parse(window.__auditStorage['x-deck-lab-state-v2']).customProducts.some(p => p.id === 'AUDIT-PARTS-ONLY')", timeout=10000)
+        state = state_snapshot(page)
+        audit.record("Catalog products with only Bey parts are accepted", any(item["id"] == "audit-blade-only" for item in state["customParts"]) and any(item["id"] == "AUDIT-PARTS-ONLY" for item in state["customProducts"]))
+        os.unlink(parts_only_path)
+
         valid_patch = {
             "schemaVersion": 1,
-            "parts": [{"id": "audit-blade-valid", "name": "Audit Blade Valid", "category": "blade", "role": "balance"}],
-            "products": [{"id": "AUDIT-VALID", "name": "Audit Product Valid", "parts": ["audit-blade-valid"]}],
+            "parts": [
+                {"id": "audit-blade-valid", "name": "Audit Blade Valid", "category": "blade", "role": "balance"},
+                {"id": "audit-ratchet-valid", "name": "Audit Ratchet Valid", "category": "ratchet", "role": "balance"},
+                {"id": "audit-bit-valid", "name": "Audit Bit Valid", "category": "bit", "role": "balance"},
+            ],
+            "products": [{"id": "AUDIT-VALID", "name": "Audit Bey Product Valid", "parts": ["audit-blade-valid", "audit-ratchet-valid", "audit-bit-valid"]}],
         }
         valid_patch_path = temporary_json(valid_patch)
         page.locator("#importCatalogInput").set_input_files(valid_patch_path)
-        page.wait_for_function("JSON.parse(window.__auditStorage['x-deck-lab-state-v2']).customProducts.some(p => p.id === 'AUDIT-VALID')")
+        page.wait_for_function("JSON.parse(window.__auditStorage['x-deck-lab-state-v2']).customProducts.some(p => p.id === 'AUDIT-VALID')", timeout=10000)
         state = state_snapshot(page)
-        audit.record("Valid catalog patch imports", any(item["id"] == "audit-blade-valid" for item in state["customParts"]) and any(item["id"] == "AUDIT-VALID" for item in state["customProducts"]))
+        audit.record("Complete-Bey catalog patch also imports", all(any(item["id"] == part_id for item in state["customParts"]) for part_id in ["audit-blade-valid", "audit-ratchet-valid", "audit-bit-valid"]) and any(item["id"] == "AUDIT-VALID" for item in state["customProducts"]))
         os.unlink(valid_patch_path)
 
         undersized = page.evaluate("""() => Array.from(document.querySelectorAll('button, label.button')).filter((el) => { const rect = el.getBoundingClientRect(); return rect.width && rect.height && (rect.width < 44 || rect.height < 44); }).map((el) => ({ id: el.id || '', text: (el.textContent || '').trim().slice(0, 40), width: Math.round(el.getBoundingClientRect().width), height: Math.round(el.getBoundingClientRect().height) }))""")
@@ -472,13 +567,27 @@ def run() -> dict[str, Any]:
         audit.record("Fresh application instance restores battles", len(restored_state["battles"]) == 3)
         second.close()
 
+        stale_state = json.loads(persisted["x-deck-lab-state-v2"])
+        stale_state.setdefault("ownedProducts", {})["BX-00-BITSET-GOLD"] = 2
+        stale_state.setdefault("customProducts", []).append({"id": "OLD-PARTS-ONLY", "name": "Old Parts Only", "parts": ["blade-dran-sword"], "status": "custom"})
+        stale_storage = dict(persisted)
+        stale_storage["x-deck-lab-state-v2"] = json.dumps(stale_state)
+        third = context.new_page()
+        third.on("pageerror", audit.page_error)
+        third.set_content(production_document(stale_storage), wait_until="load")
+        wait_ready(third)
+        cleaned = state_snapshot(third)
+        audit.record("Migration preserves ownership records for parts-only Bey releases", cleaned.get("ownedProducts", {}).get("BX-00-BITSET-GOLD") == 2)
+        audit.record("Migration preserves custom products that contain a Bey part", any(product.get("id") == "OLD-PARTS-ONLY" for product in cleaned.get("customProducts", [])))
+        third.close()
+
         browser.close()
 
     passed = sum(1 for check in audit.checks if check["passed"])
     failed = len(audit.checks) - passed
     result = {
         "application": "X Deck Lab",
-        "version": "3.0.0",
+        "version": "3.2.0",
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
         "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",

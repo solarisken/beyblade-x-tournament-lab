@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
 
-  const SCHEMA_VERSION = 7;
+  const SCHEMA_VERSION = 8;
   const ENGINEERING_MODEL_VERSION = 2;
   const PART_SLOTS = ['blade','ratchetIntegratedBlade','lockChip','metalBlade','overBlade','mainBlade','assistBlade','ratchet','bit','integratedBit'];
   const CORE_ARCHETYPES = ['attack','stamina','defense','balance','left-spin'];
@@ -1071,10 +1071,69 @@
     return ranked;
   }
 
+  function productBeyCount(product, partMap = {}) {
+    if (!product || typeof product !== 'object') return 0;
+    if (Number.isFinite(Number(product.beyCount))) return Math.max(0, Math.floor(Number(product.beyCount)));
+
+    const countParts = (partIds = []) => {
+      const counts = {};
+      partIds.forEach((id) => {
+        const category = partMap[id]?.category;
+        if (category) counts[category] = (counts[category] || 0) + 1;
+      });
+      let locks = counts.lockChip || 0;
+      let assists = counts.assistBlade || 0;
+      let ratchets = counts.ratchet || 0;
+      let bits = counts.bit || 0;
+      let mains = counts.mainBlade || 0;
+      let metals = counts.metalBlade || 0;
+      let overs = counts.overBlade || 0;
+      let total = 0;
+
+      const integratedCustom = Math.min(mains, locks, assists, counts.integratedBit || 0);
+      total += integratedCustom; mains -= integratedCustom; locks -= integratedCustom; assists -= integratedCustom;
+      const expanded = Math.min(metals, overs, locks, assists, ratchets, bits);
+      total += expanded; metals -= expanded; overs -= expanded; locks -= expanded; assists -= expanded; ratchets -= expanded; bits -= expanded;
+      const standardCustom = Math.min(mains, locks, assists, ratchets, bits);
+      total += standardCustom; mains -= standardCustom; locks -= standardCustom; assists -= standardCustom; ratchets -= standardCustom; bits -= standardCustom;
+      const integratedBlades = Math.min(counts.ratchetIntegratedBlade || 0, bits);
+      total += integratedBlades; bits -= integratedBlades;
+      total += Math.min(counts.blade || 0, ratchets, bits);
+      return total;
+    };
+
+    if (Array.isArray(product.variants) && product.variants.length) {
+      return product.variants.some((variant) => countParts(variant.parts || []) > 0) ? 1 : 0;
+    }
+    return countParts(product.parts || []);
+  }
+
+  const BEY_PART_CATEGORIES = new Set(['blade','ratchetIntegratedBlade','lockChip','metalBlade','overBlade','mainBlade','assistBlade','ratchet','bit','integratedBit']);
+
+  function productBeyPartIds(product, partMap = {}) {
+    if (!product || typeof product !== 'object') return [];
+    const references = [...(product.parts || []), ...(product.variants || []).flatMap((variant) => variant.parts || [])];
+    return references.filter((id) => BEY_PART_CATEGORIES.has(partMap[id]?.category));
+  }
+
+  function productBeyPartCount(product, partMap = {}) {
+    return productBeyPartIds(product, partMap).length;
+  }
+
+  function productContainsBey(product, partMap = {}) {
+    return productBeyCount(product, partMap) > 0;
+  }
+
+  function productContainsBeyParts(product, partMap = {}) {
+    return productContainsBey(product, partMap) || productBeyPartCount(product, partMap) > 0;
+  }
+
   function dataQualityAudit(data) {
     const issues = [];
     const warnings = [];
     const ids = new Set();
+    const products = data.products || [];
+    const productIds = new Set();
     (data.parts || []).forEach((part) => {
       if (!part.id || !part.name || !part.category) issues.push('A catalog part is missing id, name, or category.');
       if (ids.has(part.id)) issues.push(`Duplicate part ID: ${part.id}`);
@@ -1083,8 +1142,18 @@
       if (part.engineering && Object.values(part.engineering).some((value) => !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 1)) issues.push(`${part.id} has an engineering override outside 0–1.`);
       if (part.status === 'announced' && !part.notes) warnings.push(`${part.id} is announced without a release note.`);
     });
-    (data.products || []).forEach((product) => (product.parts || []).forEach((id) => { if (!ids.has(id)) issues.push(`${product.id} references missing part ${id}.`); }));
-    return { pass: issues.length === 0, issues: unique(issues), warnings: unique(warnings), counts: { parts: data.parts?.length || 0, products: data.products?.length || 0, profiles: Object.keys(data.profiles || {}).length } };
+    const map = Object.fromEntries((data.parts || []).map((part) => [part.id, part]));
+    products.forEach((product) => {
+      if (!product.id || !product.name || !product.releaseDate) issues.push('A catalog product is missing id, name, or release date.');
+      if (productIds.has(product.id)) issues.push(`Duplicate product ID: ${product.id}`);
+      productIds.add(product.id);
+      const references = [...(product.parts || []), ...(product.variants || []).flatMap((variant) => variant.parts || [])];
+      references.forEach((id) => { if (!ids.has(id)) issues.push(`${product.id} references missing part ${id}.`); });
+      if (!productContainsBeyParts(product, map)) issues.push(`${product.id} does not contain any Beyblade performance part and must not appear in the release library.`);
+      if (product.status === 'released' && product.releaseDate > data.meta?.verifiedThrough) issues.push(`${product.id} is marked released after the catalog verification date.`);
+      if (product.status === 'announced' && product.releaseDate <= data.meta?.verifiedThrough) warnings.push(`${product.id} is still marked announced on or before the verification date.`);
+    });
+    return { pass: issues.length === 0, issues: unique(issues), warnings: unique(warnings), counts: { parts: data.parts?.length || 0, products: products.length, profiles: Object.keys(data.profiles || {}).length } };
   }
 
   function fnv1a(value) {
@@ -1106,6 +1175,7 @@
         schemaVersion: SCHEMA_VERSION,
         decks: raw.decks.map((deck) => ({ ...deck, beys: Array.isArray(deck.beys) ? deck.beys : [] })),
         inventory: raw.inventory && typeof raw.inventory === 'object' ? raw.inventory : {},
+        ownedProducts: raw.ownedProducts && typeof raw.ownedProducts === 'object' ? raw.ownedProducts : {},
         battles: Array.isArray(raw.battles) ? raw.battles.map((battle) => normalizeBattle(battle, {})) : [],
         metaProfiles: Array.isArray(raw.metaProfiles) ? raw.metaProfiles : [],
         customProfiles: Array.isArray(raw.customProfiles) ? raw.customProfiles : [],
@@ -1145,6 +1215,7 @@
       schemaVersion: SCHEMA_VERSION,
       migratedFrom: Number(raw.version || raw.schemaVersion || 1),
       inventory,
+      ownedProducts: raw.ownedProducts && typeof raw.ownedProducts === 'object' ? raw.ownedProducts : {},
       customParts: Array.isArray(raw.customParts) ? raw.customParts : [],
       decks: [{ id: deckId, name: 'Migrated Tournament Deck', profileId: raw.profileId || 'tt3on3', includeAnnounced: Boolean(raw.includeAnnounced), beys: deck, notes: '', tags: [], createdAt: now, updatedAt: now }],
       activeDeckId: deckId,
@@ -1205,6 +1276,11 @@
     forecastTournament,
     generateOwnedCandidates,
     suggestDecks,
+    productBeyCount,
+    productBeyPartIds,
+    productBeyPartCount,
+    productContainsBey,
+    productContainsBeyParts,
     dataQualityAudit,
     fnv1a,
     migrateState
