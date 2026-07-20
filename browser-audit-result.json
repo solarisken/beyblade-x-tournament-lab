@@ -1,7 +1,7 @@
 {
   "application": "X Deck Lab",
-  "version": "3.2.0",
-  "timestampUtc": "2026-07-20T04:04:14.696080+00:00",
+  "version": "3.2.1",
+  "timestampUtc": "2026-07-20T12:07:15.451549+00:00",
   "viewport": {
     "width": 390,
     "height": 844,
@@ -10,16 +10,16 @@
     "touch": true
   },
   "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 20.543,
+  "durationSeconds": 21.418,
   "summary": {
-    "checks": 109,
-    "passed": 109,
+    "checks": 113,
+    "passed": 113,
     "failed": 0
   },
   "normalConsoleErrors": [],
   "uncaughtPageErrors": [],
   "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected f90925b8, calculated 6b4fa8b0.\n    at HTMLInputElement.<anonymous> (<anonymous>:1273:58)",
+    "Error: Backup checksum mismatch: expected ca8f0bd0, calculated 8ac1c518.\n    at HTMLInputElement.<anonymous> (<anonymous>:1273:58)",
     "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:1045:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:1044:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1283:13)",
     "Error: AUDIT-NO-BEY-PARTS does not contain any Beyblade performance part.\n    at <anonymous>:1050:75\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:1044:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1283:13)"
   ],
@@ -295,6 +295,11 @@
       "detail": ""
     },
     {
+      "name": "Initial Coach mission has an exact owned pairing",
+      "passed": true,
+      "detail": "{\"id\": \"basic:blade-dran-strike|||||||ratchet-4-50|bit-free-flat|::basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\", \"opponentSignature\": \"basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\"}"
+    },
+    {
       "name": "Battle form offers an owned opponent build",
       "passed": true,
       "detail": ""
@@ -322,12 +327,17 @@
     {
       "name": "Xtreme Finish receives three points",
       "passed": true,
-      "detail": "DranStrike 4-50 Free Flat · WIN\n\nWizardRod 1-60 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 20, 2026, 4:04 AM"
+      "detail": "DranStrike 4-50 Free Flat · WIN\n\nWizardRod 1-60 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 20, 2026, 12:07 PM"
     },
     {
       "name": "Saving a battle reveals a Coach handoff",
       "passed": true,
       "detail": ""
+    },
+    {
+      "name": "Coach rotates away from the just-completed exact pairing",
+      "passed": true,
+      "detail": "{\"before\": {\"id\": \"basic:blade-dran-strike|||||||ratchet-4-50|bit-free-flat|::basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\", \"opponentSignature\": \"basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\"}, \"after\": {\"id\": \"basic:blade-phoenix-wing|||||||ratchet-5-70|bit-free-ball|::basic:blade-silver-wolf|||||||ratchet-3-60|bit-disk-ball|\", \"opponentSignature\": \"basic:blade-silver-wolf|||||||ratchet-3-60|bit-disk-ball|\"}}"
     },
     {
       "name": "Impossible Self-KO Yes answer is blocked",
@@ -436,6 +446,16 @@
     },
     {
       "name": "Order analysis renders without failure",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Tournament-order cards stay inside the mobile viewport",
+      "passed": true,
+      "detail": "{\"cards\": 3, \"contained\": true, \"vertical\": true, \"stepsContained\": true}"
+    },
+    {
+      "name": "Corrected tournament-order screenshot captured",
       "passed": true,
       "detail": ""
     },

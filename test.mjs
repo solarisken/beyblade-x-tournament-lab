@@ -120,6 +120,46 @@ test('adaptive planner uses concurrently owned opponents and hard-excludes attac
   });
 });
 
+
+test('coach mission rotates away from the exact battle just completed when another owned test exists', () => {
+  const deckId = 'rotation-deck';
+  const settings = { ...DATA.testDefaults, recentBattleWindow: 6, exactPairCooldown: 3 };
+  const initial = Core.buildTestPlan({ deck: validDeck, deckId, partMap: map, inventory: broadInventory, battles: [], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings, limit: 12 });
+  assert.ok(initial.length > 1);
+  const first = initial[0];
+  const completed = {
+    id: 'rotation-first', deckId, ownSignature: first.ownSignature, ownBeyIndex: first.beyIndex,
+    opponentSignature: first.opponentSignature, opponentArchetype: first.opponentArchetype,
+    opponentBitRole: first.opponentBitRole, result: 'win', finish: 'spin', selfKo: false,
+    selfKoKnown: true, contaminated: false, timestamp: '2026-07-20T12:00:00.000Z'
+  };
+  const rotated = Core.buildTestPlan({ deck: validDeck, deckId, partMap: map, inventory: broadInventory, battles: [completed], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings, limit: 12 });
+  assert.ok(rotated.length > 0);
+  assert.notEqual(rotated[0].id, first.id);
+  assert.notEqual(rotated[0].opponentSignature, first.opponentSignature);
+  assert.ok(rotated[0].rotationPenalty <= first.rotationPenalty + 20);
+});
+
+test('recent-pair cooldown still permits a repeat when it is the only owned valid test', () => {
+  const deckId = 'cooldown-deck';
+  const own = { system: 'integrated', ratchetIntegratedBlade: 'rib-bullet-griffon', bit: 'bit-hexa' };
+  const opponent = { system: 'integrated', ratchetIntegratedBlade: 'rib-glory-valkyrie', bit: 'bit-rush' };
+  const deck = [own, {}, {}];
+  const inventory = inventoryFor([own, opponent]);
+  const settings = { ...DATA.testDefaults, recentBattleWindow: 4, exactPairCooldown: 3 };
+  const initial = Core.buildTestPlan({ deck, deckId, partMap: map, inventory, battles: [], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings, limit: 10 });
+  assert.ok(initial.length >= 1);
+  const target = initial[0];
+  const completed = {
+    id: 'only-pair', deckId, ownSignature: target.ownSignature, ownBeyIndex: target.beyIndex,
+    opponentSignature: target.opponentSignature, opponentArchetype: target.opponentArchetype,
+    opponentBitRole: target.opponentBitRole, result: 'loss', finish: 'spin', selfKo: false,
+    selfKoKnown: true, contaminated: false, timestamp: '2026-07-20T12:00:00.000Z'
+  };
+  const repeated = Core.buildTestPlan({ deck, deckId, partMap: map, inventory, battles: [completed], scoring: DATA.scoring, metaProfiles: DATA.defaultMetaProfiles, settings, limit: 10 });
+  assert.ok(repeated.some((task) => task.id === target.id), 'Cooldown must not dead-end testing when only one owned pairing exists.');
+});
+
 test('engineering profiles rank attack and stamina mechanisms in the expected directions', () => {
   const attack = basic('blade-impact-drake','ratchet-9-60','bit-low-rush');
   const stamina = basic('blade-wizard-rod','ratchet-5-70','bit-disk-ball');
@@ -296,7 +336,7 @@ test('root HTML references only root runtime assets and includes all six primary
 
 test('service worker lifecycle caches every production root asset and clears old versions', async () => {
   const source = fs.readFileSync(new URL('./service-worker.js', import.meta.url), 'utf8');
-  assert.match(source, /x-deck-lab-v3\.2\.0/);
+  assert.match(source, /x-deck-lab-v3\.2\.1/);
   const listeners = {};
   const cache = { addAll: async (assets) => { cache.assets = assets; }, put: async () => {} };
   const cachesMock = { open: async () => cache, keys: async () => ['old-cache','x-deck-lab-v2.2.0'], delete: async (key) => key === 'old-cache', match: async () => null };
@@ -503,4 +543,7 @@ test('v3.2 UI refinement keeps the coach path compact and continuous', () => {
   assert.match(app, /lastBattleHandoff/);
   assert.match(css, /library-controls \{ position: sticky/);
   assert.match(css, /grid-template-columns: repeat\(5,1fr\)/);
+  assert.match(css, /\.order-sequence \{ display: grid/);
+  assert.doesNotMatch(css, /\.order-sequence \{[^}]*overflow-x: auto/);
+  assert.match(app, /Recommended order/);
 });

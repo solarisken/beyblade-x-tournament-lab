@@ -22,8 +22,9 @@ from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parent
 RESULT_PATH = ROOT / "browser-audit-result.json"
-SCREENSHOT_PATH = ROOT / "mobile-v3.2-ui-final.png"
-HOME_SCREENSHOT_PATH = ROOT / "mobile-v3.2-ui-home.png"
+SCREENSHOT_PATH = ROOT / "mobile-v3.2.1-fix-final.png"
+HOME_SCREENSHOT_PATH = ROOT / "mobile-v3.2.1-fix-home.png"
+ORDER_SCREENSHOT_PATH = ROOT / "mobile-v3.2.1-order-card.png"
 VIEWPORT = {"width": 390, "height": 844}
 DEVICE_SCALE_FACTOR = 3
 
@@ -313,6 +314,14 @@ def run() -> dict[str, Any]:
         nav(page, "test")
         audit.record("Adaptive test plan renders exact owned opponents", page.locator("#testPlanList .test-task").count() >= 1 and "you own all needed parts" in page.locator("#view-test").inner_text().lower())
         audit.record("Adaptive plan prioritizes simple self-KO checks", "SELF-KO CHECK" in page.locator("#testPlanList").inner_text() and "self-KO question" in page.locator("#testPlanList").inner_text())
+        initial_mission = page.evaluate("""() => {
+          const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
+          const deck = state.decks.find((entry) => entry.id === state.activeDeckId);
+          const partMap = Object.fromEntries([...window.XDATA.parts, ...(state.customParts || [])].map((part) => [part.id, part]));
+          const first = window.XCore.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap, inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: window.XDATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 1 })[0];
+          return first ? { id:first.id, opponentSignature:first.opponentSignature } : null;
+        }""")
+        audit.record("Initial Coach mission has an exact owned pairing", bool(initial_mission and initial_mission.get("id")), json.dumps(initial_mission))
         audit.record("Battle form offers an owned opponent build", page.locator("#battleOpponent option").count() >= 1 and page.locator("#battleOpponent").input_value() != "")
         pair_policy = page.evaluate("""() => {
           const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
@@ -341,6 +350,14 @@ def run() -> dict[str, Any]:
         audit.record("Battle logging persists exact opponent, finish, and simple No answer", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme" and state["battles"][0]["selfKo"] is False and state["battles"][0]["selfKoKnown"] is True and bool(state["battles"][0].get("opponentBey")) and bool(state["battles"][0].get("opponentSignature")))
         audit.record("Xtreme Finish receives three points", "3 points" in history_text, history_text[:400])
         audit.record("Saving a battle reveals a Coach handoff", page.locator("#postBattleHandoff").is_visible() and "See Coach update" in page.locator("#postBattleHandoff").inner_text())
+        rotated_mission = page.evaluate("""() => {
+          const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
+          const deck = state.decks.find((entry) => entry.id === state.activeDeckId);
+          const partMap = Object.fromEntries([...window.XDATA.parts, ...(state.customParts || [])].map((part) => [part.id, part]));
+          const first = window.XCore.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap, inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: window.XDATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 1 })[0];
+          return first ? { id:first.id, opponentSignature:first.opponentSignature } : null;
+        }""")
+        audit.record("Coach rotates away from the just-completed exact pairing", bool(rotated_mission and initial_mission and rotated_mission["id"] != initial_mission["id"] and rotated_mission["opponentSignature"] != initial_mission["opponentSignature"]), json.dumps({"before": initial_mission, "after": rotated_mission}))
 
         page.locator('#battleForm select[name="result"]').select_option("win")
         page.locator('#battleForm select[name="finish"]').select_option("spin")
@@ -388,6 +405,28 @@ def run() -> dict[str, Any]:
         audit.record("Simple Self-KO analysis renders Yes-or-No totals", "Total self-KOs" in selfko_text and "Yes or No" in selfko_text and "No special cause is needed" in selfko_text, selfko_text[:600])
         audit.record("Detailed Self-KO causes are not shown", "Wilson 95%" not in selfko_text and "rail overshoot" not in selfko_text.lower() and "Over / Xtreme" not in selfko_text, selfko_text[:600])
         audit.record("Order analysis renders without failure", bool(page.locator("#orderAnalysis").inner_text().strip()))
+        order_layout = page.locator("#orderAnalysis").evaluate("""panel => {
+          const cards = [...panel.querySelectorAll('.order-card')];
+          return {
+            cards: cards.length,
+            contained: cards.every(card => card.scrollWidth <= card.clientWidth + 1),
+            vertical: cards.every(card => getComputedStyle(card.querySelector('.order-sequence')).display === 'grid'),
+            stepsContained: cards.every(card => { const bounds = card.getBoundingClientRect(); return [...card.querySelectorAll('.order-step')].every(step => { const r = step.getBoundingClientRect(); return r.left >= bounds.left - .5 && r.right <= bounds.right + .5; }); })
+          };
+        }""")
+        audit.record("Tournament-order cards stay inside the mobile viewport", order_layout["cards"] >= 1 and order_layout["contained"] and order_layout["vertical"] and order_layout["stepsContained"], json.dumps(order_layout))
+        page.evaluate("""() => {
+          const skip = document.querySelector('.skip-link'); if (skip) skip.dataset.auditDisplay = skip.style.display || '';
+          const header = document.querySelector('.app-header'); if (header) header.dataset.auditDisplay = header.style.display || '';
+          const nav = document.querySelector('.bottom-nav'); if (nav) nav.dataset.auditDisplay = nav.style.display || '';
+          const toast = document.querySelector('#toast'); if (toast) toast.dataset.auditDisplay = toast.style.display || '';
+          if (skip) skip.style.display = 'none'; if (header) header.style.display = 'none'; if (nav) nav.style.display = 'none'; if (toast) toast.style.display = 'none';
+        }""")
+        page.locator("#orderAnalysis").screenshot(path=str(ORDER_SCREENSHOT_PATH))
+        page.evaluate("""() => {
+          for (const selector of ['.skip-link','.app-header','.bottom-nav','#toast']) { const el = document.querySelector(selector); if (el) el.style.display = el.dataset.auditDisplay || ''; }
+        }""")
+        audit.record("Corrected tournament-order screenshot captured", ORDER_SCREENSHOT_PATH.exists() and ORDER_SCREENSHOT_PATH.stat().st_size > 0)
         page.locator("#runForecastButton").click()
         page.wait_for_function("document.querySelector('#runForecastButton').disabled === false && document.querySelector('#runForecastButton').textContent === 'Run forecast'", timeout=30000)
         forecast_text = page.locator("#forecastResults").inner_text()
@@ -450,7 +489,7 @@ def run() -> dict[str, Any]:
         backup = json.loads(backup_text)
         checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
         audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 8 and backup["appVersion"] == "3.1.0")
+        audit.record("Backup export uses current schema", backup["schemaVersion"] == 8 and backup["appVersion"] == "3.2.1")
 
         normal_error_count = len(audit.normal_console_errors)
         audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
@@ -587,7 +626,7 @@ def run() -> dict[str, Any]:
     failed = len(audit.checks) - passed
     result = {
         "application": "X Deck Lab",
-        "version": "3.2.0",
+        "version": "3.2.1",
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
         "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",

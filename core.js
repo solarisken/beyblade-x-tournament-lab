@@ -586,6 +586,29 @@
     }).slice(0, maxCandidates);
   }
 
+  function signaturePartIds(signature) {
+    const body = String(signature || '').split(':').slice(1).join(':');
+    if (!body) return [];
+    return body.split('|').flatMap((value) => String(value || '').split('+')).filter(Boolean);
+  }
+
+  function signatureSimilarity(left, right) {
+    const a = new Set(signaturePartIds(left));
+    const b = new Set(signaturePartIds(right));
+    if (!a.size || !b.size) return 0;
+    let intersection = 0;
+    a.forEach((id) => { if (b.has(id)) intersection += 1; });
+    return intersection / (a.size + b.size - intersection);
+  }
+
+  function recentDeckBattles(battles, deckId, windowSize) {
+    return (battles || [])
+      .filter((battle) => battle && battle.deckId === deckId && !battle.contaminated && battle.ownSignature && battle.opponentSignature)
+      .slice()
+      .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+      .slice(0, Math.max(1, windowSize));
+  }
+
   function buildTestPlan({ deck, deckId, partMap, inventory = {}, includeAnnounced = false, battles, scoring, metaProfiles, settings = {}, limit = 12 }) {
     const targetPerCell = Math.max(1, Number(settings.targetPerCell || 5));
     const targetPerOpponent = Math.max(1, Number(settings.targetPerOpponent || Math.min(3, targetPerCell)));
@@ -594,6 +617,11 @@
     const maxObservedSelfKoRate = Number(settings.maxObservedSelfKoRate ?? 0.15);
     const analytics = battleAnalytics({ battles, deck, deckId, scoring });
     const weights = metaArchetypeWeights(metaProfiles);
+    const recentBattleWindow = Math.max(2, Number(settings.recentBattleWindow || 6));
+    const exactPairCooldown = Math.max(1, Number(settings.exactPairCooldown || 3));
+    const recent = recentDeckBattles(battles, deckId, recentBattleWindow);
+    const lastBattle = recent[0] || null;
+    const lastPairId = lastBattle ? `${lastBattle.ownSignature}::${lastBattle.opponentSignature}` : '';
     const tasks = [];
 
     (deck || []).forEach((bey, beyIndex) => {
@@ -626,11 +654,22 @@
         const metaWeight = weights[archetype] || (archetype === 'left-spin' ? 0.08 : 0.1);
         const benchmark = opponent.benchmarkScore / 100;
         const stabilityBoost = stabilityNeed ? Math.min(14, stabilityDeficit * 2.2 + (observedHigh ? 6 : 0) + (disagreement >= 0.08 ? 4 : 0)) : 0;
-        const priority = archetypeDeficit * 2.0 + opponentDeficit * 1.8 + informationGain * 8 + metaWeight * 8 + benchmark * 1.6 + stabilityBoost;
+        const pairId = `${signature}::${opponent.signature}`;
+        const exactRecent = recent.filter((battle) => `${battle.ownSignature}::${battle.opponentSignature}` === pairId);
+        const lastExactDistance = recent.findIndex((battle) => `${battle.ownSignature}::${battle.opponentSignature}` === pairId);
+        const recentOwnCount = recent.filter((battle) => battle.ownSignature === signature).length;
+        const recentOpponentCount = recent.filter((battle) => battle.opponentSignature === opponent.signature).length;
+        const recentPartSimilarity = recent.reduce((highest, battle) => Math.max(highest, signatureSimilarity(battle.opponentSignature, opponent.signature)), 0);
+        const immediateRepeat = pairId === lastPairId;
+        const cooldownPenalty = lastExactDistance < 0 ? 0 : Math.max(0, exactPairCooldown - lastExactDistance) * 4.5;
+        const rotationPenalty = exactRecent.length * 5.5 + cooldownPenalty + recentOpponentCount * 2.2 + recentOwnCount * 0.8 + recentPartSimilarity * 3 + (immediateRepeat ? 16 : 0);
+        const basePriority = archetypeDeficit * 2.0 + opponentDeficit * 1.8 + informationGain * 8 + metaWeight * 8 + benchmark * 1.6 + stabilityBoost;
+        const priority = basePriority - rotationPenalty;
         const testType = stabilityNeed ? 'stability' : 'matchup';
         let rationale = opponentSummary.effective === 0
           ? `Untested owned benchmark; ${archetypeSummary.effective}/${archetypeTarget} ${archetype} evidence.`
           : `Adds repeat evidence against a physically constructible owned ${archetype} benchmark.`;
+        if (recent.length && !exactRecent.length) rationale += ' Rotated in to avoid repeating the same recent parts.';
         if (stabilityNeed) {
           rationale = `${stabilityDeficit}/${minimumSelfKoTestsPerBey} self-KO checks remaining. Use the same controlled launch and answer Yes only when your Bey goes out by itself.`;
         }
@@ -662,6 +701,12 @@
           informationGain: round(informationGain * 100, 1),
           uncertainty: round(uncertainty * 100, 1),
           priority: round(priority, 2),
+          basePriority: round(basePriority, 2),
+          pairId,
+          immediateRepeat,
+          recentExactCount: exactRecent.length,
+          lastExactDistance,
+          rotationPenalty: round(rotationPenalty, 2),
           rationale
         });
       });
@@ -669,19 +714,48 @@
 
     const selected = [];
     const selectedIds = new Set();
+    const selectedOpponents = new Set();
+    const selectedOwnCounts = {};
     const perOwnArchetype = {};
-    tasks.sort((a, b) => b.priority - a.priority || a.completed - b.completed || a.beyIndex - b.beyIndex);
-    for (const beyIndex of unique(tasks.filter((task) => task.testType === 'stability').map((task) => task.beyIndex))) {
-      const task = tasks.find((entry) => entry.beyIndex === beyIndex && entry.testType === 'stability');
-      if (task && selected.length < limit) { selected.push(task); selectedIds.add(task.id); }
-    }
-    for (const task of tasks) {
-      if (selectedIds.has(task.id)) continue;
-      const key = `${task.beyIndex}:${task.opponentArchetype}`;
-      if ((perOwnArchetype[key] || 0) >= 2) continue;
-      perOwnArchetype[key] = (perOwnArchetype[key] || 0) + 1;
+    tasks.sort((a, b) => b.priority - a.priority || a.completed - b.completed || a.beyIndex - b.beyIndex || a.opponentSignature.localeCompare(b.opponentSignature));
+
+    const pick = (task) => {
       selected.push(task);
-      if (selected.length >= limit) break;
+      selectedIds.add(task.id);
+      selectedOpponents.add(task.opponentSignature);
+      selectedOwnCounts[task.beyIndex] = (selectedOwnCounts[task.beyIndex] || 0) + 1;
+      const key = `${task.beyIndex}:${task.opponentArchetype}`;
+      perOwnArchetype[key] = (perOwnArchetype[key] || 0) + 1;
+    };
+
+    if (tasks.length && limit > 0) {
+      const nonImmediate = tasks.filter((task) => !task.immediateRepeat);
+      const differentOpponent = lastBattle ? nonImmediate.filter((task) => task.opponentSignature !== lastBattle.opponentSignature) : nonImmediate;
+      pick((differentOpponent[0] || nonImmediate[0] || tasks[0]));
+    }
+
+    const stabilityBeys = unique(tasks.filter((task) => task.testType === 'stability').map((task) => task.beyIndex));
+    for (const beyIndex of stabilityBeys) {
+      if (selected.length >= limit || selected.some((task) => task.beyIndex === beyIndex && task.testType === 'stability')) continue;
+      const choices = tasks.filter((task) => !selectedIds.has(task.id) && task.beyIndex === beyIndex && task.testType === 'stability');
+      const fresh = choices.find((task) => !task.immediateRepeat && !selectedOpponents.has(task.opponentSignature));
+      const task = fresh || choices.find((entry) => !entry.immediateRepeat) || choices[0];
+      if (task) pick(task);
+    }
+
+    while (selected.length < limit) {
+      const remaining = tasks.filter((task) => !selectedIds.has(task.id) && (perOwnArchetype[`${task.beyIndex}:${task.opponentArchetype}`] || 0) < 2);
+      if (!remaining.length) break;
+      const previous = selected[selected.length - 1];
+      remaining.sort((a, b) => {
+        const adjusted = (task) => task.priority
+          - (selectedOpponents.has(task.opponentSignature) ? 5 : 0)
+          - ((selectedOwnCounts[task.beyIndex] || 0) * 1.7)
+          - (previous && previous.beyIndex === task.beyIndex ? 2.5 : 0)
+          - (previous && previous.opponentArchetype === task.opponentArchetype ? 1.5 : 0);
+        return adjusted(b) - adjusted(a) || a.completed - b.completed || a.opponentSignature.localeCompare(b.opponentSignature);
+      });
+      pick(remaining[0]);
     }
     return selected;
   }

@@ -1,4 +1,4 @@
-# X Deck Lab 3.2.0
+# X Deck Lab 3.2.1
 
 A root-only, mobile-first Beyblade X tournament coach for GitHub Pages.
 
@@ -12,7 +12,7 @@ A root-only, mobile-first Beyblade X tournament coach for GitHub Pages.
 
 ## UI and UX design
 
-Version 3.2.0 is a focused refinement of the coach-first workflow:
+Version 3.2.1 is a focused refinement of the coach-first workflow:
 
 - Five permanent bottom-navigation actions: Home, Parts, Decks, Test, and Coach.
 - Guide, Easy/Pro mode, connection status, and advanced controls are placed in the compact header.
@@ -42,6 +42,9 @@ The bundled catalog contains 125 qualifying product records: 120 released and 5 
 - Generated opponents use owned parts and must be buildable at the same time as the selected test Bey.
 - Attack-bit versus attack-bit tests are excluded by default.
 - Test priority considers uncertainty, exact-opponent evidence, opponent-type coverage, per-Bey evidence, self-KO checks, and information value.
+- The exact pairing just completed is put on cooldown when another legal owned pairing exists; recently reused opponent parts also receive a diversity penalty.
+- Repetition returns later when additional samples are still statistically useful, and remains available immediately when no alternative owned test exists.
+- Tournament-order recommendations use vertical, wrapping sequences rather than horizontally scrolling chips.
 - Deck suggestions optimize the complete three-Bey lineup under legality, inventory, role coverage, matchup coverage, and modeled self-KO constraints.
 - Engineering values are qualitative proxies. Controlled physical battles remain the readiness authority.
 

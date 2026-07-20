@@ -174,10 +174,22 @@ td strong { display: block; }
 .bar-row { display: grid; grid-template-columns: minmax(100px, .8fr) minmax(120px, 2fr) 42px; gap: 10px; align-items: center; margin: 8px 0; }
 .bar-track { height: 9px; border-radius: 999px; background: #0e1520; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-.order-card { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
-.order-card + .order-card { margin-top: 8px; }
-.order-sequence { display: flex; gap: 7px; align-items: center; overflow-x: auto; padding-bottom: 3px; }
-.order-step { white-space: nowrap; padding: 7px 9px; border-radius: 9px; background: #0e1520; font-size: .78rem; }
+.order-card { min-width: 0; overflow: hidden; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+.order-card.recommended { border-color: rgba(91,226,255,.48); background: linear-gradient(145deg, rgba(91,226,255,.08), transparent 70%), var(--panel-2); }
+.order-card + .order-card { margin-top: 10px; }
+.order-card-head { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: start; gap: 10px; }
+.order-card-head > div { min-width: 0; }
+.order-card-head small, .order-card-head strong { display: block; }
+.order-card-head small { color: var(--accent); font-size: .65rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.order-card-head strong { margin-top: 2px; overflow-wrap: anywhere; font-size: 1rem; line-height: 1.25; }
+.order-sequence { display: grid; gap: 7px; margin: 11px 0; padding: 0; list-style: none; counter-reset: order-position; }
+.order-step { display: grid; grid-template-columns: 26px minmax(0,1fr); align-items: center; min-width: 0; padding: 8px 9px; border-radius: 9px; background: #0e1520; overflow-wrap: anywhere; font-size: .78rem; line-height: 1.3; counter-increment: order-position; }
+.order-step::before { content: counter(order-position); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; color: #061219; background: var(--accent); font-size: .68rem; font-weight: 900; }
+.order-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.order-metrics span { min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: 9px; background: rgba(7,12,19,.46); }
+.order-metrics small, .order-metrics strong { display: block; overflow-wrap: anywhere; }
+.order-metrics small { min-height: 2.2em; color: var(--muted); font-size: .58rem; line-height: 1.1; }
+.order-metrics strong { margin-top: 4px; font-size: .82rem; font-variant-numeric: tabular-nums; }
 
 .bottom-nav { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(6, 1fr); min-height: var(--nav-height); padding: 7px max(6px, env(safe-area-inset-left)) max(7px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-right)); border-top: 1px solid rgba(255,255,255,.10); background: rgba(10,14,21,.96); backdrop-filter: blur(18px); }
 .bottom-nav button { display: grid; place-items: center; align-content: center; gap: 2px; min-width: 0; min-height: 52px; padding: 4px 1px; border: 0; border-radius: 11px; color: var(--muted); background: transparent; }
@@ -558,3 +570,12 @@ body.advanced-mode .coach-advanced { border-color: rgba(91,226,255,.38); }
   .header-icon { min-width: 44px; width: 44px; }
 }
 #modeButton { font-size: .7rem; letter-spacing: -.02em; }
+
+/* v3.2.1 order containment and mission rotation */
+#orderAnalysis, #orderAnalysis > * { min-width: 0; max-width: 100%; }
+@media (max-width: 350px) {
+  .order-card-head { grid-template-columns: 1fr; }
+  .order-card-head .button { width: 100%; }
+  .order-metrics { grid-template-columns: 1fr; }
+  .order-metrics small { min-height: 0; }
+}

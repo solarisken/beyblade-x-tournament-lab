@@ -17,7 +17,7 @@
   const data = {
     meta: {
       appName: 'X Deck Lab',
-      version: '3.1.0',
+      version: '3.2.1',
       verifiedThrough: '2026-07-20',
       schemaVersion: 8,
       rulesVersion: 'Takara Tomy Regulation v12 / WBO rules checked 2026-07-19',
@@ -120,6 +120,8 @@
       candidatePool: 48,
       targetPerOpponent: 3,
       opponentPoolSize: 90,
+      recentBattleWindow: 6,
+      exactPairCooldown: 3,
       minimumSelfKoTestsPerBey: 8,
       maxObservedSelfKoRate: 0.15,
       showGuide: true,

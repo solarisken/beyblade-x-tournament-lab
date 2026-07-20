@@ -1,4 +1,4 @@
-# X Deck Lab 3.2.0 Release Audit
+# X Deck Lab 3.2.1 Release Audit
 
 ## Scope
 
@@ -33,14 +33,14 @@ Catalog status at verification date 2026-07-20:
 
 ## Verification results
 
-- Automated tests: 42/42 passed.
-- Chromium mobile regression: 109/109 passed at 390 × 844.
+- Automated tests: 44/44 passed.
+- Chromium mobile regression: 113/113 passed at 390 × 844.
 - Small-phone overflow check passed at 320 px.
 - Console errors during normal workflow: 0.
 - Uncaught page errors: 0.
 - Visible controls below the 44-pixel touch-target requirement: 0.
 - Root-only runtime architecture retained.
-- Service-worker cache version: v3.2.0.
+- Service-worker cache version: v3.2.1.
 
 ## Critical behavior retained
 
@@ -58,3 +58,9 @@ Catalog status at verification date 2026-07-20:
 ## Model boundary
 
 The engineering layer uses dimensionless proxies for impact, spin retention, stability, control, recoil, and self-KO risk. It does not claim exact collision simulation because measured mass distribution, launch RPM, friction, wear, mold variation, launcher calibration, and stadium condition are unavailable. Real controlled testing remains authoritative.
+
+## 3.2.1 targeted corrections
+
+- Mission rotation blocks immediate exact-pair repeats whenever another valid owned test exists.
+- Recent exact opponents and high part-overlap opponents receive explicit cooldown penalties.
+- Tournament-order cards use contained vertical sequences and responsive metrics; no horizontal chip strip remains.
