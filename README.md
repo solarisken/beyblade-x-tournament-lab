@@ -33,3 +33,4 @@ python browser-audit.py
 ```
 
 The engineering model is qualitative and physics-informed. Controlled battle evidence remains the authority for readiness.
+
