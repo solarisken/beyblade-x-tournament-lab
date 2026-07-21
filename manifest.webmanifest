@@ -1,37 +1,16 @@
 {
-  "name": "X Deck Lab",
-  "short_name": "X Deck Lab",
-  "description": "Guided Beyblade X tournament coach with a release-date library containing products with Beyblade performance parts, loose-part inventory, owned-opponent tests, and simple Self-KO tracking.",
+  "name": "X Command Center",
+  "short_name": "X Command",
+  "description": "Beyblade X collection, deck optimization, controlled testing, and tournament readiness command center.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0b0f17",
-  "theme_color": "#0c111b",
-  "orientation": "any",
+  "background_color": "#07101d",
+  "theme_color": "#08111f",
+  "orientation": "portrait-primary",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

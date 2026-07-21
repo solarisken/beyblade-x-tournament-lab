@@ -1,647 +1,135 @@
-#!/usr/bin/env python3
-"""Chromium mobile regression for X Deck Lab.
-
-The execution environment used for release certification blocks browser navigation to
-all URL schemes. This harness therefore injects the unchanged production HTML, CSS,
-and JavaScript into Chromium's document context. A deterministic in-memory
-localStorage shim is inserted before the production scripts so persistence and
-migration behavior can still be exercised. Service-worker lifecycle behavior is
-covered separately by test.mjs.
-"""
-from __future__ import annotations
-
-import json
-import os
-import tempfile
-import time
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import sync_playwright
+import json, re
 
 ROOT = Path(__file__).resolve().parent
-RESULT_PATH = ROOT / "browser-audit-result.json"
-SCREENSHOT_PATH = ROOT / "mobile-v3.2.1-fix-final.png"
-HOME_SCREENSHOT_PATH = ROOT / "mobile-v3.2.1-fix-home.png"
-ORDER_SCREENSHOT_PATH = ROOT / "mobile-v3.2.1-order-card.png"
-VIEWPORT = {"width": 390, "height": 844}
-DEVICE_SCALE_FACTOR = 3
+checks = []
+errors = []
 
+def check(name, condition, detail=''):
+    checks.append({'name': name, 'passed': bool(condition), 'detail': detail})
+    if not condition:
+        raise AssertionError(f'{name}: {detail}')
 
-def production_document(initial_storage: dict[str, str] | None = None) -> str:
-    html = (ROOT / "index.html").read_text(encoding="utf-8")
-    css = (ROOT / "styles.css").read_text(encoding="utf-8")
-    initial = json.dumps(initial_storage or {}, ensure_ascii=False).replace("</", "<\\/")
-    bootstrap = f"""
-<script>
-(() => {{
-  const data = Object.assign(Object.create(null), {initial});
-  const storage = {{
-    getItem(key) {{ return Object.prototype.hasOwnProperty.call(data, key) ? data[key] : null; }},
-    setItem(key, value) {{ data[key] = String(value); }},
-    removeItem(key) {{ delete data[key]; }},
-    clear() {{ Object.keys(data).forEach((key) => delete data[key]); }},
-    key(index) {{ return Object.keys(data)[index] ?? null; }},
-    get length() {{ return Object.keys(data).length; }}
-  }};
-  Object.defineProperty(window, 'localStorage', {{ value: storage, configurable: true }});
-  window.__auditStorage = data;
-  window.__auditDownloads = [];
-  window.__auditLastBlob = null;
-  window.confirm = () => true;
-  URL.createObjectURL = (blob) => {{ window.__auditLastBlob = blob; return 'blob:audit'; }};
-  URL.revokeObjectURL = () => {{}};
-  HTMLAnchorElement.prototype.click = function () {{
-    window.__auditDownloads.push({{ filename: this.download, href: this.href }});
-  }};
-}})();
-</script>
-"""
-    html = html.replace("<head>", "<head>" + bootstrap, 1)
-    html = html.replace('<link rel="stylesheet" href="styles.css">', f"<style>\n{css}\n</style>")
-    html = html.replace('<link rel="manifest" href="manifest.webmanifest">', "")
-    html = html.replace('<link rel="icon" href="icon.svg" type="image/svg+xml">', "")
-    for filename in ("data.js", "core.js", "app.js"):
-        source = (ROOT / filename).read_text(encoding="utf-8")
-        html = html.replace(f'<script src="{filename}"></script>', f"<script>\n{source}\n</script>")
+def shell_html():
+    html = (ROOT / 'index.html').read_text()
+    html = re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]*>', '', html)
+    html = re.sub(r'<link rel="manifest"[^>]*>', '', html)
+    html = re.sub(r'<link rel="(?:icon|apple-touch-icon)"[^>]*>', '', html)
+    html = html.replace('<link rel="stylesheet" href="styles.css">', f'<style>{(ROOT / "styles.css").read_text()}</style>')
+    html = re.sub(r'<script src="data\.js"></script>\s*<script src="core\.js"></script>\s*<script src="app\.js"></script>', '', html)
     return html
 
+storage_polyfill = """
+(() => {
+  const store = new Map();
+  const storage = {
+    getItem: k => store.has(String(k)) ? store.get(String(k)) : null,
+    setItem: (k,v) => store.set(String(k), String(v)),
+    removeItem: k => store.delete(String(k)),
+    clear: () => store.clear(),
+    key: i => Array.from(store.keys())[i] ?? null,
+    get length() { return store.size; }
+  };
+  Object.defineProperty(window, 'localStorage', { value: storage, configurable: true });
+})();
+"""
 
-class Audit:
-    def __init__(self) -> None:
-        self.checks: list[dict[str, Any]] = []
-        self.normal_console_errors: list[str] = []
-        self.page_errors: list[str] = []
-        self.expected_validation_logs: list[str] = []
-        self.phase = "normal"
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True, executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+    context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1, service_workers='block')
+    page = context.new_page()
+    page.on('console', lambda msg: errors.append(f'console {msg.type}: {msg.text}') if msg.type == 'error' else None)
+    page.on('pageerror', lambda exc: errors.append(f'pageerror: {exc}'))
+    page.set_content(shell_html(), wait_until='load')
+    page.add_script_tag(content=storage_polyfill)
+    page.evaluate("localStorage.setItem('xCommandCenterStateV1', JSON.stringify({settings:{avoidAttackMirrors:true}}))")
+    for name in ['data.js','core.js','app.js']:
+        page.add_script_tag(content=(ROOT / name).read_text())
+    page.wait_for_timeout(300)
 
-    def record(self, name: str, passed: bool, detail: str = "") -> None:
-        self.checks.append({"name": name, "passed": bool(passed), "detail": detail})
-        print(f"[{len(self.checks):02d}] {'PASS' if passed else 'FAIL'} {name}", flush=True)
-        if not passed:
-            raise AssertionError(f"{name}: {detail}")
+    check('App scripts initialize', bool(page.locator('#readinessHero').inner_text().strip()), '; '.join(errors))
+    check('App title renders', page.locator('h1').inner_text() == 'X Command Center')
+    check('Five primary navigation items', page.locator('.nav-item').count() == 5)
+    check('No mobile horizontal overflow', page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'))
+    check('Command view active', page.locator('#view-command').is_visible())
+    check('Readiness hero visible', page.locator('#readinessHero').is_visible())
+    check('Retired attack-mirror setting is absent', page.locator('#settingAvoidMirrors').count() == 0)
+    check('Attack-movement mirror missions are eligible', page.evaluate("""() => {
+      const C = window.XCC_CORE;
+      const own = C.normalizeBey({architecture:'standard',blade:'blade-dran-sword',ratchet:'ratchet-3-60',bit:'bit-flat'});
+      const opponent = C.normalizeBey({architecture:'standard',blade:'blade-shark-edge',ratchet:'ratchet-1-60',bit:'bit-low-flat'});
+      const looseParts = {};
+      [...C.getBeyPartIds(own), ...C.getBeyPartIds(opponent)].forEach(id => { looseParts[id] = (looseParts[id] || 0) + 1; });
+      const testState = {ownedProducts:{},looseParts,decks:[{id:'m',name:'m',beys:[own]}],activeDeckId:'m',battles:[],settings:{targetPerCell:4,avoidAttackMirrors:true}};
+      const missions = C.generateTestMissions(testState, 4);
+      return missions.length > 0 && missions.some(m => C.usesAttackMovementBit(m.own) && C.usesAttackMovementBit(m.opponent));
+    }"""))
+    check('Mobile coverage cards render', page.locator('.coverage-mobile .coverage-card').count() == 3)
+    check('Mobile coverage table is hidden', not page.locator('.coverage-table-wrap').is_visible())
+    check('Primary mobile navigation touch targets are at least 44px', page.evaluate("[...document.querySelectorAll('.nav-item')].every(el => el.getBoundingClientRect().height >= 44)"))
 
-    def console(self, message) -> None:
-        if message.type != "error":
-            return
-        target = self.expected_validation_logs if self.phase == "negative" else self.normal_console_errors
-        target.append(message.text)
+    page.locator('[data-nav="collection"]').last.click()
+    check('Collection view opens', page.locator('#view-collection').is_visible())
+    for product_id in ['UX-01','UX-03','UX-06']:
+        page.locator(f'[data-product-id="{product_id}"][data-product-change="1"]').click()
+    check('Owned product quantities update', page.locator('[data-product-id="UX-01"][data-product-change="-1"]').is_enabled())
+    check('Legacy exclusion setting is removed on save', page.evaluate("!('avoidAttackMirrors' in JSON.parse(localStorage.getItem('xCommandCenterStateV1')).settings)"))
 
-    def page_error(self, error) -> None:
-        self.page_errors.append(str(error))
+    page.locator('[data-nav="deck"]').last.click()
+    check('Deck lab opens', page.locator('#view-deck').is_visible())
+    page.locator('#optimizeButton').click()
+    check('Optimizer dialog opens', page.locator('#optimizerDialog').is_visible())
+    check('Optimizer returns a legal deck', page.locator('[data-apply-optimizer]').count() > 0)
+    page.locator('[data-apply-optimizer="0"]').click()
+    check('Applied deck has three complete previews', page.locator('.bey-preview strong').count() == 3 and all('Incomplete' not in page.locator('.bey-preview strong').nth(i).inner_text() for i in range(3)))
+    check('Deck validation passes', page.locator('#deckValidationBadge').inner_text() == 'Legal')
 
+    page.locator('[data-nav="test"]').last.click()
+    check('Test lab opens', page.locator('#view-test').is_visible())
+    check('Owned-opponent missions generated', page.locator('[data-mission-key]').count() > 1)
+    first_key = page.locator('[data-mission-key]').first.get_attribute('data-mission-key')
+    page.locator('[data-mission-key]').first.click()
+    check('Mission can be selected', page.locator('#saveBattleButton').is_enabled())
+    page.locator('input[name="winner"][value="own"]').check()
+    page.locator('input[name="finish"][value="spin"]').check()
+    page.locator('#saveBattleButton').click()
+    page.wait_for_timeout(250)
+    check('Battle saved to local state', page.evaluate("JSON.parse(localStorage.getItem('xCommandCenterStateV1')).battles.length") == 1)
+    new_first_key = page.locator('[data-mission-key]').first.get_attribute('data-mission-key')
+    check('Completed pairing is not immediately repeated', new_first_key != first_key, f'{first_key} -> {new_first_key}')
 
-def wait_ready(page: Page) -> None:
-    page.wait_for_function("document.documentElement.dataset.appReady === 'true'")
+    page.locator('[data-nav="records"]').last.click()
+    check('Records view opens', page.locator('#view-records').is_visible())
+    check('Saved battle appears in records', page.locator('.record-card').count() == 1)
 
+    page.locator('#settingsButton').click()
+    check('Settings dialog opens', page.locator('#settingsDialog').is_visible())
+    check('Mobile form controls use 16px text to avoid focus zoom', page.evaluate("parseFloat(getComputedStyle(document.querySelector('#settingTargetPerCell')).fontSize) >= 16"))
+    page.locator('[data-close-dialog="settingsDialog"]').click()
 
-def storage_snapshot(page: Page) -> dict[str, str]:
-    return page.evaluate("Object.assign({}, window.__auditStorage)")
+    page.locator('[data-nav="command"]').last.click()
+    page.wait_for_timeout(2800)
+    page.screenshot(path=str(ROOT / 'mobile-command-center.png'), full_page=True)
 
+    page.set_viewport_size({'width': 320, 'height': 720})
+    page.wait_for_timeout(100)
+    check('No 320px horizontal overflow', page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'))
+    page.screenshot(path=str(ROOT / 'small-phone-command-center.png'), full_page=True)
 
-def state_snapshot(page: Page) -> dict[str, Any]:
-    raw = page.evaluate("window.__auditStorage['x-deck-lab-state-v2'] || null")
-    if not raw:
-        raise AssertionError("No v2 state exists in audit storage.")
-    return json.loads(raw)
+    page.set_viewport_size({'width': 1280, 'height': 900})
+    page.wait_for_timeout(100)
+    check('No desktop horizontal overflow', page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'))
+    page.screenshot(path=str(ROOT / 'desktop-command-center.png'), full_page=True)
 
+    check('No uncaught browser errors', len(errors) == 0, '; '.join(errors))
+    browser.close()
 
-def nav(page: Page, view: str) -> None:
-    page.locator(f'[data-nav="{view}"]').click()
-    page.locator(f'#view-{view}').wait_for(state="visible")
-
-
-def add_product(page: Page, product_id: str, variant_id: str | None = None) -> None:
-    search = page.locator("#productSearch")
-    search.fill(product_id)
-    card = page.locator(f'[data-product-card="{product_id}"]')
-    card.wait_for(state="visible")
-    if variant_id is not None:
-        card.locator("[data-product-variant]").select_option(variant_id)
-    card.locator('[data-product-action="add"]').click()
-
-
-def temporary_json(payload: Any) -> str:
-    handle = tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False)
-    try:
-        json.dump(payload, handle, ensure_ascii=False)
-        return handle.name
-    finally:
-        handle.close()
-
-
-def run() -> dict[str, Any]:
-    audit = Audit()
-    started = time.perf_counter()
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(
-            headless=True,
-            executable_path=os.environ.get("CHROMIUM_PATH", "/usr/bin/chromium"),
-            args=["--no-sandbox", "--disable-dev-shm-usage"],
-        )
-        context = browser.new_context(
-            viewport=VIEWPORT,
-            device_scale_factor=DEVICE_SCALE_FACTOR,
-            is_mobile=True,
-            has_touch=True,
-        )
-        page = context.new_page()
-        page.on("console", audit.console)
-        page.on("pageerror", audit.page_error)
-        page.set_content(production_document(), wait_until="load")
-        wait_ready(page)
-
-        audit.record("Application initializes", page.locator("html").get_attribute("data-app-ready") == "true")
-        audit.record("No initial page errors", not audit.page_errors, "; ".join(audit.page_errors))
-        audit.record(
-            "No horizontal overflow",
-            page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"),
-            page.evaluate("`${document.documentElement.scrollWidth}px content / ${window.innerWidth}px viewport`"),
-        )
-        unlabeled = page.evaluate("""() => Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea, button')).filter((el) => { const rect = el.getBoundingClientRect(); if (!rect.width || !rect.height) return false; const labels = el.labels ? el.labels.length : 0; const accessibleName = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '').trim(); return !labels && !accessibleName; }).map((el) => el.id || el.name || el.tagName)""")
-        audit.record("Initial visible controls have accessible names", len(unlabeled) == 0, ", ".join(unlabeled))
-        duplicate_ids = page.evaluate("""() => { const ids = Array.from(document.querySelectorAll('[id]')).map((el) => el.id); return ids.filter((id, index) => ids.indexOf(id) !== index); }""")
-        audit.record("Document IDs are unique", len(duplicate_ids) == 0, ", ".join(sorted(set(duplicate_ids))))
-        audit.record("Four-step home guide is visible", page.locator("#quickGuide").is_visible() and page.locator("#guideSteps .guide-step").count() == 4)
-        page.locator("#guideButton").click()
-        page.locator("#guideDialog").wait_for(state="visible")
-        guide_text = page.locator("#guideDialog").inner_text()
-        audit.record("Full player guide has four clear steps", page.locator("#guideDialog .guide-list li").count() == 4 and "Parts" in guide_text and "Decks" in guide_text and "Coach" in guide_text)
-        audit.record("Kid guide explains ordinary Self-KO", "Just answer Yes or No" in guide_text and "ask an adult" in guide_text.lower(), guide_text[:500])
-        page.locator('#guideDialog [data-close-dialog]').click()
-        page.locator("#guideDialog").wait_for(state="hidden")
-
-        page.set_viewport_size({"width": 320, "height": 700})
-        audit.record("Small-phone layout has no horizontal overflow", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), page.evaluate("`${document.documentElement.scrollWidth}px / ${window.innerWidth}px`"))
-        page.set_viewport_size(VIEWPORT)
-
-        view_accessibility_issues = []
-        for view in ("dashboard", "inventory", "deck", "test", "results", "more"):
-            nav(page, view)
-            audit.record(f"{view.title()} view navigates", page.locator(f"#view-{view}").is_visible())
-            issues = page.evaluate("""() => Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea, button')).filter((el) => { const rect = el.getBoundingClientRect(); if (!rect.width || !rect.height) return false; const labels = el.labels ? el.labels.length : 0; const accessibleName = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '').trim(); return !labels && !accessibleName; }).map((el) => el.id || el.name || el.tagName)""")
-            view_accessibility_issues.extend([f"{view}:{item}" for item in issues])
-        audit.record("Visible controls across primary views have accessible names", len(view_accessibility_issues) == 0, ", ".join(view_accessibility_issues))
-        audit.record("Management navigation does not stall", page.locator("#settingsForm").is_visible())
-
-        nav_rects = page.locator(".bottom-nav [data-nav]").evaluate_all(
-            "els => els.map(el => { const r = el.getBoundingClientRect(); return ({w:r.width,h:r.height,left:r.left,right:r.right,bottom:r.bottom}); })"
-        )
-        touch_ok = all(rect["h"] >= 44 and rect["w"] >= 44 for rect in nav_rects)
-        contained = all(rect["left"] >= 0 and rect["right"] <= VIEWPORT["width"] + 0.5 for rect in nav_rects)
-        audit.record("Primary navigation meets 44 px touch target", touch_ok, json.dumps(nav_rects))
-        audit.record("Primary navigation stays inside viewport", contained, json.dumps(nav_rects))
-        audit.record("Bottom navigation is reduced to five core actions", page.locator(".bottom-nav [data-nav]").count() == 5)
-        audit.record("Advanced controls move to the compact header", page.locator('.app-header [data-nav="more"]').count() == 1 and page.locator('.app-header [data-nav="more"]').is_visible())
-        guide_height = page.locator("#quickGuide").evaluate("el => Math.round(el.getBoundingClientRect().height)")
-        audit.record("Four-step path stays compact on mobile", guide_height <= 190, f"{guide_height}px")
-
-        nav(page, "inventory")
-        audit.record("Official release library opens by default", page.locator("#setLibraryPanel").is_visible() and not page.locator("#loosePartsPanel").is_visible())
-        audit.record("Release filters are collapsed until requested", page.locator("#productFilterDrawer").evaluate("el => el.open") is False)
-        audit.record("Search and filter controls remain sticky", page.locator(".library-controls").evaluate("el => getComputedStyle(el).position") == "sticky")
-        page.locator("#productFilterDrawer summary").click()
-        audit.record("Filter drawer opens on demand", page.locator("#productFilterDrawer").evaluate("el => el.open") is True)
-        library_text = page.locator("#setLibraryPanel").inner_text()
-        audit.record("Library includes releases with Bey parts and excludes accessory-only releases", "Every listed product contains at least one Beyblade performance part" in library_text and "Accessory-only releases" in library_text)
-
-        product_search = page.locator("#productSearch")
-        product_search.fill("BX-00-BITSET-GOLD")
-        bit_set = page.locator('[data-product-card="BX-00-BITSET-GOLD"]')
-        bit_set.wait_for(state="visible")
-        audit.record("Parts-only releases with Bey parts are included", "4 Bey parts" in bit_set.inner_text() and "Bit Set" in bit_set.inner_text())
-        bit_set.locator('[data-product-action="add"]').click()
-        state = state_snapshot(page)
-        audit.record("Adding a parts-only release records ownership and loose parts", state["ownedProducts"].get("BX-00-BITSET-GOLD") == 1 and all(state["inventory"].get(part_id, {}).get("qty", 0) >= 1 for part_id in ["bit-flat", "bit-taper", "bit-ball", "bit-needle"]))
-        bit_set.locator('[data-product-action="remove"]').click()
-        state = state_snapshot(page)
-        audit.record("Removing a parts-only release reverses its parts", "BX-00-BITSET-GOLD" not in state["ownedProducts"] and all(state["inventory"].get(part_id, {}).get("qty", 0) == 0 for part_id in ["bit-flat", "bit-taper", "bit-ball", "bit-needle"]))
-
-        product_search.fill("BX-23")
-        audit.record("Product search retains focus", page.evaluate("document.activeElement.id") == "productSearch")
-        bx23 = page.locator('[data-product-card="BX-23"]')
-        bx23.wait_for(state="visible")
-        audit.record("Product cards show included Bey count", "1 Bey" in bx23.inner_text())
-        bx23.locator('[data-product-action="add"]').click()
-        state = state_snapshot(page)
-        audit.record("Adding a fixed product records ownership and verified loose parts", state["ownedProducts"].get("BX-23") == 1 and all(state["inventory"].get(part_id, {}).get("qty", 0) >= 1 for part_id in ["blade-phoenix-wing", "ratchet-9-60", "bit-gear-flat"]))
-        bx23.locator('[data-product-action="remove"]').click()
-        state = state_snapshot(page)
-        audit.record("Removing a fixed product reverses its owned quantity and parts", "BX-23" not in state["ownedProducts"] and all(state["inventory"].get(part_id, {}).get("qty", 0) == 0 for part_id in ["blade-phoenix-wing", "ratchet-9-60", "bit-gear-flat"]))
-        add_product(page, "BX-23")
-
-        add_product(page, "BX-14", "01")
-        state = state_snapshot(page)
-        audit.record("Random boosters require and store the exact selected pull", state["ownedProducts"].get("BX-14::01") == 1 and len(state["inventory"]) >= 6)
-
-        page.locator("#productStatus").select_option("all")
-        product_search.fill("UX-21")
-        ux21 = page.locator('[data-product-card="UX-21"]')
-        ux21.wait_for(state="visible")
-        audit.record("Announced releases with Bey parts can be browsed but not marked owned", ux21.locator('[data-product-action]').count() == 0 and "Not released yet" in ux21.inner_text())
-        page.locator("#clearProductFilters").click()
-        audit.record("Clear filters restores released newest-first browsing", page.locator("#productStatus").input_value() == "released" and page.locator("#productSort").input_value() == "newest")
-        audit.record("Filter counter resets with the controls", page.locator("#activeFilterCount").inner_text() == "0")
-
-        page.locator("#productSort").select_option("oldest")
-        first_month = page.locator("#productList [data-release-month]").first.get_attribute("data-release-month")
-        audit.record("Oldest-first sorting starts with the first release month", first_month == "2023-07", str(first_month))
-        page.locator("#productSort").select_option("code")
-        visible_codes = page.locator("#productList .catalog-code").all_inner_texts()
-        audit.record("Product-code sorting is alphabetical", visible_codes == sorted(visible_codes), " | ".join(visible_codes[:8]))
-        page.locator("#productSort").select_option("newest")
-
-        for product_id in ("UX-03", "UX-08", "UX-11", "BX-49"):
-            add_product(page, product_id)
-        state = state_snapshot(page)
-        audit.record("Product entry updates inventory", len(state["inventory"]) >= 16, f"{len(state['inventory'])} unique parts")
-
-        page.locator('[data-collection-tab="parts"]').click()
-        audit.record("Loose-parts tab switches without losing product ownership", page.locator("#loosePartsPanel").is_visible() and not page.locator("#setLibraryPanel").is_visible() and state["ownedProducts"].get("BX-23") == 1)
-        inventory_search = page.locator("#inventorySearch")
-        inventory_search.fill("PhoenixWing")
-        audit.record("Inventory search retains focus", page.evaluate("document.activeElement.id") == "inventorySearch")
-        audit.record("Inventory filtering renders owned part", "PhoenixWing" in page.locator("#inventoryList").inner_text())
-        inventory_search.fill("")
-
-        page.locator("#openPartDialog").click()
-        page.locator("#partCategory").select_option("ratchet")
-        page.locator("#partSelect").select_option("ratchet-1-60")
-        page.locator('#partForm input[name="quantity"]').fill("2")
-        page.locator("#partCondition").select_option("worn")
-        page.locator('#partForm input[name="notes"]').fill("Audit spare")
-        page.locator("#partForm").evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Loose-part dialog saves quantity and condition", state["inventory"]["ratchet-1-60"]["qty"] == 2 and state["inventory"]["ratchet-1-60"]["condition"] == "worn")
-
-        nav(page, "deck")
-        page.locator("#smartBuildButton").click()
-        page.locator("[data-apply-suggestion]").first.wait_for(state="visible", timeout=15000)
-        audit.record("Owned-parts optimizer returns ranked decks", page.locator("[data-apply-suggestion]").count() >= 1)
-        page.locator("[data-apply-suggestion]").first.click()
-        subtitles = page.locator(".bey-card .bey-title small").all_inner_texts()
-        audit.record("Optimizer applies three complete Beys", len(subtitles) == 3 and all("Incomplete" not in item for item in subtitles), " | ".join(subtitles))
-        metric_counts = page.locator(".bey-card .bey-metric").evaluate_all("els => { const cards = [...document.querySelectorAll('.bey-card')]; return cards.map(card => card.querySelectorAll('.bey-metric').length); }")
-        audit.record("Each completed Bey uses a four-cell mobile score grid", metric_counts == [4, 4, 4], json.dumps(metric_counts))
-        metric_layout = page.locator(".bey-card").first.evaluate("""card => {
-          const grid = card.querySelector('.bey-metric-grid');
-          const cardRect = card.getBoundingClientRect();
-          const cells = [...card.querySelectorAll('.bey-metric')].map(el => { const r = el.getBoundingClientRect(); return { left:r.left, right:r.right, width:r.width }; });
-          return {
-            columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
-            contained: cells.every(r => r.left >= cardRect.left - 0.5 && r.right <= cardRect.right + 0.5),
-            legacyInlineSpans: card.querySelectorAll('.bey-engineering > span').length,
-            labeledCells: [...card.querySelectorAll('.bey-metric')].every(el => el.querySelector('small') && el.querySelector('strong') && el.querySelector('em'))
-          };
-        }""")
-        audit.record("Mobile engineering scores are separated and contained", metric_layout["columns"] == 2 and metric_layout["contained"] and metric_layout["legacyInlineSpans"] == 0 and metric_layout["labeledCells"], json.dumps(metric_layout))
-        validation_text = page.locator("#deckValidation").inner_text()
-        audit.record("Applied deck passes rules and inventory gates", "Construction passes" in validation_text and "Shortage" not in validation_text and "Rules" not in validation_text, validation_text[:500])
-
-        page.locator("#renameDeckButton").click()
-        page.locator("#deckNameInput").fill("Certified Tournament Deck")
-        page.locator("#nameForm").evaluate("form => form.requestSubmit()")
-        page.locator("#cloneDeckButton").click()
-        page.locator("#deckNameInput").fill("Certified Tournament Deck Copy")
-        page.locator("#nameForm").evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Deck library clones complete decks", len(state["decks"]) == 2 and state["decks"][1]["beys"] == state["decks"][0]["beys"])
-        page.locator("#deleteDeckButton").click()
-        state = state_snapshot(page)
-        audit.record("Deck library deletes selected version safely", len(state["decks"]) == 1 and state["decks"][0]["name"] == "Certified Tournament Deck")
-
-        nav(page, "test")
-        audit.record("Adaptive test plan renders exact owned opponents", page.locator("#testPlanList .test-task").count() >= 1 and "you own all needed parts" in page.locator("#view-test").inner_text().lower())
-        audit.record("Adaptive plan prioritizes simple self-KO checks", "SELF-KO CHECK" in page.locator("#testPlanList").inner_text() and "self-KO question" in page.locator("#testPlanList").inner_text())
-        initial_mission = page.evaluate("""() => {
-          const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
-          const deck = state.decks.find((entry) => entry.id === state.activeDeckId);
-          const partMap = Object.fromEntries([...window.XDATA.parts, ...(state.customParts || [])].map((part) => [part.id, part]));
-          const first = window.XCore.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap, inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: window.XDATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 1 })[0];
-          return first ? { id:first.id, opponentSignature:first.opponentSignature } : null;
-        }""")
-        audit.record("Initial Coach mission has an exact owned pairing", bool(initial_mission and initial_mission.get("id")), json.dumps(initial_mission))
-        audit.record("Battle form offers an owned opponent build", page.locator("#battleOpponent option").count() >= 1 and page.locator("#battleOpponent").input_value() != "")
-        pair_policy = page.evaluate("""() => {
-          const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
-          const deck = state.decks.find((entry) => entry.id === state.activeDeckId);
-          const ownIndex = Number(document.querySelector('#battleOwnBey').value || 0);
-          const own = deck.beys[ownIndex];
-          const signature = document.querySelector('#battleOpponent').value;
-          const partMap = Object.fromEntries([...window.XDATA.parts, ...(state.customParts || [])].map((part) => [part.id, part]));
-          const candidates = window.XCore.generateOwnedOpponentCandidates({ inventory: state.inventory, ownBey: own, partMap, includeAnnounced: deck.includeAnnounced, avoidAttackMirrors: state.settings.avoidAttackMirrors !== false, maxCandidates: state.settings.opponentPoolSize || 90 });
-          const opponent = candidates.find((entry) => entry.signature === signature);
-          return {
-            found: Boolean(opponent),
-            capacity: opponent ? window.XCore.inventoryCapacityForBattle(own, opponent.bey, state.inventory, partMap).valid : false,
-            attackMirror: opponent ? window.XCore.bitRoleForBey(own, partMap) === 'attack' && opponent.engineering.bitRole === 'attack' : true
-          };
-        }""")
-        audit.record("Selected opponent is simultaneously constructible from owned quantities", pair_policy["found"] and pair_policy["capacity"], json.dumps(pair_policy))
-        audit.record("Attack-bit mirror exclusion is enforced", not pair_policy["attackMirror"], json.dumps(pair_policy))
-        audit.record("Opponent engineering preview renders", "Owned capacity verified" in (page.locator("#opponentEngineering").text_content() or ""))
-        page.locator('#battleForm select[name="result"]').select_option("win")
-        page.locator('#battleForm select[name="finish"]').select_option("xtreme")
-        page.locator('#battleForm input[name="selfKo"][value="no"]').check()
-        page.locator("#battleForm").evaluate("form => form.requestSubmit()")
-        history_text = page.locator("#battleHistory").inner_text()
-        state = state_snapshot(page)
-        audit.record("Battle logging persists exact opponent, finish, and simple No answer", len(state["battles"]) == 1 and state["battles"][0]["finish"] == "xtreme" and state["battles"][0]["selfKo"] is False and state["battles"][0]["selfKoKnown"] is True and bool(state["battles"][0].get("opponentBey")) and bool(state["battles"][0].get("opponentSignature")))
-        audit.record("Xtreme Finish receives three points", "3 points" in history_text, history_text[:400])
-        audit.record("Saving a battle reveals a Coach handoff", page.locator("#postBattleHandoff").is_visible() and "See Coach update" in page.locator("#postBattleHandoff").inner_text())
-        rotated_mission = page.evaluate("""() => {
-          const state = JSON.parse(window.__auditStorage['x-deck-lab-state-v2']);
-          const deck = state.decks.find((entry) => entry.id === state.activeDeckId);
-          const partMap = Object.fromEntries([...window.XDATA.parts, ...(state.customParts || [])].map((part) => [part.id, part]));
-          const first = window.XCore.buildTestPlan({ deck: deck.beys, deckId: deck.id, partMap, inventory: state.inventory, includeAnnounced: deck.includeAnnounced, battles: state.battles, scoring: window.XDATA.scoring, metaProfiles: state.metaProfiles, settings: state.settings, limit: 1 })[0];
-          return first ? { id:first.id, opponentSignature:first.opponentSignature } : null;
-        }""")
-        audit.record("Coach rotates away from the just-completed exact pairing", bool(rotated_mission and initial_mission and rotated_mission["id"] != initial_mission["id"] and rotated_mission["opponentSignature"] != initial_mission["opponentSignature"]), json.dumps({"before": initial_mission, "after": rotated_mission}))
-
-        page.locator('#battleForm select[name="result"]').select_option("win")
-        page.locator('#battleForm select[name="finish"]').select_option("spin")
-        page.locator('#battleForm input[name="selfKo"][value="yes"]').check()
-        page.locator("#battleForm").evaluate("form => form.requestSubmit()")
-        audit.record("Impossible Self-KO Yes answer is blocked", len(state_snapshot(page)["battles"]) == 1 and "only when your Bey lost" in page.locator("#toast").inner_text())
-
-        page.locator('#battleForm select[name="result"]').select_option("loss")
-        page.locator('#battleForm select[name="finish"]').select_option("over")
-        page.locator('#battleForm input[name="selfKo"][value="yes"]').check()
-        page.locator("#battleForm").evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Ordinary Self-KO Yes is retained as valid decided evidence", len(state["battles"]) == 2 and state["battles"][1]["selfKo"] is True and state["battles"][1]["selfKoKnown"] is True and state["battles"][1]["contaminated"] is False)
-        audit.record("Battle history shows only the simple Self-KO label", "SELF-KO" in page.locator("#battleHistory").inner_text() and "rail overshoot" not in page.locator("#battleHistory").inner_text().lower())
-
-        page.locator('#battleForm select[name="result"]').select_option("loss")
-        page.locator('#battleForm select[name="finish"]').select_option("spin")
-        page.locator('#battleForm input[name="selfKo"][value="no"]').check()
-        page.locator("#optionalTestDetails").evaluate("details => details.open = true")
-        page.locator('#battleForm input[name="contaminated"]').check()
-        page.locator("#battleForm").evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Contaminated battle is retained but marked for exclusion", len(state["battles"]) == 3 and state["battles"][2]["contaminated"] is True)
-
-        nav(page, "results")
-        audit.record("Coach tab is clearly named", "Coach" in page.locator('[data-nav="results"]').inner_text())
-        audit.record("Player mode is visible by default", page.locator("#modeButton").inner_text() == "Easy" and "Player mode" in (page.locator("#modeButton").get_attribute("title") or ""))
-        audit.record("Home introduces Coach before the tab is used", "Coach" in page.locator("#guideSteps").inner_text() and "Ask Coach" in page.locator("#dashboardHero").inner_text())
-        audit.record("Coach reports decided evidence", "2 battles" in page.locator("#analysisHero").inner_text())
-        audit.record("Coach shows one next mission", "do this next" in page.locator("#coachMission").inner_text().lower() and page.locator("#coachMission button").count() == 1)
-        audit.record("Coach snapshot combines progress and priorities", page.locator(".coach-overview-panel").is_visible() and page.locator("#coachProgress .coach-progress-row").count() == 3 and page.locator(".coach-overview-panel .panel").count() == 0)
-        audit.record("Engineering explanation is collapsed by default", page.locator(".insight-details").nth(1).evaluate("el => el.open") is False)
-        audit.record("Coach mission exposes information value", "value" in page.locator("#coachMission").inner_text().lower())
-        audit.record("Coach patterns render", page.locator("#coachPatterns .coach-point").count() >= 1)
-        page.locator("#modeButton").click()
-        audit.record("Advanced mode opens technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is True and page.locator("#modeButton").inner_text() == "Pro")
-        page.locator("#modeButton").click()
-        audit.record("Player mode restores collapsed technical details", page.locator("#coachAdvancedDetails").evaluate("el => el.open") is False and page.locator("#modeButton").inner_text() == "Easy")
-        audit.record("Coach shows progress, strengths, weaknesses, and simple behavior", page.locator("#coachProgress progress").count() == 3 and bool(page.locator("#coachStrengths").inner_text().strip()) and bool(page.locator("#coachWeaknesses").inner_text().strip()) and page.locator("#coachPhysics .coach-physics-row").count() == 5)
-        audit.record("Technical analysis is collapsed by default", page.locator(".coach-advanced").evaluate("el => !el.open"))
-        page.locator(".coach-advanced").evaluate("el => el.open = true")
-        audit.record("Coverage matrix renders in advanced analysis", page.locator("#coverageMatrix table").count() == 1)
-        audit.record("Engineering deck analysis renders in advanced analysis", "Deck engineering score" in page.locator("#engineeringAnalysis").inner_text() and page.locator("#engineeringAnalysis .engineering-card").count() == 3)
-        selfko_text = page.locator("#selfKoAnalysis").inner_text()
-        audit.record("Simple Self-KO analysis renders Yes-or-No totals", "Total self-KOs" in selfko_text and "Yes or No" in selfko_text and "No special cause is needed" in selfko_text, selfko_text[:600])
-        audit.record("Detailed Self-KO causes are not shown", "Wilson 95%" not in selfko_text and "rail overshoot" not in selfko_text.lower() and "Over / Xtreme" not in selfko_text, selfko_text[:600])
-        audit.record("Order analysis renders without failure", bool(page.locator("#orderAnalysis").inner_text().strip()))
-        order_layout = page.locator("#orderAnalysis").evaluate("""panel => {
-          const cards = [...panel.querySelectorAll('.order-card')];
-          return {
-            cards: cards.length,
-            contained: cards.every(card => card.scrollWidth <= card.clientWidth + 1),
-            vertical: cards.every(card => getComputedStyle(card.querySelector('.order-sequence')).display === 'grid'),
-            stepsContained: cards.every(card => { const bounds = card.getBoundingClientRect(); return [...card.querySelectorAll('.order-step')].every(step => { const r = step.getBoundingClientRect(); return r.left >= bounds.left - .5 && r.right <= bounds.right + .5; }); })
-          };
-        }""")
-        audit.record("Tournament-order cards stay inside the mobile viewport", order_layout["cards"] >= 1 and order_layout["contained"] and order_layout["vertical"] and order_layout["stepsContained"], json.dumps(order_layout))
-        page.evaluate("""() => {
-          const skip = document.querySelector('.skip-link'); if (skip) skip.dataset.auditDisplay = skip.style.display || '';
-          const header = document.querySelector('.app-header'); if (header) header.dataset.auditDisplay = header.style.display || '';
-          const nav = document.querySelector('.bottom-nav'); if (nav) nav.dataset.auditDisplay = nav.style.display || '';
-          const toast = document.querySelector('#toast'); if (toast) toast.dataset.auditDisplay = toast.style.display || '';
-          if (skip) skip.style.display = 'none'; if (header) header.style.display = 'none'; if (nav) nav.style.display = 'none'; if (toast) toast.style.display = 'none';
-        }""")
-        page.locator("#orderAnalysis").screenshot(path=str(ORDER_SCREENSHOT_PATH))
-        page.evaluate("""() => {
-          for (const selector of ['.skip-link','.app-header','.bottom-nav','#toast']) { const el = document.querySelector(selector); if (el) el.style.display = el.dataset.auditDisplay || ''; }
-        }""")
-        audit.record("Corrected tournament-order screenshot captured", ORDER_SCREENSHOT_PATH.exists() and ORDER_SCREENSHOT_PATH.stat().st_size > 0)
-        page.locator("#runForecastButton").click()
-        page.wait_for_function("document.querySelector('#runForecastButton').disabled === false && document.querySelector('#runForecastButton').textContent === 'Run forecast'", timeout=30000)
-        forecast_text = page.locator("#forecastResults").inner_text()
-        audit.record("Forecast action completes", bool(forecast_text.strip()) and "Run the forecast" not in forecast_text, forecast_text[:500])
-
-        # Initial navigation already certifies a physical mobile tap. Use a DOM click here
-        # to avoid Playwright actionability stalls after the asynchronous simulation.
-        page.evaluate("document.querySelector('[data-nav=\"more\"]').click()")
-        page.locator("#view-more").wait_for(state="visible", timeout=10000)
-        page.locator("#addMetaButton").click()
-        meta = page.locator("#metaForm")
-        meta.locator('input[name="name"]').fill("Audit field")
-        meta.locator('input[name="weight"]').fill("1.25")
-        meta.locator('select[name="position1"]').select_option("stamina")
-        meta.locator('select[name="position2"]').select_option("attack")
-        meta.locator('select[name="position3"]').select_option("balance")
-        meta.evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Meta-profile management saves weighted lineup", any(item["name"] == "Audit field" and item["weight"] == 1.25 for item in state["metaProfiles"]))
-
-        page.locator("#addProfileButton").click()
-        profile = page.locator("#profileForm")
-        profile.locator('input[name="name"]').fill("Audit 5-point")
-        profile.locator('input[name="targetPoints"]').fill("5")
-        profile.locator('select[name="lockChipPolicy"]').select_option("tt-v12")
-        profile.locator('textarea[name="bannedParts"]').fill("bit-metal-needle")
-        profile.locator('textarea[name="notes"]').fill("Audit-local organizer clause")
-        profile.evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Custom tournament profile persists", len(state["customProfiles"]) == 1 and state["customProfiles"][0]["targetPoints"] == 5)
-
-        settings = page.locator("#settingsForm")
-        settings.locator('input[name="minimumBattles"]').fill("42")
-        settings.locator('input[name="targetPerCell"]').fill("6")
-        settings.locator('input[name="targetPerOpponent"]').fill("4")
-        settings.locator('input[name="opponentPoolSize"]').fill("80")
-        settings.locator('input[name="candidatePool"]').fill("52")
-        settings.locator('input[name="minimumSelfKoTestsPerBey"]').fill("6")
-        settings.locator('input[name="maxObservedSelfKoRate"]').fill("0.12")
-        settings.locator('input[name="showGuide"]').uncheck()
-        settings.evaluate("form => form.requestSubmit()")
-        state = state_snapshot(page)
-        audit.record("Readiness and engineering-search policy persists", state["settings"]["minimumBattles"] == 42 and state["settings"]["targetPerCell"] == 6 and state["settings"]["targetPerOpponent"] == 4 and state["settings"]["opponentPoolSize"] == 80 and state["settings"]["candidatePool"] == 52 and state["settings"]["minimumSelfKoTestsPerBey"] == 6 and state["settings"]["maxObservedSelfKoRate"] == 0.12)
-        nav(page, "dashboard")
-        audit.record("Guide cards can be hidden", not page.locator("#quickGuide").is_visible())
-        nav(page, "more")
-        settings = page.locator("#settingsForm")
-        settings.locator('input[name="showGuide"]').check()
-        settings.evaluate("form => form.requestSubmit()")
-        nav(page, "dashboard")
-        audit.record("Guide cards can be restored", page.locator("#quickGuide").is_visible() and page.locator("#guideSteps .guide-step").count() == 4)
-        nav(page, "more")
-
-        page.locator("#runAuditButton").click()
-        diagnostics = page.locator("#diagnostics").inner_text()
-        audit.record("Diagnostics report integrity pass", "Integrity checks pass" in diagnostics and '"catalogPass": true' in diagnostics)
-
-        page.locator("#exportBackupButton").click()
-        backup_text = page.evaluate("window.__auditLastBlob.text()")
-        backup = json.loads(backup_text)
-        checksum = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", backup)
-        audit.record("Backup export includes valid checksum", backup["checksum"] == checksum)
-        audit.record("Backup export uses current schema", backup["schemaVersion"] == 8 and backup["appVersion"] == "3.2.1")
-
-        normal_error_count = len(audit.normal_console_errors)
-        audit.record("Normal workflow has no console errors", normal_error_count == 0, "; ".join(audit.normal_console_errors))
-        audit.record("Normal workflow has no uncaught errors", len(audit.page_errors) == 0, "; ".join(audit.page_errors))
-
-        audit.phase = "negative"
-        tampered = json.loads(json.dumps(backup))
-        tampered["state"]["decks"][0]["name"] = "Tampered Deck"
-        tampered_path = temporary_json(tampered)
-        page.locator("#importBackupInput").set_input_files(tampered_path)
-        page.wait_for_function("document.querySelector('#backupStatus').textContent.includes('checksum mismatch')")
-        audit.record("Tampered backup is rejected", "checksum mismatch" in page.locator("#backupStatus").inner_text().lower())
-        os.unlink(tampered_path)
-
-        valid_restore = json.loads(json.dumps(backup))
-        valid_restore["state"]["decks"][0]["name"] = "Restored Certified Deck"
-        valid_restore["checksum"] = page.evaluate("payload => window.XCore.fnv1a(JSON.stringify(payload.state))", valid_restore)
-        restore_path = temporary_json(valid_restore)
-        page.locator("#importBackupInput").set_input_files(restore_path)
-        page.wait_for_function("document.querySelector('#backupStatus').textContent.includes('checksum verified')")
-        state = state_snapshot(page)
-        audit.record("Valid backup imports and normalizes", state["decks"][0]["name"] == "Restored Certified Deck")
-        os.unlink(restore_path)
-
-        duplicate_patch = {
-            "schemaVersion": 1,
-            "parts": [
-                {"id": "audit-blade", "name": "Audit Blade", "category": "blade", "role": "balance"},
-                {"id": "audit-ratchet", "name": "Audit Ratchet", "category": "ratchet", "role": "balance"},
-                {"id": "audit-bit", "name": "Audit Bit", "category": "bit", "role": "balance"},
-            ],
-            "products": [
-                {"id": "AUDIT-001", "name": "Audit Product A", "parts": ["audit-blade", "audit-ratchet", "audit-bit"]},
-                {"id": "AUDIT-001", "name": "Audit Product B", "parts": ["audit-blade", "audit-ratchet", "audit-bit"]},
-            ],
-        }
-        duplicate_path = temporary_json(duplicate_patch)
-        before_custom_products = len(state_snapshot(page)["customProducts"])
-        page.locator("#importCatalogInput").set_input_files(duplicate_path)
-        page.wait_for_timeout(100)
-        after_custom_products = len(state_snapshot(page)["customProducts"])
-        audit.record("Duplicate product IDs in one catalog patch are rejected", before_custom_products == after_custom_products)
-        os.unlink(duplicate_path)
-
-        no_parts_patch = {
-            "schemaVersion": 1,
-            "parts": [],
-            "products": [{"id": "AUDIT-NO-BEY-PARTS", "name": "Audit Accessory Only Product", "parts": []}],
-        }
-        no_parts_path = temporary_json(no_parts_patch)
-        before_custom_products = len(state_snapshot(page)["customProducts"])
-        page.locator("#importCatalogInput").set_input_files(no_parts_path)
-        page.wait_for_timeout(100)
-        after_custom_products = len(state_snapshot(page)["customProducts"])
-        audit.record("Catalog products without Bey parts are rejected", before_custom_products == after_custom_products)
-        os.unlink(no_parts_path)
-
-        parts_only_patch = {
-            "schemaVersion": 1,
-            "parts": [{"id": "audit-blade-only", "name": "Audit Blade Only", "category": "blade", "role": "balance"}],
-            "products": [{"id": "AUDIT-PARTS-ONLY", "name": "Audit Parts Only Product", "parts": ["audit-blade-only"]}],
-        }
-        parts_only_path = temporary_json(parts_only_patch)
-        page.locator("#importCatalogInput").set_input_files(parts_only_path)
-        page.wait_for_function("JSON.parse(window.__auditStorage['x-deck-lab-state-v2']).customProducts.some(p => p.id === 'AUDIT-PARTS-ONLY')", timeout=10000)
-        state = state_snapshot(page)
-        audit.record("Catalog products with only Bey parts are accepted", any(item["id"] == "audit-blade-only" for item in state["customParts"]) and any(item["id"] == "AUDIT-PARTS-ONLY" for item in state["customProducts"]))
-        os.unlink(parts_only_path)
-
-        valid_patch = {
-            "schemaVersion": 1,
-            "parts": [
-                {"id": "audit-blade-valid", "name": "Audit Blade Valid", "category": "blade", "role": "balance"},
-                {"id": "audit-ratchet-valid", "name": "Audit Ratchet Valid", "category": "ratchet", "role": "balance"},
-                {"id": "audit-bit-valid", "name": "Audit Bit Valid", "category": "bit", "role": "balance"},
-            ],
-            "products": [{"id": "AUDIT-VALID", "name": "Audit Bey Product Valid", "parts": ["audit-blade-valid", "audit-ratchet-valid", "audit-bit-valid"]}],
-        }
-        valid_patch_path = temporary_json(valid_patch)
-        page.locator("#importCatalogInput").set_input_files(valid_patch_path)
-        page.wait_for_function("JSON.parse(window.__auditStorage['x-deck-lab-state-v2']).customProducts.some(p => p.id === 'AUDIT-VALID')", timeout=10000)
-        state = state_snapshot(page)
-        audit.record("Complete-Bey catalog patch also imports", all(any(item["id"] == part_id for item in state["customParts"]) for part_id in ["audit-blade-valid", "audit-ratchet-valid", "audit-bit-valid"]) and any(item["id"] == "AUDIT-VALID" for item in state["customProducts"]))
-        os.unlink(valid_patch_path)
-
-        undersized = page.evaluate("""() => Array.from(document.querySelectorAll('button, label.button')).filter((el) => { const rect = el.getBoundingClientRect(); return rect.width && rect.height && (rect.width < 44 || rect.height < 44); }).map((el) => ({ id: el.id || '', text: (el.textContent || '').trim().slice(0, 40), width: Math.round(el.getBoundingClientRect().width), height: Math.round(el.getBoundingClientRect().height) }))""")
-        audit.record("Visible button targets meet 44 px minimum", len(undersized) == 0, json.dumps(undersized))
-        audit.record("Final workflow has no horizontal overflow", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
-
-        nav(page, "dashboard")
-        page.evaluate("""() => { window.scrollTo(0, 0); const toast = document.querySelector('#toast'); if (toast) { toast.classList.remove('show'); toast.style.display = 'none'; } }""")
-        page.screenshot(path=str(HOME_SCREENSHOT_PATH), full_page=False)
-        audit.record("Guided home-screen screenshot captured", HOME_SCREENSHOT_PATH.exists() and HOME_SCREENSHOT_PATH.stat().st_size > 0)
-
-        nav(page, "results")
-        page.evaluate("""() => {
-          document.activeElement?.blur();
-          const skip = document.querySelector('.skip-link'); if (skip) skip.style.display = 'none';
-          const toast = document.querySelector('#toast'); if (toast) { toast.classList.remove('show'); toast.style.display = 'none'; }
-          const header = document.querySelector('.app-header'); if (header) header.style.position = 'static';
-          const nav = document.querySelector('.bottom-nav'); if (nav) { nav.style.position = 'static'; nav.style.marginTop = '12px'; }
-        }""")
-        page.screenshot(path=str(SCREENSHOT_PATH), full_page=True)
-        audit.record("Final guided analysis screenshot captured", SCREENSHOT_PATH.exists() and SCREENSHOT_PATH.stat().st_size > 0)
-
-        persisted = storage_snapshot(page)
-        second = context.new_page()
-        second.on("pageerror", audit.page_error)
-        second.set_content(production_document(persisted), wait_until="load")
-        wait_ready(second)
-        restored_state = state_snapshot(second)
-        audit.record("Fresh application instance restores deck library", restored_state["decks"][0]["name"] == "Restored Certified Deck")
-        audit.record("Fresh application instance restores inventory", len(restored_state["inventory"]) >= 14)
-        audit.record("Fresh application instance restores battles", len(restored_state["battles"]) == 3)
-        second.close()
-
-        stale_state = json.loads(persisted["x-deck-lab-state-v2"])
-        stale_state.setdefault("ownedProducts", {})["BX-00-BITSET-GOLD"] = 2
-        stale_state.setdefault("customProducts", []).append({"id": "OLD-PARTS-ONLY", "name": "Old Parts Only", "parts": ["blade-dran-sword"], "status": "custom"})
-        stale_storage = dict(persisted)
-        stale_storage["x-deck-lab-state-v2"] = json.dumps(stale_state)
-        third = context.new_page()
-        third.on("pageerror", audit.page_error)
-        third.set_content(production_document(stale_storage), wait_until="load")
-        wait_ready(third)
-        cleaned = state_snapshot(third)
-        audit.record("Migration preserves ownership records for parts-only Bey releases", cleaned.get("ownedProducts", {}).get("BX-00-BITSET-GOLD") == 2)
-        audit.record("Migration preserves custom products that contain a Bey part", any(product.get("id") == "OLD-PARTS-ONLY" for product in cleaned.get("customProducts", [])))
-        third.close()
-
-        browser.close()
-
-    passed = sum(1 for check in audit.checks if check["passed"])
-    failed = len(audit.checks) - passed
-    result = {
-        "application": "X Deck Lab",
-        "version": "3.2.1",
-        "timestampUtc": datetime.now(timezone.utc).isoformat(),
-        "viewport": {**VIEWPORT, "deviceScaleFactor": DEVICE_SCALE_FACTOR, "mobile": True, "touch": True},
-        "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-        "durationSeconds": round(time.perf_counter() - started, 3),
-        "summary": {"checks": len(audit.checks), "passed": passed, "failed": failed},
-        "normalConsoleErrors": audit.normal_console_errors,
-        "uncaughtPageErrors": audit.page_errors,
-        "expectedValidationLogs": audit.expected_validation_logs,
-        "checks": audit.checks,
-    }
-    RESULT_PATH.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return result
-
-
-if __name__ == "__main__":
-    result = run()
-    print(json.dumps(result["summary"], indent=2))
-    raise SystemExit(0 if result["summary"]["failed"] == 0 else 1)
+result = {
+    'checks': checks,
+    'passed': sum(1 for c in checks if c['passed']),
+    'failed': sum(1 for c in checks if not c['passed']),
+    'browserErrors': errors
+}
+(ROOT / 'browser-audit-result.json').write_text(json.dumps(result, indent=2))
+print(json.dumps({'passed': result['passed'], 'failed': result['failed'], 'errors': errors}, indent=2))

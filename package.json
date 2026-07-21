@@ -1,11 +1,11 @@
 {
-  "name": "x-deck-lab",
-  "version": "3.2.1",
+  "name": "x-command-center",
+  "version": "1.1.0",
   "private": true,
-  "description": "Root-only mobile Beyblade X tournament coach with a chronological Bey-and-parts release library, loose-part inventory, owned-opponent testing, guided missions, and physics-informed deck optimization.",
+  "description": "Static Beyblade X tournament command center",
   "scripts": {
-    "test": "node --test test.mjs",
-    "check": "node --check data.js && node --check core.js && node --check app.js && node --check service-worker.js && node --test test.mjs"
+    "test": "node test.mjs",
+    "check": "node --check data.js && node --check core.js && node --check app.js && node --check service-worker.js && node test.mjs"
   },
-  "license": "MIT"
+  "engines": { "node": ">=20" }
 }

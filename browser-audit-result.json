@@ -1,593 +1,162 @@
 {
-  "application": "X Deck Lab",
-  "version": "3.2.1",
-  "timestampUtc": "2026-07-20T12:07:15.451549+00:00",
-  "viewport": {
-    "width": 390,
-    "height": 844,
-    "deviceScaleFactor": 3,
-    "mobile": true,
-    "touch": true
-  },
-  "method": "Unchanged production files injected into Chromium document context; deterministic localStorage shim; service worker tested separately in test.mjs.",
-  "durationSeconds": 21.418,
-  "summary": {
-    "checks": 113,
-    "passed": 113,
-    "failed": 0
-  },
-  "normalConsoleErrors": [],
-  "uncaughtPageErrors": [],
-  "expectedValidationLogs": [
-    "Error: Backup checksum mismatch: expected ca8f0bd0, calculated 8ac1c518.\n    at HTMLInputElement.<anonymous> (<anonymous>:1273:58)",
-    "Error: Invalid or duplicate product ID: AUDIT-001.\n    at <anonymous>:1045:125\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:1044:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1283:13)",
-    "Error: AUDIT-NO-BEY-PARTS does not contain any Beyblade performance part.\n    at <anonymous>:1050:75\n    at Array.map (<anonymous>)\n    at importCatalog (<anonymous>:1044:37)\n    at async HTMLInputElement.<anonymous> (<anonymous>:1283:13)"
-  ],
   "checks": [
     {
-      "name": "Application initializes",
+      "name": "App scripts initialize",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "No initial page errors",
+      "name": "App title renders",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "No horizontal overflow",
+      "name": "Five primary navigation items",
       "passed": true,
-      "detail": "390px content / 390px viewport"
-    },
-    {
-      "name": "Initial visible controls have accessible names",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Document IDs are unique",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Four-step home guide is visible",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Full player guide has four clear steps",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Kid guide explains ordinary Self-KO",
-      "passed": true,
-      "detail": "PLAYER GUIDE\n\nHow to use X Deck Lab\n×\n1\nAdd your parts\n\nOpen Parts. Browse official releases by date, including sets and part packs. Releases with no Beyblade performance parts are excluded.\n\n2\nBuild a deck\n\nOpen Decks. Choose three Beys, or let the app suggest legal decks from your parts.\n\n3\nRun the next test\n\nOpen Test. Tap the first card. Build the shown opponent, battle once, and save the result.\n\n4\nCheck readiness\n\nOpen Coach. It gives you one next mission, shows progress, and explains what"
-    },
-    {
-      "name": "Small-phone layout has no horizontal overflow",
-      "passed": true,
-      "detail": "320px / 320px"
-    },
-    {
-      "name": "Dashboard view navigates",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Inventory view navigates",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Deck view navigates",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Test view navigates",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Results view navigates",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "More view navigates",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Visible controls across primary views have accessible names",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Management navigation does not stall",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Primary navigation meets 44 px touch target",
-      "passed": true,
-      "detail": "[{\"w\": 75.59375, \"h\": 59, \"left\": 6, \"right\": 81.59375, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 81.59375, \"right\": 157.1875, \"bottom\": 837}, {\"w\": 75.609375, \"h\": 59, \"left\": 157.1875, \"right\": 232.796875, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 232.796875, \"right\": 308.390625, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 308.390625, \"right\": 383.984375, \"bottom\": 837}]"
-    },
-    {
-      "name": "Primary navigation stays inside viewport",
-      "passed": true,
-      "detail": "[{\"w\": 75.59375, \"h\": 59, \"left\": 6, \"right\": 81.59375, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 81.59375, \"right\": 157.1875, \"bottom\": 837}, {\"w\": 75.609375, \"h\": 59, \"left\": 157.1875, \"right\": 232.796875, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 232.796875, \"right\": 308.390625, \"bottom\": 837}, {\"w\": 75.59375, \"h\": 59, \"left\": 308.390625, \"right\": 383.984375, \"bottom\": 837}]"
-    },
-    {
-      "name": "Bottom navigation is reduced to five core actions",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Advanced controls move to the compact header",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Four-step path stays compact on mobile",
-      "passed": true,
-      "detail": "0px"
-    },
-    {
-      "name": "Official release library opens by default",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Release filters are collapsed until requested",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Search and filter controls remain sticky",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Filter drawer opens on demand",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Library includes releases with Bey parts and excludes accessory-only releases",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Parts-only releases with Bey parts are included",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Adding a parts-only release records ownership and loose parts",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Removing a parts-only release reverses its parts",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Product search retains focus",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Product cards show included Bey count",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Adding a fixed product records ownership and verified loose parts",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Removing a fixed product reverses its owned quantity and parts",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Random boosters require and store the exact selected pull",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Announced releases with Bey parts can be browsed but not marked owned",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Clear filters restores released newest-first browsing",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Filter counter resets with the controls",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Oldest-first sorting starts with the first release month",
-      "passed": true,
-      "detail": "2023-07"
-    },
-    {
-      "name": "Product-code sorting is alphabetical",
-      "passed": true,
-      "detail": "BX-00 | BX-00 | BX-00 | BX-00 | BX-00 | BX-00 | BX-00 | BX-00"
-    },
-    {
-      "name": "Product entry updates inventory",
-      "passed": true,
-      "detail": "17 unique parts"
-    },
-    {
-      "name": "Loose-parts tab switches without losing product ownership",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Inventory search retains focus",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Inventory filtering renders owned part",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Loose-part dialog saves quantity and condition",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Owned-parts optimizer returns ranked decks",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Optimizer applies three complete Beys",
-      "passed": true,
-      "detail": "attack setup · attack bit · fit 72/100 | stamina setup · stamina bit · fit 82/100 | balance setup · stamina bit · fit 55/100"
-    },
-    {
-      "name": "Each completed Bey uses a four-cell mobile score grid",
-      "passed": true,
-      "detail": "[4, 4, 4]"
-    },
-    {
-      "name": "Mobile engineering scores are separated and contained",
-      "passed": true,
-      "detail": "{\"columns\": 2, \"contained\": true, \"legacyInlineSpans\": 0, \"labeledCells\": true}"
-    },
-    {
-      "name": "Applied deck passes rules and inventory gates",
-      "passed": true,
-      "detail": "Construction passes\n\nOfficial scoring. In Custom Line, ordinary lock chips may repeat; Valkyrie and Emperor are limited to one each.\n\nPass"
-    },
-    {
-      "name": "Deck library clones complete decks",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Deck library deletes selected version safely",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Adaptive test plan renders exact owned opponents",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Adaptive plan prioritizes simple self-KO checks",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Initial Coach mission has an exact owned pairing",
-      "passed": true,
-      "detail": "{\"id\": \"basic:blade-dran-strike|||||||ratchet-4-50|bit-free-flat|::basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\", \"opponentSignature\": \"basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\"}"
-    },
-    {
-      "name": "Battle form offers an owned opponent build",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Selected opponent is simultaneously constructible from owned quantities",
-      "passed": true,
-      "detail": "{\"found\": true, \"capacity\": true, \"attackMirror\": false}"
-    },
-    {
-      "name": "Attack-bit mirror exclusion is enforced",
-      "passed": true,
-      "detail": "{\"found\": true, \"capacity\": true, \"attackMirror\": false}"
-    },
-    {
-      "name": "Opponent engineering preview renders",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Battle logging persists exact opponent, finish, and simple No answer",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Xtreme Finish receives three points",
-      "passed": true,
-      "detail": "DranStrike 4-50 Free Flat · WIN\n\nWizardRod 1-60 Free Ball · stamina bit · xtreme finish · 3 points\n\n×\n\nJul 20, 2026, 12:07 PM"
-    },
-    {
-      "name": "Saving a battle reveals a Coach handoff",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach rotates away from the just-completed exact pairing",
-      "passed": true,
-      "detail": "{\"before\": {\"id\": \"basic:blade-dran-strike|||||||ratchet-4-50|bit-free-flat|::basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\", \"opponentSignature\": \"basic:blade-wizard-rod|||||||ratchet-1-60|bit-free-ball|\"}, \"after\": {\"id\": \"basic:blade-phoenix-wing|||||||ratchet-5-70|bit-free-ball|::basic:blade-silver-wolf|||||||ratchet-3-60|bit-disk-ball|\", \"opponentSignature\": \"basic:blade-silver-wolf|||||||ratchet-3-60|bit-disk-ball|\"}}"
-    },
-    {
-      "name": "Impossible Self-KO Yes answer is blocked",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Ordinary Self-KO Yes is retained as valid decided evidence",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Battle history shows only the simple Self-KO label",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Contaminated battle is retained but marked for exclusion",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach tab is clearly named",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Player mode is visible by default",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Home introduces Coach before the tab is used",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach reports decided evidence",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach shows one next mission",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach snapshot combines progress and priorities",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Engineering explanation is collapsed by default",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach mission exposes information value",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach patterns render",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Advanced mode opens technical details",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Player mode restores collapsed technical details",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Coach shows progress, strengths, weaknesses, and simple behavior",
-      "passed": true,
       "detail": ""
     },
     {
-      "name": "Technical analysis is collapsed by default",
+      "name": "No mobile horizontal overflow",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Coverage matrix renders in advanced analysis",
+      "name": "Command view active",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Engineering deck analysis renders in advanced analysis",
+      "name": "Readiness hero visible",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Simple Self-KO analysis renders Yes-or-No totals",
+      "name": "Retired attack-mirror setting is absent",
       "passed": true,
-      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. DranStrike 4-50 Free Flat\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n13.7%\nengineering estimate\n\n2. WizardRod 9-60 Disk Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n1.5%\nengineering estimate\n\n3. PhoenixWing 5-70 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n4.3%\nengineering estimate"
-    },
-    {
-      "name": "Detailed Self-KO causes are not shown",
-      "passed": true,
-      "detail": "Total self-KOs\n1\nin 2 answered tests\nObserved rate\n50.0%\nlower is better\nSimple rule\nYes or No\nNo special cause is needed\nWhat counts?\nGoes out alone\nYour Bey jumps or runs out mostly by itself\nBEY\tTESTS\tSELF-KOS\tRATE\tMODEL ESTIMATE\n\n1. DranStrike 4-50 Free Flat\nRun more tests\t\n2\nanswered tests\t\n1\nself-KOs\t\n50.0%\nobserved rate\t\n13.7%\nengineering estimate\n\n2. WizardRod 9-60 Disk Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n1.5%\nengineering estimate\n\n3. PhoenixWing 5-70 Free Ball\nRun more tests\t\n0\nanswered tests\t\n0\nself-KOs\t\n0.0%\nobserved rate\t\n4.3%\nengineering estimate"
-    },
-    {
-      "name": "Order analysis renders without failure",
-      "passed": true,
-      "detail": ""
-    },
-    {
-      "name": "Tournament-order cards stay inside the mobile viewport",
-      "passed": true,
-      "detail": "{\"cards\": 3, \"contained\": true, \"vertical\": true, \"stepsContained\": true}"
-    },
-    {
-      "name": "Corrected tournament-order screenshot captured",
-      "passed": true,
       "detail": ""
-    },
-    {
-      "name": "Forecast action completes",
-      "passed": true,
-      "detail": "Estimated match win rate\n31.9%\nrange 30.8%–33.1%\nAverage score\n2.08–3.18\n6,000 model runs\nBattle evidence\n2\nrelevant decided battles\nEstimated self-KO chance\n8.5%\nuses recorded Yes/No answers\nModel status\nNeeds more tests\nguide only, not a guarantee\n\nForecast is prior-heavy because battle count or self-KO answers are limited; sparse cells use the engineering-informed self-KO estimate."
     },
     {
-      "name": "Meta-profile management saves weighted lineup",
+      "name": "Attack-movement mirror missions are eligible",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Custom tournament profile persists",
+      "name": "Mobile coverage cards render",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Readiness and engineering-search policy persists",
+      "name": "Mobile coverage table is hidden",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Guide cards can be hidden",
+      "name": "Primary mobile navigation touch targets are at least 44px",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Guide cards can be restored",
+      "name": "Collection view opens",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Diagnostics report integrity pass",
+      "name": "Owned product quantities update",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Backup export includes valid checksum",
+      "name": "Legacy exclusion setting is removed on save",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Backup export uses current schema",
+      "name": "Deck lab opens",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Normal workflow has no console errors",
+      "name": "Optimizer dialog opens",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Normal workflow has no uncaught errors",
+      "name": "Optimizer returns a legal deck",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Tampered backup is rejected",
+      "name": "Applied deck has three complete previews",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Valid backup imports and normalizes",
+      "name": "Deck validation passes",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Duplicate product IDs in one catalog patch are rejected",
+      "name": "Test lab opens",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Catalog products without Bey parts are rejected",
+      "name": "Owned-opponent missions generated",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Catalog products with only Bey parts are accepted",
+      "name": "Mission can be selected",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Complete-Bey catalog patch also imports",
+      "name": "Battle saved to local state",
       "passed": true,
       "detail": ""
-    },
-    {
-      "name": "Visible button targets meet 44 px minimum",
-      "passed": true,
-      "detail": "[]"
     },
     {
-      "name": "Final workflow has no horizontal overflow",
+      "name": "Completed pairing is not immediately repeated",
       "passed": true,
-      "detail": ""
+      "detail": "standard:blade-dran-buster|ratchet-1-60|bit-accel>>standard:blade-wizard-rod|ratchet-7-60|bit-disk-ball -> standard:blade-dran-buster|ratchet-1-60|bit-accel>>standard:blade-leon-crest|ratchet-5-70|bit-gear-needle"
     },
     {
-      "name": "Guided home-screen screenshot captured",
+      "name": "Records view opens",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Final guided analysis screenshot captured",
+      "name": "Saved battle appears in records",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Fresh application instance restores deck library",
+      "name": "Settings dialog opens",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Fresh application instance restores inventory",
+      "name": "Mobile form controls use 16px text to avoid focus zoom",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Fresh application instance restores battles",
+      "name": "No 320px horizontal overflow",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Migration preserves ownership records for parts-only Bey releases",
+      "name": "No desktop horizontal overflow",
       "passed": true,
       "detail": ""
     },
     {
-      "name": "Migration preserves custom products that contain a Bey part",
+      "name": "No uncaught browser errors",
       "passed": true,
       "detail": ""
     }
-  ]
+  ],
+  "passed": 31,
+  "failed": 0,
+  "browserErrors": []
 }
